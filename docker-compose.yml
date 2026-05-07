@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
-  llmai:
+  vixcode:
     build: .
-    container_name: llmai-agent
+    container_name: vixcode-agent
     ports:
       - "7777:7777"
     environment:
@@ -11,7 +9,7 @@ services:
       - PORT=7777
       # Use host.docker.internal to connect to Ollama running on your local machine
       - OLLAMA_URL=http://host.docker.internal:11434
-      - VIXCODE_MODEL=qwen2.5-coder
+      - VIXCODE_MODEL=gemma3:4b
     volumes:
       # Mount a workspace directory so the agent can read/write files safely
       - ./workspace:/workspace
@@ -21,3 +19,4 @@ services:
     # extra_hosts is needed on Linux for host.docker.internal to resolve
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped

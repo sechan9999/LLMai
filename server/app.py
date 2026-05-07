@@ -57,12 +57,8 @@ async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     config = load_config()
-    ollama_url = config.get(
-        "ollama_url", os.environ.get("OLLAMA_URL", "http://localhost:11434")
-    )
-    model = config.get(
-        "model", os.environ.get("VIXCODE_MODEL", "qwen2.5-coder")
-    )
+    ollama_url = os.environ.get("OLLAMA_URL") or config.get("ollama_url", "http://localhost:11434")
+    model      = os.environ.get("VIXCODE_MODEL") or config.get("model", "qwen2.5-coder")
 
     agent = WebSocketAgent(llm_url=ollama_url, model=model, ws=websocket)
     agent_task: asyncio.Task | None = None

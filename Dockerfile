@@ -24,9 +24,7 @@ EXPOSE 7777
 # Set environment variables
 ENV HOST=0.0.0.0
 ENV PORT=7777
-# host.docker.internal allows Docker to talk to Ollama running on the host machine
 ENV OLLAMA_URL=http://host.docker.internal:11434
 ENV VIXCODE_MODEL=qwen2.5-coder
 
-# Default command
 CMD ["python", "run_server.py"]

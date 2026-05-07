@@ -10,8 +10,9 @@ from pathlib import Path
 
 def main():
     port = int(os.environ.get("PORT", "7777"))
+    # 0.0.0.0 when running in Docker; 127.0.0.1 otherwise
     host = os.environ.get("HOST", "127.0.0.1")
-    url  = f"http://{host}:{port}"
+    url  = f"http://localhost:{port}"
 
     # Print config summary
     config_path = Path(__file__).parent / "config.json"
@@ -38,12 +39,13 @@ def main():
         print("uvicorn not installed. Run: pip install uvicorn[standard]")
         sys.exit(1)
 
-    # Open browser after a short delay
-    import threading, time
-    def _open():
-        time.sleep(1.2)
-        webbrowser.open(url)
-    threading.Thread(target=_open, daemon=True).start()
+    # Open browser only when running locally (not in container)
+    if host == "127.0.0.1":
+        import threading, time
+        def _open():
+            time.sleep(1.2)
+            webbrowser.open(url)
+        threading.Thread(target=_open, daemon=True).start()
 
     uvicorn.run(
         "server.app:app",
