@@ -1,0 +1,12 @@
+{
+  "ollama_url": "http://localhost:11434",
+  "model": "gemma3:4b",
+  "permissions": {
+    "read_file":   "allow",
+    "list_files":  "allow",
+    "search_code": "allow",
+    "write_file":  "ask",
+    "edit_file":   "ask",
+    "run_bash":    "ask"
+  }
+}

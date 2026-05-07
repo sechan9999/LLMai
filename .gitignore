@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.env
+*.egg
+vixcode.egg-info/
+.vixcode/
+vixcode.json
+_test_ws.py

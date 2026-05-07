@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vixcode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root {
+  --bg:        #05050a;
+  --surface:   #0e0e18;
+  --surface2:  #161625;
+  --surface3:  #1e1e30;
+  --border:    #2a2a42;
+  --border2:   #363654;
+  --text:      #e2e4f0;
+  --text2:     #a8aac0;
+  --muted:     #5c5e7a;
+  --accent:    #7c6af7;
+  --accent2:   #9d8ff9;
+  --glow:      rgba(124,106,247,.18);
+  --green:     #22c55e;
+  --green-dim: rgba(34,197,94,.12);
+  --yellow:    #f59e0b;
+  --yellow-dim:rgba(245,158,11,.12);
+  --red:       #ef4444;
+  --red-dim:   rgba(239,68,68,.12);
+  --cyan:      #06b6d4;
+  --purple:    #a855f7;
+  --sans: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --r: 10px;
+  --r-sm: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,.45);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── Header ────────────────────────────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: .4;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -.2px;
+  color: var(--text);
+}
+.logo-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 14px var(--glow);
+}
+.logo-text { color: var(--text); }
+.logo-text span { color: var(--accent2); }
+
+.model-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px 4px 8px;
+  font-size: 12px;
+  color: var(--text2);
+  font-family: var(--mono);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  flex-shrink: 0;
+  transition: all .3s;
+}
+.status-dot.off { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+.spacer { flex: 1; }
+
+.token-counter {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.hbtn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 5px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: 12px var(--sans);
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.hbtn:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+  color: var(--text);
+}
+
+/* ── Main layout ───────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Feed ──────────────────────────────────────────────────────── */
+#feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msg-row {
+  padding: 2px 24px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp .2s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* User message */
+.user-bubble {
+  align-self: flex-end;
+  max-width: 72%;
+  background: linear-gradient(135deg, #2d1f6e, #1e1845);
+  border: 1px solid rgba(124,106,247,.3);
+  border-radius: 14px 14px 3px 14px;
+  padding: 11px 16px;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-size: 14px;
+  box-shadow: 0 2px 12px rgba(124,106,247,.15);
+}
+
+/* AI message */
+.ai-block {
+  align-self: flex-start;
+  max-width: 88%;
+  display: flex;
+  gap: 10px;
+}
+.ai-avatar {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  box-shadow: 0 0 10px var(--glow);
+}
+.ai-content {
+  flex: 1;
+  line-height: 1.7;
+  color: var(--text);
+  font-size: 14px;
+  min-width: 0;
+}
+
+/* Markdown styles inside ai-content */
+.ai-content p { margin-bottom: 8px; }
+.ai-content p:last-child { margin-bottom: 0; }
+.ai-content ul, .ai-content ol { padding-left: 20px; margin-bottom: 8px; }
+.ai-content li { margin-bottom: 3px; }
+.ai-content code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--cyan);
+}
+.ai-content pre {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.ai-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+.ai-content h1, .ai-content h2, .ai-content h3 {
+  margin: 10px 0 6px;
+  color: var(--text);
+  font-weight: 600;
+}
+.ai-content h1 { font-size: 17px; }
+.ai-content h2 { font-size: 15px; }
+.ai-content h3 { font-size: 14px; }
+.ai-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  color: var(--text2);
+  margin: 8px 0;
+}
+.ai-content strong { color: var(--text); font-weight: 600; }
+.ai-content a { color: var(--accent2); text-decoration: none; }
+.ai-content a:hover { text-decoration: underline; }
+.ai-content table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+.ai-content th, .ai-content td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.ai-content th { background: var(--surface2); color: var(--text2); font-weight: 600; }
+
+/* ── Tool card ─────────────────────────────────────────────────── */
+.tool-wrap { padding: 4px 24px 4px 62px; animation: fadeUp .2s ease; }
+
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  max-width: 680px;
+  transition: border-color .15s;
+}
+.tool-card:hover { border-color: var(--border2); }
+
+.tool-head {
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.tool-head:hover { background: rgba(255,255,255,.02); }
+
+.tool-badge {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.tb-read   { background: rgba(6,182,212,.12);  color: var(--cyan);   border: 1px solid rgba(6,182,212,.25);  }
+.tb-write  { background: rgba(168,85,247,.12); color: var(--purple); border: 1px solid rgba(168,85,247,.25); }
+.tb-edit   { background: rgba(168,85,247,.12); color: var(--purple); border: 1px solid rgba(168,85,247,.25); }
+.tb-bash   { background: rgba(34,197,94,.1);   color: var(--green);  border: 1px solid rgba(34,197,94,.2);   }
+.tb-list   { background: rgba(245,158,11,.1);  color: var(--yellow); border: 1px solid rgba(245,158,11,.2);  }
+.tb-search { background: rgba(124,106,247,.1); color: var(--accent2);border: 1px solid rgba(124,106,247,.2); }
+
+.tool-args {
+  flex: 1;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-args em { color: var(--text); font-style: normal; }
+
+.tool-status { font-size: 11px; flex-shrink: 0; font-family: var(--mono); }
+.ts-run    { color: var(--yellow); }
+.ts-ok     { color: var(--green); }
+.ts-err    { color: var(--red); }
+.ts-denied { color: var(--muted); }
+
+.chevron {
+  color: var(--muted);
+  font-size: 10px;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.tool-card.open .chevron { transform: rotate(180deg); }
+
+.tool-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow-y: auto;
+  line-height: 1.55;
+}
+.tool-card.open .tool-body { display: block; }
+
+/* ── Permission card ───────────────────────────────────────────── */
+.perm-wrap { padding: 4px 24px 4px 62px; animation: fadeUp .2s ease; }
+
+.perm-card {
+  background: var(--surface);
+  border: 1px solid var(--yellow);
+  border-radius: var(--r);
+  max-width: 680px;
+  overflow: hidden;
+  box-shadow: 0 0 20px var(--yellow-dim);
+}
+.perm-head {
+  padding: 10px 14px;
+  background: var(--yellow-dim);
+  border-bottom: 1px solid rgba(245,158,11,.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--yellow);
+}
+.perm-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
+.perm-preview {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.perm-btns { display: flex; gap: 8px; }
+
+.btn-allow {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--green);
+  color: #000;
+  border: none;
+  padding: 6px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: 600 12px var(--sans);
+  transition: opacity .15s;
+}
+.btn-allow:hover { opacity: .85; }
+.btn-deny {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,.35);
+  padding: 6px 16px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: 12px var(--sans);
+  transition: all .15s;
+}
+.btn-deny:hover { background: rgba(239,68,68,.2); }
+
+/* ── Thinking ──────────────────────────────────────────────────── */
+.thinking-wrap { padding: 6px 24px 6px 62px; }
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.dots { display: inline-flex; gap: 4px; }
+.dots span {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: .3;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: .2s; }
+.dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes pulse { 0%,80%,100%{opacity:.2;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+
+/* ── System / error notices ────────────────────────────────────── */
+.sys-row {
+  display: flex;
+  justify-content: center;
+  padding: 6px 24px;
+}
+.sys-pill {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 12px;
+}
+.err-row { padding: 4px 24px 4px 62px; }
+.err-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--red);
+  background: var(--red-dim);
+  border: 1px solid rgba(239,68,68,.25);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+}
+
+/* ── Welcome screen ────────────────────────────────────────────── */
+#welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  text-align: center;
+}
+.welcome-logo {
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 32px var(--glow);
+  margin-bottom: 6px;
+}
+.welcome-title {
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent2), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.welcome-sub { color: var(--text2); font-size: 13px; }
+.welcome-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.hint-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.hint-chip:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+/* ── Input area ────────────────────────────────────────────────── */
+#bar-wrap {
+  padding: 0 20px 16px;
+  flex-shrink: 0;
+}
+#bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+#bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 4px 24px var(--glow);
+}
+#inp {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 14px 16px 0;
+  resize: none;
+  min-height: 52px;
+  max-height: 200px;
+  outline: none;
+  line-height: 1.6;
+}
+#inp::placeholder { color: var(--muted); }
+#inp:disabled { opacity: .5; }
+
+.bar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 10px;
+}
+.bar-hint { font-size: 11px; color: var(--muted); }
+
+#sendbtn {
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font: 600 13px var(--sans);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity .15s, transform .1s;
+}
+#sendbtn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+#sendbtn:active:not(:disabled) { transform: translateY(0); }
+#sendbtn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <span class="logo-text">vix<span>code</span></span>
+  </div>
+  <div class="model-pill">
+    <div class="status-dot off" id="dot"></div>
+    <span id="model-badge">connecting…</span>
+  </div>
+  <div class="spacer"></div>
+  <span class="token-counter" id="tok-count"></span>
+  <button class="hbtn" onclick="cmd('reset')" title="Clear conversation">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
+    Reset
+  </button>
+</header>
+
+<!-- Main area -->
+<div class="main">
+  <div id="feed-wrap" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+
+    <!-- Welcome -->
+    <div id="welcome">
+      <div class="welcome-logo">⚡</div>
+      <div class="welcome-title">vixcode</div>
+      <div class="welcome-sub">Local AI Coding Agent — powered by Ollama</div>
+      <div class="welcome-hints">
+        <div class="hint-chip" onclick="fillInput(this)">현재 디렉토리 파일 목록 보여줘</div>
+        <div class="hint-chip" onclick="fillInput(this)">README.md 파일 읽어줘</div>
+        <div class="hint-chip" onclick="fillInput(this)">git status 확인해줘</div>
+        <div class="hint-chip" onclick="fillInput(this)">간단한 Python 스크립트 만들어줘</div>
+      </div>
+    </div>
+
+    <!-- Messages injected here -->
+    <div id="feed" style="display:none; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
+
+  </div>
+</div>
+
+<!-- Input -->
+<div id="bar-wrap">
+  <div id="bar">
+    <textarea id="inp"
+      placeholder="코딩 작업을 입력하세요…"
+      rows="1"></textarea>
+    <div class="bar-footer">
+      <span class="bar-hint">Enter 전송 &nbsp;·&nbsp; Shift+Enter 줄바꿈</span>
+      <button id="sendbtn" onclick="send()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const feed      = document.getElementById('feed')
+const welcome   = document.getElementById('welcome')
+const inp       = document.getElementById('inp')
+const sendBtn   = document.getElementById('sendbtn')
+const dot       = document.getElementById('dot')
+const badge     = document.getElementById('model-badge')
+const tokCount  = document.getElementById('tok-count')
+
+let ws = null
+let busy = false
+let curAiEl = null
+let curToolCard = null
+let msgCount = 0
+
+// ── marked config ───────────────────────────────────────────────────────────
+marked.setOptions({ gfm: true, breaks: true })
+
+// ── WebSocket ────────────────────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws`)
+  ws.onopen  = () => { setOnline(true);  ws.send(j({type:'get_info'})) }
+  ws.onclose = () => { setOnline(false); setTimeout(connect, 2500) }
+  ws.onerror = () => setOnline(false)
+  ws.onmessage = e => handle(JSON.parse(e.data))
+}
+
+function handle(m) {
+  switch (m.type) {
+    case 'info':
+      badge.textContent = m.model
+      break
+    case 'text':
+      appendAi(m.content)
+      break
+    case 'tool_start':
+      curAiEl = null
+      curToolCard = addToolCard(m.name, m.args)
+      break
+    case 'tool_result':
+      if (curToolCard) { resolveToolCard(curToolCard, m.content, m.error); curToolCard = null }
+      break
+    case 'permission_request':
+      curAiEl = null
+      addPermCard(m.tool, m.preview, m.args)
+      break
+    case 'done':
+      setbusy(false); curAiEl = null
+      break
+    case 'error':
+      addErr(m.message); setbusy(false)
+      break
+    case 'reset_done':
+      feed.innerHTML = ''
+      feed.style.display = 'none'
+      welcome.style.display = 'flex'
+      msgCount = 0
+      addSys('대화가 초기화되었습니다.')
+      break
+  }
+}
+
+// ── UI builders ──────────────────────────────────────────────────────────────
+function showFeed() {
+  if (msgCount === 0) {
+    welcome.style.display = 'none'
+    feed.style.display = 'block'
+  }
+  msgCount++
+}
+
+function appendAi(text) {
+  if (!curAiEl) {
+    showFeed()
+    const row = mk('div','msg-row')
+    const block = mk('div','ai-block')
+    const av = mk('div','ai-avatar'); av.textContent = '⚡'
+    const content = mk('div','ai-content')
+    block.appendChild(av)
+    block.appendChild(content)
+    row.appendChild(block)
+    feed.appendChild(row)
+    curAiEl = content
+  }
+  curAiEl._raw = (curAiEl._raw || '') + text
+  curAiEl.innerHTML = marked.parse(curAiEl._raw)
+  curAiEl.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b))
+  scrollDown()
+}
+
+function addToolCard(name, args) {
+  const wrap = mk('div','tool-wrap')
+  const card = mk('div','tool-card')
+
+  const badgeClass = {
+    read_file:'tb-read', write_file:'tb-write', edit_file:'tb-edit',
+    run_bash:'tb-bash', list_files:'tb-list', search_code:'tb-search'
+  }[name] || 'tb-search'
+
+  const icons = {
+    read_file:'📖', write_file:'✏️', edit_file:'🔧',
+    run_bash:'⚡', list_files:'📁', search_code:'🔍'
+  }
+  const icon = icons[name] || '⚙'
+
+  const argsStr = fmtArgs(args)
+  const uid = ++_uid
+
+  card.innerHTML = `
+    <div class="tool-head" onclick="this.parentElement.classList.toggle('open')">
+      <span class="tool-badge ${badgeClass}">${icon} ${esc(name)}</span>
+      <span class="tool-args">${esc(argsStr)}</span>
+      <span class="tool-status ts-run" id="ts-${uid}">● running</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="tool-body"></div>`
+
+  wrap.appendChild(card)
+  feed.appendChild(wrap)
+  showFeed()
+  scrollDown()
+  return { card, uid }
+}
+
+function resolveToolCard({ card, uid }, content, error) {
+  const st = document.getElementById(`ts-${uid}`)
+  if (error) { st.textContent = '✗ denied';    st.className = 'tool-status ts-err'    }
+  else        { st.textContent = '✓ done';      st.className = 'tool-status ts-ok'     }
+  card.querySelector('.tool-body').textContent = content || '(no output)'
+  scrollDown()
+}
+
+function addPermCard(tool, preview, args) {
+  const wrap = mk('div','perm-wrap')
+  const pre  = preview || `${tool}(${JSON.stringify(args)})`
+  wrap.innerHTML = `
+    <div class="perm-card">
+      <div class="perm-head">⚠ 권한 확인 필요</div>
+      <div class="perm-body">
+        <div class="perm-preview">${esc(pre)}</div>
+        <div class="perm-btns" id="pb-${++_uid}">
+          <button class="btn-allow">✓ Allow</button>
+          <button class="btn-deny">✕ Deny</button>
+        </div>
+      </div>
+    </div>`
+  const btnsId = `pb-${_uid}`
+  wrap.querySelector('.btn-allow').onclick = () => {
+    perm(true)
+    document.getElementById(btnsId).innerHTML = '<span style="color:var(--green);font-size:12px">✓ Allowed</span>'
+  }
+  wrap.querySelector('.btn-deny').onclick = () => {
+    perm(false)
+    document.getElementById(btnsId).innerHTML = '<span style="color:var(--muted);font-size:12px">✗ Denied</span>'
+  }
+  feed.appendChild(wrap)
+  showFeed()
+  scrollDown()
+}
+
+function addThinking() {
+  const el = mk('div','thinking-wrap')
+  el.id = 'thinking'
+  el.innerHTML = `<div class="thinking">
+    <span class="dots"><span></span><span></span><span></span></span>
+    응답 생성 중…
+  </div>`
+  feed.appendChild(el)
+  scrollDown()
+}
+function rmThinking() { document.getElementById('thinking')?.remove() }
+
+function addUserMsg(text) {
+  showFeed()
+  const row = mk('div','msg-row')
+  const bub = mk('div','user-bubble')
+  bub.textContent = text
+  row.appendChild(bub)
+  feed.appendChild(row)
+  scrollDown()
+}
+
+function addSys(t) {
+  const row = mk('div','sys-row')
+  const pill = mk('div','sys-pill')
+  pill.textContent = t
+  row.appendChild(pill)
+  feed.appendChild(row)
+  scrollDown()
+}
+
+function addErr(t) {
+  const row = mk('div','err-row')
+  row.innerHTML = `<div class="err-pill"><span>✗</span> ${esc(t)}</div>`
+  feed.appendChild(row)
+  showFeed()
+  scrollDown()
+}
+
+function scrollDown() {
+  feed.scrollTop = feed.scrollHeight
+  document.getElementById('feed-wrap').scrollTop = document.getElementById('feed-wrap').scrollHeight
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+let _uid = 0
+function mk(tag, cls) { const e=document.createElement(tag); if(cls)e.className=cls; return e }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function j(o)   { return JSON.stringify(o) }
+function fmtArgs(args) {
+  if (!args || !Object.keys(args).length) return ''
+  return Object.entries(args).map(([k,v]) => {
+    const s = typeof v === 'string' ? v : JSON.stringify(v)
+    return s.length > 60 ? s.slice(0,57)+'…' : s
+  }).join('  ')
+}
+
+function setOnline(v) {
+  dot.classList.toggle('off', !v)
+  if (!v) badge.textContent = 'disconnected'
+}
+function setbusy(v) {
+  busy = v; sendBtn.disabled = v; inp.disabled = v
+  if (!v) rmThinking()
+}
+function fillInput(chip) { inp.value = chip.textContent; inp.focus() }
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+function send() {
+  const text = inp.value.trim()
+  if (!text || busy || !ws || ws.readyState !== WebSocket.OPEN) return
+  addUserMsg(text)
+  inp.value = ''; inp.style.height = 'auto'
+  curAiEl = null
+  setbusy(true); addThinking()
+  ws.send(j({type:'user_message', content:text}))
+}
+function perm(approved) { ws.send(j({type:'permission_response', approved})) }
+function cmd(t)          { if (ws?.readyState === WebSocket.OPEN) ws.send(j({type:t})) }
+
+// ── Input resize + Enter ─────────────────────────────────────────────────────
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+})
+inp.addEventListener('input', () => {
+  inp.style.height = 'auto'
+  inp.style.height = Math.min(inp.scrollHeight, 200) + 'px'
+})
+
+connect()
+</script>
+</body>
+</html>

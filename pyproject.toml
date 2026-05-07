@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vixcode"
+version = "0.1.0"
+description = "Local AI coding agent — Ollama + any model"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "rich>=13.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+vixcode        = "vixcode.main:main"
+vixcode-server = "run_server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vixcode*", "server*"]
