@@ -10,7 +10,7 @@ from pathlib import Path
 
 def main():
     port = int(os.environ.get("PORT", "7777"))
-    host = "127.0.0.1"
+    host = os.environ.get("HOST", "127.0.0.1")
     url  = f"http://{host}:{port}"
 
     # Print config summary

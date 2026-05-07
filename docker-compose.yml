@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  llmai:
+    build: .
+    container_name: llmai-agent
+    ports:
+      - "7777:7777"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=7777
+      # Use host.docker.internal to connect to Ollama running on your local machine
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - VIXCODE_MODEL=qwen2.5-coder
+    volumes:
+      # Mount a workspace directory so the agent can read/write files safely
+      - ./workspace:/workspace
+      # Optional: mount config.json if you want to override permissions
+      # - ./config.json:/app/config.json
+    working_dir: /workspace
+    # extra_hosts is needed on Linux for host.docker.internal to resolve
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

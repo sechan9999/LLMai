@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLMai (vixcode) | 100% Local AI Coding Agent</title>
+    <meta name="description" content="A fully local, privacy-first AI coding assistant that connects to Ollama to power an agentic loop.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-glow bg-glow-purple"></div>
+    <div class="bg-glow bg-glow-blue"></div>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <div class="container header-inner">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">vix<span>code</span></div>
+            </div>
+            <nav>
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it works</a>
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" class="btn btn-outline">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-content">
+                <div class="badge">Open Source &middot; 100% Local</div>
+                <h1 class="hero-title">Your Private AI <br/><span class="text-gradient">Coding Agent</span></h1>
+                <p class="hero-subtitle">
+                    Read, write, edit files and run shell commands — all orchestrated by your local LLM. Zero telemetry. Zero API keys. Total privacy.
+                </p>
+                <div class="hero-actions">
+                    <a href="https://github.com/sechan9999/LLMai" target="_blank" class="btn btn-primary">
+                        View Source
+                    </a>
+                    <a href="#quick-start" class="btn btn-secondary">
+                        Quick Start
+                    </a>
+                </div>
+                
+                <div class="terminal-mockup">
+                    <div class="terminal-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <div class="terminal-title">vixcode-server</div>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="line"><span class="prompt">$</span> pip install -e .</div>
+                        <div class="line"><span class="prompt">$</span> vixcode-server</div>
+                        <br/>
+                        <div class="line text-dim">+--------------------------------------+</div>
+                        <div class="line text-dim">|  <span class="text-white">vixcode -- Local AI Coding Agent</span>    |</div>
+                        <div class="line text-dim">+--------------------------------------+</div>
+                        <div class="line text-dim">|  URL   : http://127.0.0.1:7777       |</div>
+                        <div class="line text-dim">|  Model : qwen2.5-coder               |</div>
+                        <div class="line text-dim">|  Ollama: http://localhost:11434      |</div>
+                        <div class="line text-dim">+--------------------------------------+</div>
+                        <div class="line"><span class="text-green">INFO</span>: Uvicorn running on http://127.0.0.1:7777 (Press CTRL+C to quit)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features container">
+            <div class="section-head">
+                <h2>Why choose vixcode?</h2>
+                <p>Designed for power users who want intelligent automation without sacrificing privacy.</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Local</h3>
+                    <p>No API keys, no cloud servers. Everything runs on your own hardware via Ollama.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Agentic Loop</h3>
+                    <p>It doesn't just chat. The LLM autonomously plans, reads files, writes code, and executes commands.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Permission System</h3>
+                    <p>You're in control. Read operations auto-approve, while writes & shell commands require your explicit permission.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Dual Interface</h3>
+                    <p>Use the blazing-fast CLI (REPL) in your terminal, or the beautiful dark-mode Web UI in your browser.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Dynamic Tools</h3>
+                    <p>6 built-in tools including file reading, editing, listing directories, and searching code patterns.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Context Compression</h3>
+                    <p>Smart memory management automatically compresses older conversation context to save tokens.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="quick-start" class="cta-section">
+            <div class="container cta-container">
+                <h2>Ready to run it locally?</h2>
+                <p>Start your private agent in seconds via Docker or native Python.</p>
+                
+                <div class="code-box">
+                    <div class="code-box-header">
+                        <span class="active">Docker</span>
+                    </div>
+                    <pre><code># Clone the repository
+git clone https://github.com/sechan9999/LLMai.git
+cd LLMai
+
+# Run via Docker Compose (make sure Ollama is running locally)
+docker-compose up -d
+
+# Open your browser to http://localhost:7777</code></pre>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-inner">
+            <div class="logo">
+                <div class="logo-icon small">⚡</div>
+                <div class="logo-text">vix<span>code</span></div>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/sechan9999/LLMai">GitHub Repository</a>
+                <a href="https://ollama.ai">Powered by Ollama</a>
+            </div>
+            <p class="copyright">&copy; 2026 sechan9999. MIT Licensed.</p>
+        </div>
+    </footer>
+</body>
+</html>
