@@ -9,3 +9,21 @@ vixcode.egg-info/
 .vixcode/
 vixcode.json
 _test_ws.py
+
+# User config (may contain custom settings)
+config.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+.pytest_cache/
+htmlcov/
+.coverage

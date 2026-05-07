@@ -626,6 +626,45 @@ header::after {
 </div>
 
 <script>
+// ── i18n ─────────────────────────────────────────────────────────────────────
+const _i18n = {
+  ko: {
+    inputPlaceholder: '코딩 작업을 입력하세요…',
+    permissionRequired: '⚠ 권한 확인 필요',
+    resetDone: '대화가 초기화되었습니다.',
+    thinking: '응답 생성 중…',
+    sendHint: 'Enter 전송 \u00a0·\u00a0 Shift+Enter 줄바꿈',
+    allowed: '✓ 허용됨',
+    denied: '✗ 거부됨',
+    hints: [
+      '현재 디렉토리 파일 목록 보여줘',
+      'README.md 파일 읽어줘',
+      'git status 확인해줘',
+      '간단한 Python 스크립트 만들어줘',
+    ],
+  },
+  en: {
+    inputPlaceholder: 'Describe your coding task…',
+    permissionRequired: '⚠ Permission Required',
+    resetDone: 'Conversation has been reset.',
+    thinking: 'Generating response…',
+    sendHint: 'Enter to send \u00a0·\u00a0 Shift+Enter for newline',
+    allowed: '✓ Allowed',
+    denied: '✗ Denied',
+    hints: [
+      'List files in current directory',
+      'Read README.md',
+      'Check git status',
+      'Create a simple Python script',
+    ],
+  },
+}
+
+// Detect language: default to Korean, allow override via ?lang=en
+const _langParam = new URLSearchParams(location.search).get('lang')
+const _lang = _langParam && _i18n[_langParam] ? _langParam : 'ko'
+const t = (key) => _i18n[_lang][key] || _i18n.ko[key] || key
+
 const feed      = document.getElementById('feed')
 const welcome   = document.getElementById('welcome')
 const inp       = document.getElementById('inp')
@@ -639,6 +678,12 @@ let busy = false
 let curAiEl = null
 let curToolCard = null
 let msgCount = 0
+
+// Apply i18n to static elements
+inp.placeholder = t('inputPlaceholder')
+document.querySelector('.bar-hint').textContent = t('sendHint')
+const hintChips = document.querySelectorAll('.hint-chip')
+t('hints').forEach((text, i) => { if (hintChips[i]) hintChips[i].textContent = text })
 
 // ── marked config ───────────────────────────────────────────────────────────
 marked.setOptions({ gfm: true, breaks: true })
@@ -682,7 +727,7 @@ function handle(m) {
       feed.style.display = 'none'
       welcome.style.display = 'flex'
       msgCount = 0
-      addSys('대화가 초기화되었습니다.')
+      addSys(t('resetDone'))
       break
   }
 }
@@ -721,12 +766,12 @@ function addToolCard(name, args) {
 
   const badgeClass = {
     read_file:'tb-read', write_file:'tb-write', edit_file:'tb-edit',
-    run_bash:'tb-bash', list_files:'tb-list', search_code:'tb-search'
+    run_bash:'tb-bash', run_command:'tb-bash', list_files:'tb-list', search_code:'tb-search'
   }[name] || 'tb-search'
 
   const icons = {
     read_file:'📖', write_file:'✏️', edit_file:'🔧',
-    run_bash:'⚡', list_files:'📁', search_code:'🔍'
+    run_bash:'⚡', run_command:'⚡', list_files:'📁', search_code:'🔍'
   }
   const icon = icons[name] || '⚙'
 
@@ -762,7 +807,7 @@ function addPermCard(tool, preview, args) {
   const pre  = preview || `${tool}(${JSON.stringify(args)})`
   wrap.innerHTML = `
     <div class="perm-card">
-      <div class="perm-head">⚠ 권한 확인 필요</div>
+      <div class="perm-head">${esc(t('permissionRequired'))}</div>
       <div class="perm-body">
         <div class="perm-preview">${esc(pre)}</div>
         <div class="perm-btns" id="pb-${++_uid}">
@@ -774,11 +819,11 @@ function addPermCard(tool, preview, args) {
   const btnsId = `pb-${_uid}`
   wrap.querySelector('.btn-allow').onclick = () => {
     perm(true)
-    document.getElementById(btnsId).innerHTML = '<span style="color:var(--green);font-size:12px">✓ Allowed</span>'
+    document.getElementById(btnsId).innerHTML = `<span style="color:var(--green);font-size:12px">${esc(t('allowed'))}</span>`
   }
   wrap.querySelector('.btn-deny').onclick = () => {
     perm(false)
-    document.getElementById(btnsId).innerHTML = '<span style="color:var(--muted);font-size:12px">✗ Denied</span>'
+    document.getElementById(btnsId).innerHTML = `<span style="color:var(--muted);font-size:12px">${esc(t('denied'))}</span>`
   }
   feed.appendChild(wrap)
   showFeed()
@@ -790,7 +835,7 @@ function addThinking() {
   el.id = 'thinking'
   el.innerHTML = `<div class="thinking">
     <span class="dots"><span></span><span></span><span></span></span>
-    응답 생성 중…
+    ${esc(t('thinking'))}
   </div>`
   feed.appendChild(el)
   scrollDown()

@@ -1,5 +1,12 @@
+"""
+FastAPI application for the vixcode Web UI.
+
+Serves the single-page frontend and manages WebSocket connections
+for the agentic chat loop.
+"""
 import asyncio
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -9,13 +16,19 @@ from fastapi.staticfiles import StaticFiles
 
 from .agent_ws import WebSocketAgent
 
-app = FastAPI(title="vixcode")
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="vixcode", description="Local AI Coding Agent")
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# ── Valid WebSocket message types ─────────────────────────────────────────────
+_VALID_TYPES = {"get_info", "user_message", "permission_response", "reset"}
+
 
 def load_config() -> dict:
+    """Load configuration from the first available config file."""
     for p in [
         Path.cwd() / "vixcode.json",
         Path(__file__).parent.parent / "config.json",
@@ -23,23 +36,33 @@ def load_config() -> dict:
         if p.exists():
             try:
                 return json.loads(p.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load config from %s: %s", p, e)
     return {}
 
 
 @app.get("/")
 async def index():
+    """Serve the main Web UI page."""
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for the agent chat loop.
+
+    Handles message routing between the browser client and the
+    async agent loop, including permission request/response flow.
+    """
     await websocket.accept()
 
     config = load_config()
-    ollama_url = config.get("ollama_url", os.environ.get("OLLAMA_URL", "http://localhost:11434"))
-    model = config.get("model", os.environ.get("VIXCODE_MODEL", "qwen2.5-coder"))
+    ollama_url = config.get(
+        "ollama_url", os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    )
+    model = config.get(
+        "model", os.environ.get("VIXCODE_MODEL", "qwen2.5-coder")
+    )
 
     agent = WebSocketAgent(llm_url=ollama_url, model=model, ws=websocket)
     agent_task: asyncio.Task | None = None
@@ -47,18 +70,49 @@ async def ws_endpoint(websocket: WebSocket):
     try:
         while True:
             raw = await websocket.receive_text()
-            data = json.loads(raw)
+
+            # P1: Validate incoming JSON
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Invalid JSON message",
+                })
+                continue
+
             t = data.get("type")
 
+            if t not in _VALID_TYPES:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"Unknown message type: {t}",
+                })
+                continue
+
             if t == "get_info":
-                await websocket.send_json({"type": "info", "model": model, "ollama": ollama_url})
+                await websocket.send_json({
+                    "type": "info",
+                    "model": model,
+                    "ollama": ollama_url,
+                })
 
             elif t == "user_message":
+                content = data.get("content", "").strip()
+                if not content:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "Empty message",
+                    })
+                    continue
                 # Don't start a new run while one is in progress
                 if agent_task and not agent_task.done():
-                    await websocket.send_json({"type": "error", "message": "Agent is busy. Wait or /reset."})
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "Agent is busy. Wait or reset.",
+                    })
                     continue
-                agent_task = asyncio.create_task(agent.run(data["content"]))
+                agent_task = asyncio.create_task(agent.run(content))
 
             elif t == "permission_response":
                 await agent.handle_permission(data.get("approved", False))
@@ -70,9 +124,11 @@ async def ws_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "reset_done"})
 
     except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected")
         if agent_task and not agent_task.done():
             agent_task.cancel()
     except Exception as e:
+        logger.exception("WebSocket error")
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
         except Exception:

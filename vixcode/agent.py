@@ -6,11 +6,14 @@ A chatbot: one input → one output.
 An agent:  one input → loop until goal reached.
 """
 import json
+import logging
 from typing import Callable
+
 from .llm import OllamaClient
 from .tools import TOOL_DEFINITIONS, execute_tool
 from .permissions import PermissionManager
 
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are an expert coding assistant running locally. Help the user with software development tasks.
 
@@ -27,6 +30,19 @@ PrintFn = Callable[..., None]
 
 
 class AgentLoop:
+    """Synchronous agent loop used by the CLI REPL.
+
+    The loop calls the LLM, processes any tool calls, feeds results back,
+    and repeats until the LLM responds with text only (no more tool calls)
+    or the iteration limit is reached.
+
+    Attributes:
+        llm: The Ollama client instance.
+        permissions: Permission manager for gating tool execution.
+        max_iterations: Safety cap on agentic loop iterations.
+        messages: Full conversation history.
+    """
+
     def __init__(
         self,
         llm: OllamaClient,
@@ -39,7 +55,17 @@ class AgentLoop:
         self.messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     # ── Public ──────────────────────────────────────────────────────────────
+
     def run(self, user_input: str, print_fn: PrintFn = print) -> str:
+        """Execute one full agent turn (potentially multi-step).
+
+        Args:
+            user_input: The user's message.
+            print_fn: Callable used for output (default: print).
+
+        Returns:
+            The last text response from the LLM.
+        """
         self.messages.append({"role": "user", "content": user_input})
         last_text = ""
 
@@ -48,6 +74,7 @@ class AgentLoop:
             try:
                 msg = self.llm.chat(self.messages, tools=TOOL_DEFINITIONS)
             except Exception as e:
+                logger.exception("LLM call failed")
                 print_fn(f"\n[LLM error] {e}")
                 break
 
@@ -92,16 +119,22 @@ class AgentLoop:
 
         return last_text
 
-    def reset(self):
+    def reset(self) -> None:
+        """Clear conversation history, keeping only the system prompt."""
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     @property
     def token_estimate(self) -> int:
+        """Rough token count estimate (4 chars ≈ 1 token)."""
         total = sum(len(m.get("content", "")) for m in self.messages)
-        return total // 4  # rough estimate: 4 chars ≈ 1 token
+        return total // 4
 
-    def maybe_compress(self, threshold: int = 50_000):
-        """Summarise old messages when context gets large."""
+    def maybe_compress(self, threshold: int = 50_000) -> None:
+        """Summarise old messages when context gets large.
+
+        Keeps the system prompt and last 6 turns, replacing older
+        messages with an LLM-generated summary.
+        """
         if self.token_estimate < threshold:
             return
         # Keep system + last 6 turns; summarise the rest
@@ -129,6 +162,7 @@ class AgentLoop:
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _parse_tool_call(tc: dict) -> tuple[str, dict, str]:
+    """Extract (name, args, id) from an OpenAI-format tool_call dict."""
     fn = tc.get("function", {})
     name = fn.get("name", "unknown")
     raw_args = fn.get("arguments", "{}")
@@ -141,6 +175,7 @@ def _parse_tool_call(tc: dict) -> tuple[str, dict, str]:
 
 
 def _fmt_args(args: dict) -> str:
+    """Format tool arguments for display (truncated)."""
     parts = []
     for k, v in args.items():
         s = repr(v)
@@ -148,7 +183,8 @@ def _fmt_args(args: dict) -> str:
     return ", ".join(parts)
 
 
-def _print_result(result: str, print_fn: PrintFn):
+def _print_result(result: str, print_fn: PrintFn) -> None:
+    """Print a preview of a tool result (first 8 lines)."""
     lines = result.splitlines()
     preview = "\n  ".join(lines[:8])
     if len(lines) > 8:

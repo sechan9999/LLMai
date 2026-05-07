@@ -1,8 +1,67 @@
-import subprocess
+"""
+Tool definitions and implementations for the vixcode agent.
+
+Each tool is defined as an OpenAI-compatible function spec and paired
+with a Python implementation.  The agent calls these via the LLM's
+tool-calling mechanism.
+"""
+import os
+import platform
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
+# ── Workspace sandbox ─────────────────────────────────────────────────────────
+# All file operations are restricted to WORKSPACE_ROOT (defaults to cwd).
+
+WORKSPACE_ROOT: Path = Path.cwd().resolve()
+
+
+def set_workspace(path: str | Path) -> None:
+    """Override the workspace root (used mainly in tests)."""
+    global WORKSPACE_ROOT
+    WORKSPACE_ROOT = Path(path).resolve()
+
+
+def _validate_path(path: str) -> Path:
+    """Resolve *path* and ensure it stays inside the workspace.
+
+    Raises ValueError for any path-traversal attempt.
+    """
+    resolved = Path(path).resolve()
+    try:
+        resolved.relative_to(WORKSPACE_ROOT)
+    except ValueError:
+        raise ValueError(
+            f"Access denied: '{path}' resolves to '{resolved}' "
+            f"which is outside the workspace '{WORKSPACE_ROOT}'"
+        )
+    return resolved
+
+
+# ── Dangerous-command blocklist (P1 – shell injection guard) ──────────────────
+
+_DANGEROUS_PATTERNS: list[str] = [
+    r"rm\s+(-rf?|--recursive)\s+/",     # recursive delete from root
+    r":()\{\s*:\|\s*:&\s*\};:",          # fork bomb
+    r"mkfs\.",                            # format filesystem
+    r"dd\s+if=.*/dev/",                  # raw disk write
+    r">\s*/dev/sd",                       # redirect into raw device
+    r"shutdown|reboot|halt|poweroff",     # system power commands
+    r"chmod\s+-R\s+777\s+/",             # open permissions on root
+]
+
+
+def _is_dangerous_command(command: str) -> bool:
+    """Return True if *command* matches a known destructive pattern."""
+    for pat in _DANGEROUS_PATTERNS:
+        if re.search(pat, command, re.IGNORECASE):
+            return True
+    return False
+
+
+# ── Tool definitions (OpenAI function-calling format) ─────────────────────────
 
 TOOL_DEFINITIONS = [
     {
@@ -15,11 +74,11 @@ TOOL_DEFINITIONS = [
                 "properties": {
                     "path": {"type": "string", "description": "Path to the file"},
                     "offset": {"type": "integer", "description": "Start from this line (1-based)"},
-                    "limit": {"type": "integer", "description": "Number of lines to read"}
+                    "limit": {"type": "integer", "description": "Number of lines to read"},
                 },
-                "required": ["path"]
-            }
-        }
+                "required": ["path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -29,12 +88,12 @@ TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
-                    "content": {"type": "string"}
+                    "path": {"type": "string", "description": "Destination file path"},
+                    "content": {"type": "string", "description": "File content to write"},
                 },
-                "required": ["path", "content"]
-            }
-        }
+                "required": ["path", "content"],
+            },
+        },
     },
     {
         "type": "function",
@@ -44,28 +103,28 @@ TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
+                    "path": {"type": "string", "description": "File to edit"},
                     "old_string": {"type": "string", "description": "Exact text to find (must be unique in file)"},
-                    "new_string": {"type": "string", "description": "Text to replace it with"}
+                    "new_string": {"type": "string", "description": "Text to replace it with"},
                 },
-                "required": ["path", "old_string", "new_string"]
-            }
-        }
+                "required": ["path", "old_string", "new_string"],
+            },
+        },
     },
     {
         "type": "function",
         "function": {
-            "name": "run_bash",
+            "name": "run_command",
             "description": "Execute a shell command. Use for git, tests, package managers, etc.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "command": {"type": "string"},
-                    "timeout": {"type": "integer", "description": "Seconds before timeout (default: 30)"}
+                    "command": {"type": "string", "description": "Shell command to execute"},
+                    "timeout": {"type": "integer", "description": "Seconds before timeout (default: 30)"},
                 },
-                "required": ["command"]
-            }
-        }
+                "required": ["command"],
+            },
+        },
     },
     {
         "type": "function",
@@ -75,12 +134,12 @@ TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
-                    "pattern": {"type": "string", "description": "Glob pattern e.g. '**/*.py'"}
+                    "path": {"type": "string", "description": "Directory to list"},
+                    "pattern": {"type": "string", "description": "Glob pattern e.g. '**/*.py'"},
                 },
-                "required": ["path"]
-            }
-        }
+                "required": ["path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -91,22 +150,29 @@ TOOL_DEFINITIONS = [
                 "type": "object",
                 "properties": {
                     "pattern": {"type": "string", "description": "Regex or literal pattern"},
-                    "path": {"type": "string"},
-                    "include": {"type": "string", "description": "File pattern e.g. '*.py'"}
+                    "path": {"type": "string", "description": "Directory or file to search"},
+                    "include": {"type": "string", "description": "File pattern e.g. '*.py'"},
                 },
-                "required": ["pattern", "path"]
-            }
-        }
+                "required": ["pattern", "path"],
+            },
+        },
     },
 ]
 
 
+# ── Dispatcher ────────────────────────────────────────────────────────────────
+
 def execute_tool(name: str, args: dict[str, Any]) -> str:
+    """Execute the named tool with the given arguments.
+
+    Returns a human-readable string result or error message.
+    """
     handlers = {
         "read_file": _read_file,
         "write_file": _write_file,
         "edit_file": _edit_file,
-        "run_bash": _run_bash,
+        "run_bash": _run_command,      # keep legacy alias
+        "run_command": _run_command,
         "list_files": _list_files,
         "search_code": _search_code,
     }
@@ -117,12 +183,26 @@ def execute_tool(name: str, args: dict[str, Any]) -> str:
         return handler(**args)
     except TypeError as e:
         return f"Error: Bad arguments for {name}: {e}"
+    except ValueError as e:
+        return f"Error: {e}"
     except Exception as e:
         return f"Error in {name}: {e}"
 
 
+# ── Tool implementations ─────────────────────────────────────────────────────
+
 def _read_file(path: str, offset: int = None, limit: int = None) -> str:
-    p = Path(path)
+    """Read file contents, returning numbered lines.
+
+    Args:
+        path: Absolute or relative file path.
+        offset: 1-based starting line number.
+        limit: Maximum number of lines to read.
+
+    Returns:
+        Formatted string with header and numbered lines.
+    """
+    p = _validate_path(path)
     if not p.exists():
         return f"Error: File not found: {path}"
     if not p.is_file():
@@ -139,19 +219,38 @@ def _read_file(path: str, offset: int = None, limit: int = None) -> str:
     numbered = "\n".join(f"{start + i + 1:4d}  {line}" for i, line in enumerate(slice_))
     header = f"{path} ({len(lines)} lines total"
     if offset or limit:
-        header += f", showing {start+1}–{min(end, len(lines))}"
+        header += f", showing {start + 1}–{min(end, len(lines))}"
     return f"{header})\n\n{numbered}"
 
 
 def _write_file(path: str, content: str) -> str:
-    p = Path(path)
+    """Write *content* to *path*, creating parent directories as needed.
+
+    Args:
+        path: Destination file path.
+        content: Text to write.
+
+    Returns:
+        Confirmation with line count.
+    """
+    p = _validate_path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
     return f"Wrote {len(content.splitlines())} lines to {path}"
 
 
 def _edit_file(path: str, old_string: str, new_string: str) -> str:
-    p = Path(path)
+    """Replace a unique occurrence of *old_string* with *new_string*.
+
+    Args:
+        path: File to edit.
+        old_string: Exact text to find (must appear exactly once).
+        new_string: Replacement text.
+
+    Returns:
+        Confirmation or error if not found / not unique.
+    """
+    p = _validate_path(path)
     if not p.exists():
         return f"Error: File not found: {path}"
     content = p.read_text(encoding="utf-8")
@@ -164,17 +263,46 @@ def _edit_file(path: str, old_string: str, new_string: str) -> str:
     return f"Edited {path}: 1 replacement applied"
 
 
-def _run_bash(command: str, timeout: int = 30) -> str:
+def _run_command(command: str, timeout: int = 30) -> str:
+    """Execute a shell command with safety checks.
+
+    On Windows, commands run through PowerShell for better compatibility.
+    Dangerous command patterns are blocked before execution.
+
+    Args:
+        command: Shell command string.
+        timeout: Maximum seconds before timeout (default 30).
+
+    Returns:
+        Combined stdout/stderr output with exit code on failure.
+    """
+    # P1: block obviously destructive commands
+    if _is_dangerous_command(command):
+        return "Error: Command blocked — matches a dangerous pattern. Please review."
+
     try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            encoding="utf-8",
-            errors="replace",
-        )
+        # P3: Windows compatibility — use PowerShell instead of cmd
+        if platform.system() == "Windows":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", command],
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=str(WORKSPACE_ROOT),
+                encoding="utf-8",
+                errors="replace",
+            )
+        else:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=str(WORKSPACE_ROOT),
+                encoding="utf-8",
+                errors="replace",
+            )
     except subprocess.TimeoutExpired:
         return f"Error: Command timed out after {timeout}s"
 
@@ -189,7 +317,16 @@ def _run_bash(command: str, timeout: int = 30) -> str:
 
 
 def _list_files(path: str, pattern: str = None) -> str:
-    p = Path(path)
+    """List directory contents with optional glob filtering.
+
+    Args:
+        path: Directory to list.
+        pattern: Optional glob pattern (e.g. '**/*.py').
+
+    Returns:
+        Formatted directory listing, capped at 300 entries.
+    """
+    p = _validate_path(path)
     if not p.exists():
         return f"Error: Path not found: {path}"
     if not p.is_dir():
@@ -210,12 +347,28 @@ def _list_files(path: str, pattern: str = None) -> str:
 
 
 def _search_code(pattern: str, path: str, include: str = None) -> str:
-    # Try system grep first
-    cmd = ["grep", "-rn", "--color=never", pattern, path]
+    """Search for a text pattern in files.
+
+    Uses system grep when available, otherwise falls back to pure Python.
+
+    Args:
+        pattern: Regex or literal search pattern.
+        path: Directory or file to search.
+        include: Optional file-name filter (e.g. '*.py').
+
+    Returns:
+        Matching lines with file/line info, capped at 100 results.
+    """
+    p = _validate_path(path)
+
+    # Try system grep first (much faster for large codebases)
+    cmd = ["grep", "-rn", "--color=never", pattern, str(p)]
     if include:
         cmd += ["--include", include]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, encoding="utf-8")
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=15, encoding="utf-8"
+        )
         output = result.stdout.strip()
         if not output:
             return f"No matches for '{pattern}' in {path}"
@@ -225,17 +378,18 @@ def _search_code(pattern: str, path: str, include: str = None) -> str:
             truncated += f"\n... ({len(lines) - 100} more matches)"
         return truncated
     except FileNotFoundError:
-        pass
+        pass  # grep not available — fall through to Python impl
 
-    # Fallback: pure Python
-    p = Path(path)
+    # Fallback: pure Python regex search
     results = []
     files = list(p.rglob(include or "*")) if p.is_dir() else [p]
     for f in files:
         if not f.is_file():
             continue
         try:
-            for i, line in enumerate(f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            for i, line in enumerate(
+                f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1
+            ):
                 if re.search(pattern, line):
                     results.append(f"{f}:{i}: {line}")
                     if len(results) >= 100:

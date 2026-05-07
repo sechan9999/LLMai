@@ -1,10 +1,23 @@
+"""
+Permission management for vixcode tool execution.
+
+Each tool can be in one of three modes:
+  - allow : auto-approve (default for read-only tools)
+  - ask   : prompt user before execution (default for writes & shell)
+  - deny  : always block
+
+Permissions are loaded from config files and can be changed at runtime.
+"""
 import json
+import logging
 from pathlib import Path
 from typing import Literal
 
+logger = logging.getLogger(__name__)
+
 PermMode = Literal["allow", "ask", "deny"]
 
-# Safe read-only ops: auto-allow. Writes & shell: ask.
+# Safe read-only ops: auto-allow.  Writes & shell: ask.
 DEFAULT: dict[str, PermMode] = {
     "read_file":   "allow",
     "list_files":  "allow",
@@ -12,19 +25,33 @@ DEFAULT: dict[str, PermMode] = {
     "write_file":  "ask",
     "edit_file":   "ask",
     "run_bash":    "ask",
+    "run_command": "ask",
 }
 
 
 class PermissionManager:
+    """Manages per-tool permission modes.
+
+    Modes can be loaded from a JSON config file and overridden at runtime.
+    """
+
     def __init__(self, config_path: str = None):
         self.rules: dict[str, PermMode] = dict(DEFAULT)
         if config_path:
             p = Path(config_path)
             if p.exists():
-                data = json.loads(p.read_text())
-                self.rules.update(data.get("permissions", {}))
+                try:
+                    data = json.loads(p.read_text(encoding="utf-8"))
+                    self.rules.update(data.get("permissions", {}))
+                except (json.JSONDecodeError, OSError) as e:
+                    logger.warning("Failed to load permissions from %s: %s", config_path, e)
 
     def check(self, tool_name: str, args: dict) -> bool:
+        """Check whether *tool_name* is permitted.
+
+        Returns True if the tool should execute, False otherwise.
+        For mode='ask', prompts the user interactively.
+        """
         mode = self.rules.get(tool_name, "ask")
 
         if mode == "allow":
@@ -42,14 +69,19 @@ class PermissionManager:
             return False
         return answer in ("y", "yes")
 
-    def set_mode(self, tool_name: str, mode: PermMode):
+    def set_mode(self, tool_name: str, mode: PermMode) -> None:
+        """Override the permission mode for a specific tool."""
         self.rules[tool_name] = mode
 
 
 def _preview(name: str, args: dict) -> str:
-    if name == "run_bash":
+    """Build a human-readable preview string for a tool invocation.
+
+    Used both in the CLI prompt and in the WebSocket permission card.
+    """
+    if name in ("run_bash", "run_command"):
         cmd = args.get("command", "")
-        return f"run_bash: `{cmd[:80]}`"
+        return f"run_command: `{cmd[:80]}`"
     if name == "write_file":
         return f"write_file: {args.get('path', '')}"
     if name == "edit_file":
