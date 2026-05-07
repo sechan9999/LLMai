@@ -27,4 +27,4 @@ ENV PORT=7777
 ENV OLLAMA_URL=http://host.docker.internal:11434
 ENV VIXCODE_MODEL=qwen2.5-coder
 
-CMD ["python", "run_server.py"]
+CMD ["python", "/app/run_server.py"]
