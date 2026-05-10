@@ -19,6 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <!-- Background Elements -->
@@ -55,31 +58,48 @@
                         View on GitHub
                     </a>
                     <a href="#quick-start" class="btn btn-secondary">
-                        Get Started
+                        Install Locally
                     </a>
                 </div>
 
-                <div class="terminal-mockup">
-                    <div class="terminal-header">
-                        <span class="dot red"></span>
-                        <span class="dot yellow"></span>
-                        <span class="dot green"></span>
-                        <div class="terminal-title">vixcode-server</div>
+                <!-- Live chat against the user's local Ollama -->
+                <div class="chat-card" id="chat-card">
+                    <div class="chat-status" id="chat-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Looking for Ollama on http://localhost:11434…</span>
+                        <span class="status-model" id="chat-model"></span>
                     </div>
-                    <div class="terminal-body">
-                        <div class="line"><span class="prompt">$</span> pip install -e .</div>
-                        <div class="line"><span class="prompt">$</span> vixcode-server</div>
-                        <br/>
-                        <div class="line text-dim">+--------------------------------------+</div>
-                        <div class="line text-dim">|  <span class="text-white">vixcode -- Local AI Coding Agent</span>    |</div>
-                        <div class="line text-dim">+--------------------------------------+</div>
-                        <div class="line text-dim">|  URL   : http://127.0.0.1:7777       |</div>
-                        <div class="line text-dim">|  Model : qwen2.5-coder               |</div>
-                        <div class="line text-dim">|  Ollama: http://localhost:11434      |</div>
-                        <div class="line text-dim">+--------------------------------------+</div>
-                        <div class="line"><span class="text-green">INFO</span>: Uvicorn running on http://127.0.0.1:7777 (Press CTRL+C to quit)</div>
+
+                    <div class="chat-feed" id="chat-feed">
+                        <div class="chat-empty">
+                            <div class="chat-empty-icon">⚡</div>
+                            <div class="chat-empty-title">Try vixcode in your browser</div>
+                            <div class="chat-empty-sub">Connects to <code>localhost:11434</code> &mdash; nothing leaves your machine.</div>
+                        </div>
+                    </div>
+
+                    <form class="chat-input" onsubmit="event.preventDefault(); sendChat();">
+                        <textarea id="chat-text"
+                                  placeholder="Ask vixcode anything…"
+                                  rows="1"
+                                  autocomplete="off"></textarea>
+                        <button type="submit" id="chat-send" aria-label="Send">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </form>
+
+                    <div class="chat-chips">
+                        <button type="button" class="chip" onclick="useChip(this)">Explain async/await in JS</button>
+                        <button type="button" class="chip" onclick="useChip(this)">Write a Python regex for emails</button>
+                        <button type="button" class="chip" onclick="useChip(this)">REST vs GraphQL trade-offs</button>
+                        <button type="button" class="chip" onclick="useChip(this)">Sort an array in 5 languages</button>
                     </div>
                 </div>
+
+                <p class="hero-fineprint">
+                    Want full agentic power &mdash; file edits, shell commands, the whole loop?
+                    <a href="#quick-start">Install vixcode locally</a>.
+                </p>
             </div>
         </section>
 
@@ -225,5 +245,175 @@ docker compose up -d
             <p class="copyright">&copy; 2026 sechan9999 &middot; MIT Licensed &middot; Alpha</p>
         </div>
     </footer>
+
+    <script>
+    // ── In-page chat against the user's local Ollama ───────────────────────
+    // Browsers allow http://localhost from https pages, but Ollama itself
+    // must permit cross-origin requests:
+    //   OLLAMA_ORIGINS=https://ll-mai.vercel.app ollama serve
+    const OLLAMA = 'http://localhost:11434';
+    // Models we prefer to default to, in priority order. First match wins.
+    const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
+
+    let activeModel = null;
+    let chatBusy = false;
+    const SYSTEM = "You are a helpful coding assistant. Be concise. Use Markdown and fenced code blocks for code.";
+    const history = [{ role: 'system', content: SYSTEM }];
+
+    const $status = () => document.getElementById('chat-status');
+    const $feed   = () => document.getElementById('chat-feed');
+    const $text   = () => document.getElementById('chat-text');
+    const $send   = () => document.getElementById('chat-send');
+    const $model  = () => document.getElementById('chat-model');
+
+    function setStatus(state, text, modelName) {
+        const el = $status();
+        el.dataset.state = state; // ok | bad | loading
+        el.querySelector('.status-text').textContent = text;
+        $model().textContent = modelName ? '· ' + modelName : '';
+    }
+
+    async function detectOllama() {
+        setStatus('loading', 'Looking for Ollama on http://localhost:11434…');
+        try {
+            const r = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            const models = (data.models || []).map(m => m.name);
+            if (!models.length) {
+                setStatus('bad', 'Ollama is running but has no models — try `ollama pull qwen2.5-coder`.');
+                return;
+            }
+            // Pick a model: first preferred match, else the first one available
+            activeModel = models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
+            setStatus('ok', 'Connected to local Ollama', activeModel);
+        } catch (e) {
+            setStatus('bad', "Can't reach Ollama. Click for setup help.");
+            $status().style.cursor = 'pointer';
+            $status().onclick = showSetupHelp;
+        }
+    }
+
+    function showSetupHelp() {
+        if (document.getElementById('chat-help-msg')) return;
+        appendMsg('assistant', '__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n```bash\n# 1) Install Ollama\nbrew install ollama          # macOS\n# or download from https://ollama.com\n\n# 2) Pull a model\nollama pull qwen2.5-coder\n\n# 3) Start the server with this origin allowed\nOLLAMA_ORIGINS=' + location.origin + ' ollama serve\n```\n\nThen reload this page.', 'chat-help-msg');
+    }
+
+    function useChip(btn) {
+        $text().value = btn.textContent;
+        $text().focus();
+    }
+
+    function appendMsg(role, content, id) {
+        // Hide empty-state on first message
+        const empty = $feed().querySelector('.chat-empty');
+        if (empty) empty.remove();
+
+        const row = document.createElement('div');
+        row.className = `chat-msg chat-${role}`;
+        if (id) row.id = id;
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.dataset.raw = content || '';
+        renderInto(bubble, content || '');
+        row.appendChild(bubble);
+        $feed().appendChild(row);
+        $feed().scrollTop = $feed().scrollHeight;
+        return bubble;
+    }
+
+    function renderInto(el, raw) {
+        if (window.marked) {
+            el.innerHTML = marked.parse(raw);
+            if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+        } else {
+            el.textContent = raw;
+        }
+    }
+
+    function appendDelta(bubble, delta) {
+        bubble.dataset.raw += delta;
+        renderInto(bubble, bubble.dataset.raw);
+        $feed().scrollTop = $feed().scrollHeight;
+    }
+
+    async function sendChat() {
+        const txt = $text().value.trim();
+        if (!txt || chatBusy) return;
+
+        if (!activeModel) {
+            await detectOllama();
+            if (!activeModel) { showSetupHelp(); return; }
+        }
+
+        chatBusy = true;
+        $send().disabled = true;
+        $text().value = '';
+        $text().style.height = 'auto';
+
+        appendMsg('user', txt);
+        history.push({ role: 'user', content: txt });
+        const reply = appendMsg('assistant', '');
+
+        try {
+            const resp = await fetch(`${OLLAMA}/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: activeModel,
+                    messages: history,
+                    stream: true,
+                }),
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            let full = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                let idx;
+                while ((idx = buf.indexOf('\n')) >= 0) {
+                    const line = buf.slice(0, idx).trim();
+                    buf = buf.slice(idx + 1);
+                    if (!line || line === 'data: [DONE]') continue;
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const obj = JSON.parse(line.slice(6));
+                        const piece = obj.choices?.[0]?.delta?.content || '';
+                        if (piece) { full += piece; appendDelta(reply, piece); }
+                    } catch { /* ignore partial */ }
+                }
+            }
+            history.push({ role: 'assistant', content: full });
+        } catch (e) {
+            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, restart Ollama with:\n\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``;
+            renderInto(reply, reply.dataset.raw);
+        } finally {
+            chatBusy = false;
+            $send().disabled = false;
+            $text().focus();
+        }
+    }
+
+    // Auto-grow textarea + Enter-to-send
+    document.addEventListener('DOMContentLoaded', () => {
+        const ta = $text();
+        ta.addEventListener('input', () => {
+            ta.style.height = 'auto';
+            ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+        });
+        ta.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+        });
+        if (window.marked) {
+            marked.setOptions({ breaks: true, gfm: true });
+        }
+        detectOllama();
+    });
+    </script>
 </body>
 </html>
