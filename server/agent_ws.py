@@ -81,6 +81,8 @@ class WebSocketAgent:
     on the model.  Permissions are checked before each tool execution.
     """
 
+    MAX_ITERATIONS = 20
+
     def __init__(self, llm_url: str, model: str, ws: WebSocket):
         self.llm_url = llm_url.rstrip("/") + "/v1/chat/completions"
         self.model = model
@@ -95,26 +97,41 @@ class WebSocketAgent:
     # ── Public ───────────────────────────────────────────────────────────────
 
     async def run(self, user_input: str) -> None:
-        """Execute one full agent turn for *user_input*."""
+        """Execute one full agent turn for *user_input*.
+
+        Iterates the model/tool loop up to ``MAX_ITERATIONS`` times for both
+        native and XML modes. Each handler returns ``True`` when the agent has
+        produced a final response with no more tool calls.
+
+        Native mode streams text content to the client as it arrives; XML
+        mode waits for the full response so ``<tool_call>`` tags can be
+        parsed cleanly before display.
+        """
         self.messages.append({"role": "user", "content": user_input})
 
-        for _ in range(20):
+        for _ in range(self.MAX_ITERATIONS):
             try:
-                msg = await self._chat()
+                if self.native:
+                    msg = await self._chat_stream_native()
+                else:
+                    msg = await self._chat()
             except Exception as e:
                 logger.exception("LLM call failed")
                 await self._send("error", message=str(e))
                 return
 
             if self.native:
-                await self._handle_native(msg)
-                # native: loop continues inside _handle_native chain
-                return
+                done = await self._handle_native(msg, streamed=True)
             else:
                 done = await self._handle_xml(msg)
-                if done:
-                    return
 
+            if done:
+                return
+
+        await self._send(
+            "error",
+            message=f"Reached max iterations ({self.MAX_ITERATIONS}) without a final answer.",
+        )
         await self._send("done")
 
     async def handle_permission(self, approved: bool) -> None:
@@ -128,12 +145,22 @@ class WebSocketAgent:
 
     # ── Native tool-call mode ────────────────────────────────────────────────
 
-    async def _handle_native(self, msg: dict) -> None:
-        """Process a response that may contain native tool_calls."""
+    async def _handle_native(self, msg: dict, *, streamed: bool = False) -> bool:
+        """Process one response that may contain native tool_calls.
+
+        Args:
+            msg: Assembled assistant message ``{content, tool_calls}``.
+            streamed: True when content was already emitted as ``text``
+                deltas during streaming — we then skip re-sending it.
+
+        Returns:
+            True when the agent has produced a final answer (no tool calls),
+            False when tools were executed and another iteration is needed.
+        """
         content = msg.get("content") or ""
         tool_calls = msg.get("tool_calls") or []
 
-        if content:
+        if content and not streamed:
             await self._send("text", content=content)
 
         assistant: dict = {"role": "assistant"}
@@ -145,7 +172,7 @@ class WebSocketAgent:
 
         if not tool_calls:
             await self._send("done")
-            return
+            return True
 
         for tc in tool_calls:
             fn_name, fn_args, tc_id = _parse_native_tc(tc)
@@ -156,14 +183,7 @@ class WebSocketAgent:
                 "content": self._last_result,
             })
 
-        # Continue the loop
-        try:
-            next_msg = await self._chat()
-        except Exception as e:
-            logger.exception("LLM follow-up call failed")
-            await self._send("error", message=str(e))
-            return
-        await self._handle_native(next_msg)
+        return False  # continue loop in run()
 
     # ── XML text-parsing mode ────────────────────────────────────────────────
 
@@ -237,7 +257,11 @@ class WebSocketAgent:
         return await self._perm_queue.get()
 
     async def _chat(self) -> dict:
-        """Send a chat completion request to Ollama."""
+        """Send a non-streaming chat completion request to Ollama.
+
+        Used by XML mode (where we need the full text before parsing
+        ``<tool_call>`` tags). Retries up to twice on transient errors.
+        """
         payload: dict = {
             "model": self.model,
             "messages": self.messages,
@@ -246,10 +270,94 @@ class WebSocketAgent:
         if self.native:
             payload["tools"] = TOOL_DEFINITIONS
 
-        async with httpx.AsyncClient(timeout=180) as client:
-            resp = await client.post(self.llm_url, json=payload)
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]
+        backoff = 0.5
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=180) as client:
+                    resp = await client.post(self.llm_url, json=payload)
+                    resp.raise_for_status()
+                    return resp.json()["choices"][0]["message"]
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.RemoteProtocolError) as exc:
+                last_exc = exc
+                if attempt == 2:
+                    raise
+                logger.warning(
+                    "Ollama _chat failed (attempt %d/3): %s — retrying in %.1fs",
+                    attempt + 1, exc, backoff,
+                )
+                await asyncio.sleep(backoff)
+                backoff *= 2
+        raise last_exc  # pragma: no cover
+
+    async def _chat_stream_native(self) -> dict:
+        """Stream a chat completion in OpenAI-compat mode and emit deltas.
+
+        Sends a ``text`` event for each content chunk as it arrives, and
+        accumulates ``tool_calls`` deltas (merged by index) for return.
+        Falls back transparently to a single non-streaming call if the
+        Ollama server doesn't support streaming for this model.
+
+        Returns:
+            ``{"content": str | None, "tool_calls": list[dict] | None}``
+        """
+        payload = {
+            "model": self.model,
+            "messages": self.messages,
+            "tools": TOOL_DEFINITIONS,
+            "stream": True,
+        }
+
+        content_parts: list[str] = []
+        tool_calls: dict[int, dict] = {}
+
+        try:
+            async with httpx.AsyncClient(timeout=180) as client:
+                async with client.stream("POST", self.llm_url, json=payload) as resp:
+                    resp.raise_for_status()
+                    async for line in resp.aiter_lines():
+                        if not line:
+                            continue
+                        line = line.strip()
+                        if line == "data: [DONE]" or not line.startswith("data: "):
+                            continue
+                        try:
+                            chunk = json.loads(line[6:])
+                        except json.JSONDecodeError:
+                            continue
+                        choice = (chunk.get("choices") or [{}])[0]
+                        delta = choice.get("delta") or {}
+
+                        text = delta.get("content")
+                        if text:
+                            content_parts.append(text)
+                            await self._send("text", content=text)
+
+                        for tc_delta in (delta.get("tool_calls") or []):
+                            idx = tc_delta.get("index", 0)
+                            cur = tool_calls.setdefault(idx, {
+                                "id": "",
+                                "type": "function",
+                                "function": {"name": "", "arguments": ""},
+                            })
+                            if tc_delta.get("id"):
+                                cur["id"] = tc_delta["id"]
+                            if tc_delta.get("type"):
+                                cur["type"] = tc_delta["type"]
+                            fn_delta = tc_delta.get("function") or {}
+                            if fn_delta.get("name"):
+                                cur["function"]["name"] += fn_delta["name"]
+                            if fn_delta.get("arguments") is not None:
+                                cur["function"]["arguments"] += fn_delta.get("arguments", "")
+        except httpx.HTTPStatusError as exc:
+            # Some Ollama builds don't support streaming with tools — retry non-streaming.
+            logger.warning("Streaming failed (%s); falling back to non-streaming", exc)
+            return await self._chat()
+
+        return {
+            "content": "".join(content_parts) or None,
+            "tool_calls": list(tool_calls.values()) if tool_calls else None,
+        }
 
     async def _send(self, msg_type: str, **kwargs) -> None:
         """Send a typed JSON message over the WebSocket."""

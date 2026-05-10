@@ -24,7 +24,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ── Valid WebSocket message types ─────────────────────────────────────────────
-_VALID_TYPES = {"get_info", "user_message", "permission_response", "reset"}
+_VALID_TYPES = {"get_info", "user_message", "permission_response", "reset", "cancel"}
 
 
 def load_config() -> dict:
@@ -113,9 +113,24 @@ async def ws_endpoint(websocket: WebSocket):
             elif t == "permission_response":
                 await agent.handle_permission(data.get("approved", False))
 
+            elif t == "cancel":
+                # Stop the in-flight agent run without wiping conversation history.
+                if agent_task and not agent_task.done():
+                    agent_task.cancel()
+                    try:
+                        await agent_task
+                    except (asyncio.CancelledError, Exception):
+                        pass
+                    await websocket.send_json({"type": "cancelled"})
+                await websocket.send_json({"type": "done"})
+
             elif t == "reset":
                 if agent_task and not agent_task.done():
                     agent_task.cancel()
+                    try:
+                        await agent_task
+                    except (asyncio.CancelledError, Exception):
+                        pass
                 agent.reset()
                 await websocket.send_json({"type": "reset_done"})
 
