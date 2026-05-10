@@ -164,6 +164,30 @@ The Web UI will open at `http://127.0.0.1:7777` automatically.
 
 ---
 
+## 🦊 GitLab integration (optional)
+
+When `GITLAB_TOKEN` is set, the agent gets 11 extra tools for triaging
+issues, MRs, and CI pipelines without leaving the chat:
+
+```bash
+export GITLAB_TOKEN=glpat-…           # personal access token, scope: api
+export GITLAB_URL=https://gitlab.com  # optional, defaults to gitlab.com
+export GITLAB_PROJECT=group/repo      # optional, auto-detected from `git remote`
+```
+
+| Tool | Use case |
+|------|----------|
+| `gitlab_list_issues`, `gitlab_get_issue` | "Triage open bugs labeled 'priority::high'" |
+| `gitlab_create_issue`, `gitlab_comment_issue` | "Open an issue summarising what I just found" |
+| `gitlab_list_mrs`, `gitlab_get_mr` | "Show me open MRs targeting main" |
+| `gitlab_create_mr`, `gitlab_comment_mr` | "Open an MR from this branch and link issue #42" |
+| `gitlab_list_pipelines`, `gitlab_get_pipeline`, `gitlab_get_job_log` | "Why did the latest pipeline on `main` fail?" |
+
+Read-only tools auto-allow; anything that creates issues/MRs or posts
+comments still goes through vixcode's normal permission prompt.
+
+---
+
 ## 📂 Project Structure
 
 ```
