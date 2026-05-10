@@ -13,6 +13,8 @@ import logging
 from pathlib import Path
 from typing import Literal
 
+from .gitlab_tools import GITLAB_DEFAULT_PERMISSIONS
+
 logger = logging.getLogger(__name__)
 
 PermMode = Literal["allow", "ask", "deny"]
@@ -26,6 +28,8 @@ DEFAULT: dict[str, PermMode] = {
     "edit_file":   "ask",
     "run_bash":    "ask",
     "run_command": "ask",
+    # GitLab tools (active only when GITLAB_TOKEN is set; harmless otherwise)
+    **GITLAB_DEFAULT_PERMISSIONS,
 }
 
 
@@ -87,5 +91,16 @@ def _preview(name: str, args: dict) -> str:
     if name == "edit_file":
         old = args.get("old_string", "")[:40]
         return f"edit_file: {args.get('path', '')}  (replace '{old}...')"
+    if name == "gitlab_create_issue":
+        return f"gitlab_create_issue: '{args.get('title', '')[:60]}'"
+    if name == "gitlab_create_mr":
+        return (
+            f"gitlab_create_mr: '{args.get('title', '')[:50]}' "
+            f"({args.get('source_branch', '')} → {args.get('target_branch', '')})"
+        )
+    if name in ("gitlab_comment_issue", "gitlab_comment_mr"):
+        kind = "issue" if "issue" in name else "MR"
+        body = args.get("body", "")[:60]
+        return f"{name}: comment on {kind} #{args.get('iid')} — '{body}'"
     parts = [f"{k}={repr(v)[:30]}" for k, v in args.items()]
     return f"{name}({', '.join(parts)})"

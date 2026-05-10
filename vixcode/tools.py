@@ -4,6 +4,10 @@ Tool definitions and implementations for the vixcode agent.
 Each tool is defined as an OpenAI-compatible function spec and paired
 with a Python implementation.  The agent calls these via the LLM's
 tool-calling mechanism.
+
+GitLab tools (gitlab_list_issues, gitlab_get_mr, gitlab_get_job_log, …)
+are registered automatically when the GITLAB_TOKEN environment variable
+is set. See ``vixcode/gitlab_tools.py`` for details.
 """
 import os
 import platform
@@ -11,6 +15,8 @@ import re
 import subprocess
 from pathlib import Path
 from typing import Any
+
+from . import gitlab_tools as _gl
 
 # ── Workspace sandbox ─────────────────────────────────────────────────────────
 # All file operations are restricted to WORKSPACE_ROOT.
@@ -180,16 +186,7 @@ def execute_tool(name: str, args: dict[str, Any]) -> str:
 
     Returns a human-readable string result or error message.
     """
-    handlers = {
-        "read_file": _read_file,
-        "write_file": _write_file,
-        "edit_file": _edit_file,
-        "run_bash": _run_command,      # keep legacy alias
-        "run_command": _run_command,
-        "list_files": _list_files,
-        "search_code": _search_code,
-    }
-    handler = handlers.get(name)
+    handler = _BASE_HANDLERS.get(name) or _gl.GITLAB_TOOL_HANDLERS.get(name)
     if not handler:
         return f"Error: Unknown tool '{name}'"
     try:
@@ -198,6 +195,8 @@ def execute_tool(name: str, args: dict[str, Any]) -> str:
         return f"Error: Bad arguments for {name}: {e}"
     except ValueError as e:
         return f"Error: {e}"
+    except _gl.GitLabError as e:
+        return f"Error in {name}: GitLab: {e}"
     except Exception as e:
         return f"Error in {name}: {e}"
 
@@ -416,3 +415,21 @@ def _search_code(pattern: str, path: str, include: str = None) -> str:
         except Exception:
             continue
     return "\n".join(results) if results else f"No matches for '{pattern}' in {path}"
+
+
+# ── Registry (defined after helpers so symbols exist) ─────────────────────────
+
+_BASE_HANDLERS = {
+    "read_file": _read_file,
+    "write_file": _write_file,
+    "edit_file": _edit_file,
+    "run_bash": _run_command,      # keep legacy alias
+    "run_command": _run_command,
+    "list_files": _list_files,
+    "search_code": _search_code,
+}
+
+# GitLab tools are appended only when GITLAB_TOKEN is set so the model
+# isn't tempted to call APIs that aren't actually configured.
+if _gl.is_gitlab_enabled():
+    TOOL_DEFINITIONS.extend(_gl.GITLAB_TOOL_DEFINITIONS)
