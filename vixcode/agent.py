@@ -125,8 +125,20 @@ class AgentLoop:
 
     @property
     def token_estimate(self) -> int:
-        """Rough token count estimate (4 chars ≈ 1 token)."""
-        total = sum(len(m.get("content", "")) for m in self.messages)
+        """Rough token count estimate (4 chars ≈ 1 token).
+
+        Counts both content text and any serialized tool_calls so the
+        estimate doesn't silently miss large arguments blobs.
+        """
+        total = 0
+        for m in self.messages:
+            content = m.get("content") or ""
+            total += len(content)
+            for tc in (m.get("tool_calls") or []):
+                fn = tc.get("function", {})
+                total += len(fn.get("name", ""))
+                args = fn.get("arguments", "")
+                total += len(args) if isinstance(args, str) else len(json.dumps(args))
         return total // 4
 
     def maybe_compress(self, threshold: int = 50_000) -> None:
@@ -137,22 +149,40 @@ class AgentLoop:
         """
         if self.token_estimate < threshold:
             return
-        # Keep system + last 6 turns; summarise the rest
         keep_recent = 6
+        if len(self.messages) <= 1 + keep_recent:
+            return  # nothing meaningful to compress
+
         system = self.messages[:1]
         old = self.messages[1:-keep_recent]
         recent = self.messages[-keep_recent:]
-        summary_prompt = (
-            "Summarise the key decisions, file changes, and conclusions from "
-            "this conversation in ≤200 words."
-        )
+
+        # Serialize history into plain text so the summarizer can't be
+        # confused by raw tool_calls or system roles.
+        transcript = _format_for_summary(old)
+        summary_messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You summarise programming-assistant conversations. "
+                    "Preserve file paths, decisions, and pending work. "
+                    "Reply with plain prose only, no tool calls. Max 200 words."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Summarise the conversation below for use as compressed "
+                    "context.\n\n--- Conversation ---\n" + transcript
+                ),
+            },
+        ]
         try:
-            summary_msg = self.llm.chat(
-                old + [{"role": "user", "content": summary_prompt}]
-            )
-            summary = summary_msg.get("content", "(summary unavailable)")
+            summary_msg = self.llm.chat(summary_messages)
+            summary = summary_msg.get("content") or "(summary unavailable)"
         except Exception:
-            summary = "(context compressed)"
+            logger.exception("Compression LLM call failed")
+            summary = "(context compressed; summary unavailable)"
 
         self.messages = system + [
             {"role": "system", "content": f"[Earlier context summary]\n{summary}"}
@@ -190,3 +220,25 @@ def _print_result(result: str, print_fn: PrintFn) -> None:
     if len(lines) > 8:
         preview += f"\n  … ({len(lines) - 8} more lines)"
     print_fn(f"  → {preview}")
+
+
+def _format_for_summary(messages: list[dict]) -> str:
+    """Render a message list as plain text for the summarizer LLM.
+
+    Strips raw ``tool_calls`` structures down to a short marker so the
+    summarizer focuses on intent rather than re-emitting tool calls.
+    """
+    lines: list[str] = []
+    for m in messages:
+        role = m.get("role", "?")
+        content = m.get("content") or ""
+        tool_calls = m.get("tool_calls") or []
+        if tool_calls:
+            names = ", ".join(
+                tc.get("function", {}).get("name", "?") for tc in tool_calls
+            )
+            marker = f" [called: {names}]"
+        else:
+            marker = ""
+        lines.append(f"[{role}]{marker} {content}".rstrip())
+    return "\n".join(lines)

@@ -389,6 +389,80 @@ nav a:not(.btn):hover {
     line-height: 1.6;
 }
 
+/* How it works */
+.how-it-works {
+    padding: 80px 0;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: border-color 0.3s ease;
+}
+
+.step:hover { border-color: var(--accent); }
+
+.step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(124,106,247,0.35);
+}
+
+.step h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.step p {
+    color: var(--text-dim);
+    font-size: 14.5px;
+    line-height: 1.6;
+}
+
+.step p em { color: var(--text); font-style: normal; }
+
+/* Inline code in feature/step copy */
+.feature-card p code,
+.step p code,
+.cta-fineprint code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--accent-hover);
+    background: rgba(124,106,247,0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.cta-fineprint {
+    margin-top: 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
 /* CTA Section */
 .cta-section {
     padding: 100px 0;
@@ -442,6 +516,32 @@ nav a:not(.btn):hover {
     border-bottom: 2px solid var(--accent);
     margin-bottom: -11px;
 }
+
+/* CSS-only tab switcher for Quick Start */
+.qs-toggle { position: absolute; opacity: 0; pointer-events: none; }
+
+.qs-tab {
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    padding: 4px 0 8px;
+    margin-right: 24px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.qs-tab:hover { color: var(--text); }
+
+#qs-pip:checked    ~ .code-box-header label[for="qs-pip"],
+#qs-docker:checked ~ .code-box-header label[for="qs-docker"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+}
+
+.qs-panel { display: none; }
+#qs-pip:checked    ~ .qs-panel-pip,
+#qs-docker:checked ~ .qs-panel-docker { display: block; }
 
 .code-box pre {
     padding: 24px;
