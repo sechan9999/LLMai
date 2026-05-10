@@ -5,11 +5,20 @@ Supports both non-streaming (tool calls) and streaming (text-only) modes.
 """
 import json
 import logging
+import time
 from typing import Iterator
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+def _is_transient(exc: Exception) -> bool:
+    """Return True if *exc* is a network error worth retrying."""
+    return isinstance(
+        exc,
+        (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError),
+    )
 
 
 class OllamaClient:
@@ -36,19 +45,26 @@ class OllamaClient:
         messages: list[dict],
         tools: list[dict] = None,
         timeout: int = 120,
+        *,
+        retries: int = 2,
     ) -> dict:
         """Send a chat completion request and return the assistant message.
+
+        Retries up to *retries* times on transient network errors with
+        exponential backoff (0.5s, 1s).
 
         Args:
             messages: Conversation history in OpenAI format.
             tools: Optional list of tool definitions.
             timeout: Request timeout in seconds.
+            retries: Max retry attempts on transient errors.
 
         Returns:
             The ``choices[0].message`` dict from the API response.
 
         Raises:
             requests.HTTPError: On non-2xx responses.
+            requests.ConnectionError / Timeout: After exhausting retries.
         """
         payload: dict = {
             "model": self.model,
@@ -58,9 +74,23 @@ class OllamaClient:
         if tools:
             payload["tools"] = tools
 
-        resp = requests.post(self._url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
+        backoff = 0.5
+        for attempt in range(retries + 1):
+            try:
+                resp = requests.post(self._url, json=payload, timeout=timeout)
+                resp.raise_for_status()
+                data = resp.json()
+                break
+            except Exception as exc:
+                if attempt < retries and _is_transient(exc):
+                    logger.warning(
+                        "Ollama request failed (attempt %d/%d): %s — retrying in %.1fs",
+                        attempt + 1, retries + 1, exc, backoff,
+                    )
+                    time.sleep(backoff)
+                    backoff *= 2
+                    continue
+                raise
 
         # P3: Capture token usage when available
         usage = data.get("usage")
@@ -113,9 +143,10 @@ class OllamaClient:
     # ── Utilities ─────────────────────────────────────────────────────────────
 
     def is_available(self) -> bool:
-        """Check whether the Ollama server is reachable."""
+        """Check whether the Ollama server is reachable and healthy."""
         try:
-            requests.get(f"{self.base_url}/api/tags", timeout=3)
+            resp = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            resp.raise_for_status()
             return True
         except Exception:
             return False

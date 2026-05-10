@@ -13,15 +13,28 @@ from pathlib import Path
 from typing import Any
 
 # ── Workspace sandbox ─────────────────────────────────────────────────────────
-# All file operations are restricted to WORKSPACE_ROOT (defaults to cwd).
+# All file operations are restricted to WORKSPACE_ROOT.
+# Defaults to $VIXCODE_WORKSPACE if set, else the current working directory.
 
-WORKSPACE_ROOT: Path = Path.cwd().resolve()
+WORKSPACE_ROOT: Path = Path(
+    os.environ.get("VIXCODE_WORKSPACE") or os.getcwd()
+).resolve()
 
 
 def set_workspace(path: str | Path) -> None:
-    """Override the workspace root (used mainly in tests)."""
+    """Override the workspace root (used by tests and explicit launchers)."""
     global WORKSPACE_ROOT
     WORKSPACE_ROOT = Path(path).resolve()
+
+
+# Common dirs that are always noise in code search.
+_IGNORE_DIRS: frozenset[str] = frozenset({
+    ".git", ".hg", ".svn",
+    "node_modules", "bower_components",
+    ".venv", "venv", "env", "__pycache__", ".tox", ".mypy_cache", ".pytest_cache",
+    "dist", "build", "out", ".next", ".nuxt",
+    "target", ".gradle", ".idea", ".vscode",
+})
 
 
 def _validate_path(path: str) -> Path:
@@ -365,6 +378,8 @@ def _search_code(pattern: str, path: str, include: str = None) -> str:
     cmd = ["grep", "-rn", "--color=never", pattern, str(p)]
     if include:
         cmd += ["--include", include]
+    for d in _IGNORE_DIRS:
+        cmd += ["--exclude-dir", d]
     try:
         result = subprocess.run(
             cmd, capture_output=True, text=True, timeout=15, encoding="utf-8"
@@ -380,12 +395,16 @@ def _search_code(pattern: str, path: str, include: str = None) -> str:
     except FileNotFoundError:
         pass  # grep not available — fall through to Python impl
 
-    # Fallback: pure Python regex search
+    # Fallback: pure Python regex search, skipping common ignored dirs.
     results = []
-    files = list(p.rglob(include or "*")) if p.is_dir() else [p]
+    if p.is_dir():
+        files = (
+            f for f in p.rglob(include or "*")
+            if f.is_file() and not _IGNORE_DIRS.intersection(f.parts)
+        )
+    else:
+        files = [p]
     for f in files:
-        if not f.is_file():
-            continue
         try:
             for i, line in enumerate(
                 f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1
