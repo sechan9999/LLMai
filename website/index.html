@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLMai (vixcode) | 100% Local AI Coding Agent</title>
-    <meta name="description" content="A fully local, privacy-first AI coding assistant that connects to Ollama to power an agentic loop.">
+    <title>LLMai (vixcode) — A 100% local AI coding agent</title>
+    <meta name="description" content="An open-source AI coding agent that runs entirely on your machine via Ollama. Reads, writes, and edits files; runs shell commands. No API keys, no telemetry.">
+
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta property="og:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
+    <meta property="og:url" content="https://ll-mai.vercel.app/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta name="twitter:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -25,7 +35,8 @@
             <nav>
                 <a href="#features">Features</a>
                 <a href="#how-it-works">How it works</a>
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" class="btn btn-outline">GitHub</a>
+                <a href="#quick-start">Install</a>
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-outline">GitHub</a>
             </nav>
         </div>
     </header>
@@ -33,20 +44,21 @@
     <main>
         <section class="hero">
             <div class="container hero-content">
-                <div class="badge">Open Source &middot; 100% Local</div>
-                <h1 class="hero-title">Your Private AI <br/><span class="text-gradient">Coding Agent</span></h1>
+                <div class="badge">Open Source · MIT · Powered by Ollama</div>
+                <h1 class="hero-title">An AI coding agent <br/><span class="text-gradient">that never leaves your laptop</span></h1>
                 <p class="hero-subtitle">
-                    Read, write, edit files and run shell commands — all orchestrated by your local LLM. Zero telemetry. Zero API keys. Total privacy.
+                    vixcode plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
+                    Your code stays on disk. No API keys, no logs sent anywhere.
                 </p>
                 <div class="hero-actions">
-                    <a href="https://github.com/sechan9999/LLMai" target="_blank" class="btn btn-primary">
-                        View Source
+                    <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-primary">
+                        View on GitHub
                     </a>
                     <a href="#quick-start" class="btn btn-secondary">
-                        Quick Start
+                        Get Started
                     </a>
                 </div>
-                
+
                 <div class="terminal-mockup">
                     <div class="terminal-header">
                         <span class="dot red"></span>
@@ -73,61 +85,127 @@
 
         <section id="features" class="features container">
             <div class="section-head">
-                <h2>Why choose vixcode?</h2>
-                <p>Designed for power users who want intelligent automation without sacrificing privacy.</p>
+                <h2>Built for power users who care about privacy</h2>
+                <p>Six tools, two interfaces, one principle: your code never leaves your machine.</p>
             </div>
             <div class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔒</div>
-                    <h3>100% Local</h3>
-                    <p>No API keys, no cloud servers. Everything runs on your own hardware via Ollama.</p>
+                    <h3>100% local</h3>
+                    <p>Runs against a local Ollama instance. No outbound API calls, no telemetry, no account required.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
-                    <h3>Agentic Loop</h3>
-                    <p>It doesn't just chat. The LLM autonomously plans, reads files, writes code, and executes commands.</p>
+                    <h3>Real agentic loop</h3>
+                    <p>Up to 20 iterations of plan&nbsp;→&nbsp;tool&nbsp;→&nbsp;observe per turn. The model chains reads, edits, and tests on its own &mdash; not just one-shot chat.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🛡️</div>
-                    <h3>Permission System</h3>
-                    <p>You're in control. Read operations auto-approve, while writes & shell commands require your explicit permission.</p>
+                    <h3>Explicit-permission writes</h3>
+                    <p>Reads and searches auto-run. <code>write_file</code>, <code>edit_file</code>, and <code>run_command</code> require explicit approval &mdash; configurable per tool.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Six built-in tools</h3>
+                    <p><code>read_file</code> · <code>write_file</code> · <code>edit_file</code> · <code>list_files</code> · <code>search_code</code> · <code>run_command</code> &mdash; all path-sandboxed to your workspace.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Works with any model</h3>
+                    <p>Native function-calling for Qwen and Llama 3.x; XML-based fallback for Gemma, Phi, and Mistral. The agent picks the right mode automatically.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
-                    <h3>Dual Interface</h3>
-                    <p>Use the blazing-fast CLI (REPL) in your terminal, or the beautiful dark-mode Web UI in your browser.</p>
+                    <h3>CLI <em>and</em> Web UI</h3>
+                    <p>Rich terminal REPL for fast iteration, plus a dark-mode browser UI over WebSocket for visual permission prompts and tool traces.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Dynamic Tools</h3>
-                    <p>6 built-in tools including file reading, editing, listing directories, and searching code patterns.</p>
+                    <div class="feature-icon">🖥️</div>
+                    <h3>Cross-platform</h3>
+                    <p>Native PowerShell on Windows, POSIX shell on macOS and Linux. Path traversal and a destructive-command blocklist are enforced everywhere.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📦</div>
-                    <h3>Context Compression</h3>
-                    <p>Smart memory management automatically compresses older conversation context to save tokens.</p>
+                    <h3>Context compression</h3>
+                    <p>When the conversation grows past ~50k tokens, older turns are auto-summarized so long sessions don't blow your model's context window.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <div class="section-head">
+                    <h2>How it works</h2>
+                    <p>A small, readable Python loop &mdash; not a framework.</p>
+                </div>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div>
+                            <h3>You ask in plain language</h3>
+                            <p>Type into the REPL or the Web UI: <em>"add pagination to the products endpoint and update the tests."</em></p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div>
+                            <h3>Ollama plans the next step</h3>
+                            <p>The agent calls your local model with the conversation and a list of tools. The model decides whether to read a file, run a command, or answer.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div>
+                            <h3>Tools run, sandboxed to your workspace</h3>
+                            <p>Read-only tools execute immediately. Anything that mutates state pauses for your approval &mdash; in the terminal or as a card in the Web UI.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div>
+                            <h3>Loop until the task is done</h3>
+                            <p>Tool results feed back into the model. It plans the next step, runs another tool, and repeats up to 20 times until it has a final answer.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <section id="quick-start" class="cta-section">
             <div class="container cta-container">
-                <h2>Ready to run it locally?</h2>
-                <p>Start your private agent in seconds via Docker or native Python.</p>
-                
+                <h2>Run it locally in under a minute</h2>
+                <p>Pick the install path you prefer. Make sure Ollama is running and a model is pulled.</p>
+
                 <div class="code-box">
+                    <input type="radio" name="qs" id="qs-pip" class="qs-toggle" checked>
+                    <input type="radio" name="qs" id="qs-docker" class="qs-toggle">
                     <div class="code-box-header">
-                        <span class="active">Docker</span>
+                        <label for="qs-pip" class="qs-tab">Python (pip)</label>
+                        <label for="qs-docker" class="qs-tab">Docker</label>
                     </div>
-                    <pre><code># Clone the repository
-git clone https://github.com/sechan9999/LLMai.git
+                    <pre class="qs-panel qs-panel-pip"><code>git clone https://github.com/sechan9999/LLMai.git
+cd LLMai
+pip install -e .
+
+# In another terminal:
+ollama serve
+ollama pull qwen2.5-coder
+
+# Launch the Web UI (or run `vixcode` for CLI):
+vixcode-server
+# → open http://127.0.0.1:7777</code></pre>
+                    <pre class="qs-panel qs-panel-docker"><code>git clone https://github.com/sechan9999/LLMai.git
 cd LLMai
 
-# Run via Docker Compose (make sure Ollama is running locally)
-docker-compose up -d
+# Make sure Ollama is reachable on the host
+docker compose up -d
 
-# Open your browser to http://localhost:7777</code></pre>
+# → open http://127.0.0.1:7777</code></pre>
                 </div>
+
+                <p class="cta-fineprint">
+                    Need a smaller model? Try <code>ollama pull gemma3:4b</code> &mdash; vixcode auto-detects that Gemma needs the XML tool-calling fallback and switches.
+                </p>
             </div>
         </section>
     </main>
@@ -139,10 +217,12 @@ docker-compose up -d
                 <div class="logo-text">vix<span>code</span></div>
             </div>
             <div class="footer-links">
-                <a href="https://github.com/sechan9999/LLMai">GitHub Repository</a>
-                <a href="https://ollama.ai">Powered by Ollama</a>
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/sechan9999/LLMai#readme" target="_blank" rel="noopener">Docs</a>
+                <a href="https://github.com/sechan9999/LLMai/issues" target="_blank" rel="noopener">Report an issue</a>
+                <a href="https://ollama.ai" target="_blank" rel="noopener">Ollama</a>
             </div>
-            <p class="copyright">&copy; 2026 sechan9999. MIT Licensed.</p>
+            <p class="copyright">&copy; 2026 sechan9999 &middot; MIT Licensed &middot; Alpha</p>
         </div>
     </footer>
 </body>
