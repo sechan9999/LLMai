@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vixcode — 60-second demo</title>
+<meta name="description" content="vixcode: an open-source AI coding agent that runs entirely on your laptop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg:        #05050a;
+    --surface:   #0e0e18;
+    --surface2:  #161625;
+    --surface3:  #1e1e30;
+    --border:    #2a2a42;
+    --text:      #e2e4f0;
+    --text-dim:  #a8aac0;
+    --text-mute: #5c5e7a;
+    --accent:    #7c6af7;
+    --accent2:   #9d8ff9;
+    --green:     #22c55e;
+    --yellow:    #f59e0b;
+    --red:       #ef4444;
+    --cyan:      #06b6d4;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Stage — fixed 16:9 frame, centered. Each scene fills it. */
+.stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Background ambient glow */
+.glow {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    filter: blur(140px);
+    z-index: -1;
+    opacity: 0.18;
+    pointer-events: none;
+    animation: drift 24s ease-in-out infinite alternate;
+}
+.glow.purple { top: -200px; left: -200px; background: var(--accent); }
+.glow.cyan   { bottom: -200px; right: -200px; background: var(--cyan); animation-delay: -12s; }
+
+@keyframes drift {
+    from { transform: translate(0,0); }
+    to   { transform: translate(80px, 60px); }
+}
+
+/* Scenes — only the active one is visible */
+.scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 5vw;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+    pointer-events: none;
+}
+.scene.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ── Scene 1 · Logo ───────────────────────────────────────────────────── */
+.s1 .logo-stack {
+    text-align: center;
+}
+.s1 .logo-icon {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 28px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 0 64px rgba(124,106,247,0.5);
+    animation: logoIn 0.9s cubic-bezier(.2,.8,.2,1) both;
+}
+.s1 h1 {
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 800;
+    letter-spacing: -3px;
+    margin-bottom: 16px;
+    animation: rise 0.8s 0.2s ease both;
+}
+.s1 h1 span { color: var(--accent2); }
+.s1 .tag {
+    font-size: clamp(18px, 2vw, 24px);
+    color: var(--text-dim);
+    animation: rise 0.8s 0.4s ease both;
+}
+
+@keyframes logoIn {
+    from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scene 2 · Terminal ───────────────────────────────────────────────── */
+.terminal {
+    width: min(820px, 90vw);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+}
+.term-head {
+    padding: 12px 16px;
+    background: #0a0a14;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+.term-head .dot { width: 12px; height: 12px; border-radius: 50%; }
+.term-head .dot.r { background: #ff5f56; }
+.term-head .dot.y { background: #ffbd2e; }
+.term-head .dot.g { background: #27c93f; }
+.term-head .ttl {
+    margin-left: auto;
+    margin-right: auto;
+    transform: translateX(-24px);
+    color: var(--text-mute);
+    font: 500 13px var(--sans);
+}
+.term-body {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 24px 28px;
+    min-height: 360px;
+}
+.term-body .line { display: block; }
+.term-body .line.dim   { color: var(--text-mute); }
+.term-body .line.green { color: var(--green); }
+.term-body .line.purple { color: var(--accent2); }
+.prompt { color: var(--accent); margin-right: 10px; }
+.cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--text);
+    vertical-align: -2px;
+    margin-left: 2px;
+    animation: blink 1.05s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.typed { opacity: 0; }
+.typed.show { opacity: 1; }
+
+/* ── Scene 3-5 · Web UI mockup ────────────────────────────────────────── */
+.browser {
+    width: min(960px, 92vw);
+    height: min(620px, 78vh);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+}
+.browser-bar {
+    background: #0a0a14;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.browser-bar .dot { width: 11px; height: 11px; border-radius: 50%; }
+.browser-bar .dot.r { background: #ff5f56; }
+.browser-bar .dot.y { background: #ffbd2e; }
+.browser-bar .dot.g { background: #27c93f; }
+.browser-bar .url {
+    margin-left: 12px;
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font: 12px var(--mono);
+    color: var(--text-dim);
+}
+.app-head {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+.app-logo-i {
+    width: 22px; height: 22px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.app-logo { font-weight: 700; }
+.app-logo span { color: var(--accent2); }
+.app-pill {
+    margin-left: auto;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font: 500 11px var(--mono);
+    background: rgba(34,197,94,0.12);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,0.25);
+}
+.feed {
+    flex: 1;
+    overflow: hidden;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.msg {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.msg.show { opacity: 1; transform: translateY(0); }
+
+.msg.user {
+    align-self: flex-end;
+    max-width: 70%;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-bottom-right-radius: 4px;
+    font-size: 14px;
+}
+
+.msg.ai {
+    align-self: flex-start;
+    max-width: 80%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.tool-card {
+    align-self: stretch;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font: 13px var(--mono);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.35s, transform 0.35s;
+}
+.tool-card.show { opacity: 1; transform: none; }
+.tool-card .badge {
+    font-size: 11px;
+    color: var(--cyan);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.tool-card .name { color: var(--text); font-weight: 600; }
+.tool-card .args { color: var(--text-mute); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-card .status {
+    font-size: 11px;
+    color: var(--green);
+    flex-shrink: 0;
+}
+.tool-card.permission {
+    border-left-color: var(--yellow);
+    background: rgba(245,158,11,0.06);
+}
+.tool-card.permission .status { color: var(--yellow); }
+.tool-card.fail { border-left-color: var(--red); }
+
+.perm-card {
+    align-self: stretch;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.35s, transform 0.35s;
+}
+.perm-card.show { opacity: 1; transform: none; }
+.perm-card .h { color: var(--yellow); font-weight: 600; margin-bottom: 6px; }
+.perm-card .body { color: var(--text-dim); font: 12px var(--mono); margin-bottom: 10px; }
+.perm-card .btns { display: flex; gap: 8px; }
+.perm-card button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font: 600 12px var(--sans);
+    cursor: pointer;
+}
+.perm-card .allow { background: var(--green); color: #061b0e; }
+.perm-card .allow.click { animation: clickFlash 0.5s ease; }
+@keyframes clickFlash {
+    50% { transform: scale(0.92); box-shadow: 0 0 0 8px rgba(34,197,94,0.25); }
+}
+
+.input-bar {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.25);
+    display: flex;
+    gap: 10px;
+}
+.input-bar .ta {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font: 14px var(--sans);
+}
+.input-bar .send {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* ── Scene 6 · Differentiator pills ───────────────────────────────────── */
+.s6 h2 {
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 700;
+    letter-spacing: -1.5px;
+    margin-bottom: 32px;
+    text-align: center;
+    animation: rise 0.6s ease both;
+}
+.s6 h2 .accent {
+    background: linear-gradient(135deg, var(--text), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.pills {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: min(820px, 90vw);
+}
+.pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.4s;
+}
+.pill.show { opacity: 1; transform: none; }
+.pill:hover { border-color: var(--accent); }
+.pill .ico {
+    width: 38px; height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.pill .t { font-weight: 600; margin-bottom: 4px; font-size: 15px; }
+.pill .s { color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+
+/* ── Scene 7 · CTA ────────────────────────────────────────────────────── */
+.s7 {
+    text-align: center;
+}
+.s7 .cta-i {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    box-shadow: 0 0 64px rgba(124,106,247,0.5);
+    animation: pulse 1.6s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+    from { transform: scale(1); }
+    to   { transform: scale(1.06); }
+}
+.s7 .url {
+    font: 600 clamp(28px, 4.5vw, 56px) var(--mono);
+    background: linear-gradient(135deg, var(--text), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 16px 0 12px;
+    animation: rise 0.8s 0.3s ease both;
+}
+.s7 .sub {
+    color: var(--text-dim);
+    font: 16px var(--mono);
+    animation: rise 0.8s 0.5s ease both;
+}
+
+/* ── Caption (subtitle) ─────────────────────────────────────────────── */
+.caption {
+    position: fixed;
+    bottom: 6vh;
+    left: 0; right: 0;
+    text-align: center;
+    color: var(--text);
+    font-size: clamp(15px, 1.7vw, 20px);
+    font-weight: 500;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.85);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    z-index: 50;
+    padding: 0 8vw;
+}
+.caption.show { opacity: 1; transform: none; }
+
+/* ── Progress bar ────────────────────────────────────────────────────── */
+.progress {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    width: 0;
+    transition: width 0.2s linear;
+    z-index: 100;
+    box-shadow: 0 0 12px rgba(124,106,247,0.6);
+}
+
+/* ── Replay button (after the loop completes) ────────────────────────── */
+.replay {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text-dim);
+    font: 500 13px var(--sans);
+    cursor: pointer;
+    z-index: 200;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+.replay:hover { opacity: 1; color: var(--text); border-color: var(--accent); }
+
+/* Reduced motion / print */
+@media (prefers-reduced-motion: reduce) {
+    .scene, .msg, .tool-card, .pill, .perm-card { transition: none !important; }
+    .glow { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="glow purple"></div>
+<div class="glow cyan"></div>
+
+<div class="stage" id="stage">
+
+    <!-- ── Scene 1: logo ── -->
+    <section class="scene s1" data-scene="1">
+        <div class="logo-stack">
+            <div class="logo-icon">⚡</div>
+            <h1>vix<span>code</span></h1>
+            <p class="tag">An AI coding agent that never leaves your laptop.</p>
+        </div>
+    </section>
+
+    <!-- ── Scene 2: terminal install ── -->
+    <section class="scene s2" data-scene="2">
+        <div class="terminal">
+            <div class="term-head">
+                <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                <span class="ttl">~/projects/llmai</span>
+            </div>
+            <div class="term-body" id="term-body">
+                <span class="line typed" data-d="0"><span class="prompt">$</span>pip install -e .</span>
+                <span class="line typed dim" data-d="900">Successfully installed vixcode-0.2.0</span>
+                <span class="line typed" data-d="1500"><span class="prompt">$</span>vixcode-server</span>
+                <span class="line typed dim" data-d="2400">+--------------------------------------------+</span>
+                <span class="line typed dim" data-d="2500">|  vixcode -- AI Coding Agent                |</span>
+                <span class="line typed dim" data-d="2600">+--------------------------------------------+</span>
+                <span class="line typed dim" data-d="2700">|  Provider: <span style="color:var(--accent2)">Ollama (local)</span>              |</span>
+                <span class="line typed dim" data-d="2800">|  Model   : <span style="color:var(--yellow)">qwen2.5-coder</span>                 |</span>
+                <span class="line typed dim" data-d="2900">|  URL     : <span style="color:var(--green)">http://localhost:7777</span>          |</span>
+                <span class="line typed dim" data-d="3000">+--------------------------------------------+</span>
+                <span class="line typed green" data-d="3300">INFO: Uvicorn running on http://localhost:7777</span>
+                <span class="line typed" data-d="3700"><span class="prompt">$</span><span class="cursor"></span></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Scene 3: Web UI — user prompt + agent reply + tool chain ── -->
+    <section class="scene s3" data-scene="3">
+        <div class="browser">
+            <div class="browser-bar">
+                <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                <span class="url">localhost:7777</span>
+            </div>
+            <div class="app-head">
+                <span class="app-logo-i">⚡</span>
+                <span class="app-logo">vix<span>code</span></span>
+                <span class="app-pill">● qwen2.5-coder</span>
+            </div>
+            <div class="feed" id="feed-3"></div>
+            <div class="input-bar">
+                <div class="ta" id="ta-3"></div>
+                <div class="send">→</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Scene 4: differentiator pills ── -->
+    <section class="scene s6" data-scene="4">
+        <h2>Local-first. <span class="accent">Cloud-optional.</span></h2>
+        <div class="pills" id="pills">
+            <div class="pill"><div class="ico">🔒</div><div><div class="t">100% local by default</div><div class="s">Runs on Ollama. No API keys, no telemetry. Gemini opt-in for harder tasks.</div></div></div>
+            <div class="pill"><div class="ico">🔧</div><div><div class="t">17 tools out of the box</div><div class="s">Six file/shell tools plus eleven GitLab tools for issues, MRs, and CI logs.</div></div></div>
+            <div class="pill"><div class="ico">🔄</div><div><div class="t">Works with any model</div><div class="s">Native function-calling for Qwen and Llama; XML fallback for Gemma, Phi, Mistral.</div></div></div>
+            <div class="pill"><div class="ico">🛡️</div><div><div class="t">Sandboxed and gated</div><div class="s">Path traversal blocked. Writes and shell commands need explicit approval.</div></div></div>
+        </div>
+    </section>
+
+    <!-- ── Scene 5: CTA ── -->
+    <section class="scene s7" data-scene="5">
+        <div class="cta-i">⚡</div>
+        <div class="url">github.com/sechan9999/LLMai</div>
+        <div class="sub">git clone · ollama serve · vixcode</div>
+    </section>
+
+</div>
+
+<div class="caption" id="caption"></div>
+<div class="progress" id="progress"></div>
+<button class="replay" id="replay" onclick="restart()">↻ replay</button>
+
+<script>
+// ── Scene timeline (ms) ──────────────────────────────────────────────────
+// Adjust these freely; the runtime drives everything from this table.
+const TIMELINE = [
+    { scene: 1, dur: 4000,  caption: "An AI coding agent that runs entirely on your laptop.",
+      onEnter: () => {} },
+    { scene: 2, dur: 9000,  caption: "Three commands to start. No API key. No telemetry.",
+      onEnter: scene2 },
+    { scene: 3, dur: 28000, caption: "Watch it triage a failing pipeline — read the log, fix the code, open an MR.",
+      onEnter: scene3 },
+    { scene: 4, dur: 9000,  caption: "Local-first. Cloud-optional. Path-sandboxed. MIT licensed.",
+      onEnter: scene4 },
+    { scene: 5, dur: 7000,  caption: "Open source. MIT licensed. Try it tonight.",
+      onEnter: scene5 },
+];
+
+const $  = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+let active = -1;
+let timer = null;
+let paused = false;
+
+function showScene(idx) {
+    $$('.scene').forEach(s => s.classList.remove('active'));
+    const el = document.querySelector(`[data-scene="${TIMELINE[idx].scene}"]`);
+    if (el) el.classList.add('active');
+    setCaption(TIMELINE[idx].caption);
+    if (TIMELINE[idx].onEnter) TIMELINE[idx].onEnter();
+}
+
+function setCaption(text) {
+    const c = $('#caption');
+    c.classList.remove('show');
+    if (!text) return;
+    setTimeout(() => {
+        c.textContent = text;
+        c.classList.add('show');
+    }, 250);
+}
+
+function advance() {
+    active++;
+    if (active >= TIMELINE.length) {
+        // Pause at the CTA, show replay button.
+        return;
+    }
+    showScene(active);
+    const startedAt = performance.now();
+    const dur = TIMELINE[active].dur;
+    if (timer) cancelAnimationFrame(timer);
+    function tick(now) {
+        const total = TIMELINE.reduce((a, s) => a + s.dur, 0);
+        const elapsedBefore = TIMELINE.slice(0, active).reduce((a, s) => a + s.dur, 0);
+        const elapsed = elapsedBefore + Math.min(dur, now - startedAt);
+        $('#progress').style.width = (elapsed / total * 100) + '%';
+        if (now - startedAt >= dur) {
+            advance();
+        } else {
+            timer = requestAnimationFrame(tick);
+        }
+    }
+    timer = requestAnimationFrame(tick);
+}
+
+function restart() {
+    if (timer) cancelAnimationFrame(timer);
+    active = -1;
+    $$('.typed').forEach(e => e.classList.remove('show'));
+    $('#feed-3').innerHTML = '';
+    $('#ta-3').innerHTML = '';
+    $('#pills').querySelectorAll('.pill').forEach(p => p.classList.remove('show'));
+    $('#progress').style.width = '0';
+    advance();
+}
+
+// ── Scene 2: terminal — type lines on staggered delays ──────────────────
+function scene2() {
+    $$('.s2 .typed').forEach(e => e.classList.remove('show'));
+    $$('.s2 .typed').forEach(e => {
+        const d = parseInt(e.dataset.d || '0', 10);
+        setTimeout(() => e.classList.add('show'), d);
+    });
+}
+
+// ── Scene 3: chat + tool calls ──────────────────────────────────────────
+function scene3() {
+    const feed = $('#feed-3'); feed.innerHTML = '';
+    const ta = $('#ta-3'); ta.innerHTML = '';
+
+    const userPrompt = "The pipeline on MR !42 is red. Figure out what broke and open a fix MR.";
+    typeInto(ta, userPrompt, 0, 22, () => {
+        // After typing, push to feed as user message
+        setTimeout(() => {
+            ta.textContent = '';
+            addUserMsg(feed, userPrompt);
+
+            const steps = [
+                { kind: 'ai',   text: "Looking up MR !42 and the failing pipeline." },
+                { kind: 'tool', name: 'gitlab_get_mr', args: 'iid=42 include_diff=true', delay: 700 },
+                { kind: 'tool', name: 'gitlab_list_pipelines', args: 'status=failed ref=feat/login', delay: 700 },
+                { kind: 'tool', name: 'gitlab_get_job_log', args: 'job_id=8814 tail=200', delay: 850 },
+                { kind: 'ai',   text: "Found it — `assert user.is_active` fails because `User.activate()` was renamed in 7d2f9aa." },
+                { kind: 'tool', name: 'read_file', args: 'src/auth.py', delay: 700 },
+                { kind: 'tool', name: 'edit_file', args: 'src/auth.py: rename activate→set_active', delay: 700, perm: true },
+                { kind: 'perm', tool: 'edit_file', body: "edit_file: src/auth.py  (replace 'def activate...')", delay: 1100 },
+                { kind: 'tool', name: 'run_command', args: "git commit -am 'fix: …' && git push", delay: 1000 },
+                { kind: 'tool', name: 'gitlab_create_mr', args: 'feat/login → main · "fix: rename activate"', delay: 800 },
+                { kind: 'ai',   text: "Done. **Fix MR !43** is open and the pipeline turned green ✓." },
+            ];
+
+            let t = 600;
+            steps.forEach(step => {
+                t += step.delay || 1000;
+                setTimeout(() => runStep(feed, step), t);
+            });
+        }, 400);
+    });
+}
+
+function typeInto(el, text, i, speed, done) {
+    if (paused || i >= text.length) { done && done(); return; }
+    el.textContent = text.slice(0, i + 1);
+    setTimeout(() => typeInto(el, text, i + 1, speed, done), speed);
+}
+
+function addUserMsg(feed, text) {
+    const m = document.createElement('div');
+    m.className = 'msg user';
+    m.textContent = text;
+    feed.appendChild(m);
+    requestAnimationFrame(() => m.classList.add('show'));
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function runStep(feed, step) {
+    if (step.kind === 'ai') {
+        const m = document.createElement('div');
+        m.className = 'msg ai';
+        m.innerHTML = step.text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/`(.+?)`/g, '<code style="font:13px var(--mono);background:rgba(0,0,0,.4);padding:1px 5px;border-radius:4px;">$1</code>');
+        feed.appendChild(m);
+        requestAnimationFrame(() => m.classList.add('show'));
+    } else if (step.kind === 'tool') {
+        const c = document.createElement('div');
+        c.className = 'tool-card' + (step.perm ? ' permission' : '');
+        c.innerHTML = `
+            <span class="badge">⚙</span>
+            <span class="name">${step.name}</span>
+            <span class="args">${step.args}</span>
+            <span class="status">${step.perm ? '⚠ asking' : '● running'}</span>
+        `;
+        feed.appendChild(c);
+        requestAnimationFrame(() => c.classList.add('show'));
+        if (!step.perm) {
+            setTimeout(() => {
+                c.querySelector('.status').textContent = '✓ done';
+                c.querySelector('.status').style.color = 'var(--green)';
+            }, 700);
+        }
+    } else if (step.kind === 'perm') {
+        const card = document.createElement('div');
+        card.className = 'perm-card';
+        card.innerHTML = `
+            <div class="h">⚠ Permission required</div>
+            <div class="body">${step.body}</div>
+            <div class="btns">
+                <button class="allow">✓ Allow</button>
+                <button style="background:var(--surface3);color:var(--text-dim);">✕ Deny</button>
+            </div>
+        `;
+        feed.appendChild(card);
+        requestAnimationFrame(() => card.classList.add('show'));
+        // Auto-click Allow after a beat for the demo
+        setTimeout(() => {
+            const btn = card.querySelector('.allow');
+            btn.classList.add('click');
+            setTimeout(() => {
+                card.style.opacity = '0.4';
+                card.querySelector('.h').textContent = '✓ Allowed';
+                // Resolve the previous tool card too
+                const prev = [...feed.querySelectorAll('.tool-card.permission')].pop();
+                if (prev) {
+                    prev.querySelector('.status').textContent = '✓ done';
+                    prev.querySelector('.status').style.color = 'var(--green)';
+                    prev.classList.remove('permission');
+                }
+            }, 350);
+        }, 900);
+    }
+    feed.scrollTop = feed.scrollHeight;
+}
+
+// ── Scene 4: pills cascade in ───────────────────────────────────────────
+function scene4() {
+    const pills = $$('#pills .pill');
+    pills.forEach(p => p.classList.remove('show'));
+    pills.forEach((p, i) => setTimeout(() => p.classList.add('show'), 200 + i * 350));
+}
+
+// ── Scene 5: CTA (nothing dynamic) ──────────────────────────────────────
+function scene5() {}
+
+// ── Pause / resume on click anywhere ────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === ' ') {
+        paused = !paused;
+        if (paused && timer) cancelAnimationFrame(timer);
+        else advance();
+        e.preventDefault();
+    }
+    if (e.key === 'r' || e.key === 'R') restart();
+});
+
+// ── Boot ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => setTimeout(advance, 350));
+</script>
+</body>
+</html>
