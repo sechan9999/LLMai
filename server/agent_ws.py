@@ -83,11 +83,24 @@ class WebSocketAgent:
 
     MAX_ITERATIONS = 20
 
-    def __init__(self, llm_url: str, model: str, ws: WebSocket):
-        self.llm_url = llm_url.rstrip("/") + "/v1/chat/completions"
+    def __init__(
+        self,
+        llm_url: str,
+        model: str,
+        ws: WebSocket,
+        *,
+        chat_path: str = "/v1/chat/completions",
+        headers: dict[str, str] | None = None,
+        provider: str = "ollama",
+    ):
+        self.llm_url = llm_url.rstrip("/") + chat_path
         self.model = model
         self.ws = ws
-        self.native = _supports_native_tools(model)
+        self.headers: dict[str, str] = dict(headers or {})
+        self.provider = provider
+        # Cloud-hosted models (Gemini etc.) almost always support native
+        # tool calling; only Ollama needs the per-model gate.
+        self.native = (provider != "ollama") or _supports_native_tools(model)
         system = NATIVE_SYSTEM_PROMPT if self.native else XML_SYSTEM_PROMPT
         self.messages: list[dict] = [{"role": "system", "content": system}]
         self.rules: dict[str, str] = dict(DEFAULT)
@@ -274,7 +287,7 @@ class WebSocketAgent:
         last_exc: Exception | None = None
         for attempt in range(3):
             try:
-                async with httpx.AsyncClient(timeout=180) as client:
+                async with httpx.AsyncClient(timeout=180, headers=self.headers) as client:
                     resp = await client.post(self.llm_url, json=payload)
                     resp.raise_for_status()
                     return resp.json()["choices"][0]["message"]
@@ -312,7 +325,7 @@ class WebSocketAgent:
         tool_calls: dict[int, dict] = {}
 
         try:
-            async with httpx.AsyncClient(timeout=180) as client:
+            async with httpx.AsyncClient(timeout=180, headers=self.headers) as client:
                 async with client.stream("POST", self.llm_url, json=payload) as resp:
                     resp.raise_for_status()
                     async for line in resp.aiter_lines():

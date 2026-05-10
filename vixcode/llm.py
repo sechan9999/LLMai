@@ -1,10 +1,14 @@
 """
-OllamaClient — HTTP client for Ollama's OpenAI-compatible API.
+OllamaClient — HTTP client for any OpenAI-compatible chat-completions API.
 
-Supports both non-streaming (tool calls) and streaming (text-only) modes.
+Speaks the same protocol as Ollama, Google Gemini (AI Studio + Vertex AI
+OpenAI-compat), and other vendors that implement the OpenAI standard.
+The class name is kept for stability — see :func:`make_default_client`
+for the factory that picks a provider based on environment variables.
 """
 import json
 import logging
+import os
 import time
 from typing import Iterator
 
@@ -22,21 +26,33 @@ def _is_transient(exc: Exception) -> bool:
 
 
 class OllamaClient:
-    """Lightweight HTTP client for the Ollama /v1/chat/completions endpoint.
+    """Lightweight HTTP client for any OpenAI-compatible chat endpoint.
+
+    Despite the name, the client works with Ollama, Google Gemini, or any
+    other backend that implements the OpenAI ``/v1/chat/completions``
+    contract. The class name is preserved for backwards compatibility.
 
     Attributes:
-        base_url: Ollama server URL (default: http://localhost:11434).
+        base_url: Server URL (default: ``http://localhost:11434``).
         model: Active model name (can be changed at runtime).
+        headers: Extra HTTP headers (e.g. ``Authorization: Bearer …``).
+        provider: Free-form label for the active backend (Ollama, Gemini, …).
     """
 
     def __init__(
         self,
         base_url: str = "http://localhost:11434",
         model: str = "qwen2.5-coder",
+        *,
+        headers: dict[str, str] | None = None,
+        chat_path: str = "/v1/chat/completions",
+        provider: str = "ollama",
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
-        self._url = f"{self.base_url}/v1/chat/completions"
+        self.headers: dict[str, str] = dict(headers or {})
+        self.provider = provider
+        self._url = f"{self.base_url}{chat_path}"
 
     # ── Non-streaming: returns full assistant message dict ──────────────────
 
@@ -77,7 +93,9 @@ class OllamaClient:
         backoff = 0.5
         for attempt in range(retries + 1):
             try:
-                resp = requests.post(self._url, json=payload, timeout=timeout)
+                resp = requests.post(
+                    self._url, json=payload, timeout=timeout, headers=self.headers,
+                )
                 resp.raise_for_status()
                 data = resp.json()
                 break
@@ -120,7 +138,7 @@ class OllamaClient:
         """
         payload = {"model": self.model, "messages": messages, "stream": True}
         with requests.post(
-            self._url, json=payload, stream=True, timeout=timeout
+            self._url, json=payload, stream=True, timeout=timeout, headers=self.headers,
         ) as resp:
             resp.raise_for_status()
             buf = ""
@@ -143,19 +161,92 @@ class OllamaClient:
     # ── Utilities ─────────────────────────────────────────────────────────────
 
     def is_available(self) -> bool:
-        """Check whether the Ollama server is reachable and healthy."""
+        """Check whether the backend is reachable and healthy.
+
+        Cloud providers like Gemini don't expose Ollama's ``/api/tags`` —
+        for those, we just trust the configuration (the user explicitly
+        supplied an API key) rather than probing.
+        """
+        if self.provider != "ollama":
+            return True
         try:
-            resp = requests.get(f"{self.base_url}/api/tags", timeout=3)
+            resp = requests.get(
+                f"{self.base_url}/api/tags", timeout=3, headers=self.headers,
+            )
             resp.raise_for_status()
             return True
         except Exception:
             return False
 
     def list_models(self) -> list[str]:
-        """Return names of locally available models."""
+        """Return names of locally available models (Ollama only)."""
+        if self.provider != "ollama":
+            return [self.model] if self.model else []
         try:
-            resp = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            resp = requests.get(
+                f"{self.base_url}/api/tags", timeout=5, headers=self.headers,
+            )
             resp.raise_for_status()
             return [m["name"] for m in resp.json().get("models", [])]
         except Exception:
             return []
+
+
+# ── Provider auto-detection ──────────────────────────────────────────────────
+
+# Google Gemini's OpenAI-compatible endpoint (AI Studio key path).
+# For Vertex AI, point GEMINI_BASE_URL at the Vertex OpenAI compat endpoint
+# and supply a bearer token from `gcloud auth print-access-token`.
+_GEMINI_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
+_GEMINI_DEFAULT_MODEL = "gemini-2.5-flash"
+
+
+def resolve_provider_config(
+    base_url: str | None = None,
+    model: str | None = None,
+) -> dict:
+    """Pick an LLM backend based on environment + explicit overrides.
+
+    Precedence:
+      1. Explicit ``base_url`` argument (custom OpenAI-compat endpoint).
+      2. ``GEMINI_API_KEY`` set → Google Gemini.
+      3. Ollama on ``OLLAMA_URL`` (default ``http://localhost:11434``).
+    """
+    if base_url:
+        return {
+            "provider": "custom",
+            "base_url": base_url.rstrip("/"),
+            "chat_path": "/v1/chat/completions",
+            "model": model or "qwen2.5-coder",
+            "headers": {},
+        }
+    if os.environ.get("GEMINI_API_KEY"):
+        return {
+            "provider": "gemini",
+            "base_url": os.environ.get("GEMINI_BASE_URL", _GEMINI_DEFAULT_BASE).rstrip("/"),
+            "chat_path": "/chat/completions",
+            "model": model or os.environ.get("GEMINI_MODEL", _GEMINI_DEFAULT_MODEL),
+            "headers": {"Authorization": f"Bearer {os.environ['GEMINI_API_KEY']}"},
+        }
+    return {
+        "provider": "ollama",
+        "base_url": os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/"),
+        "chat_path": "/v1/chat/completions",
+        "model": model or os.environ.get("VIXCODE_MODEL", "qwen2.5-coder"),
+        "headers": {},
+    }
+
+
+def make_default_client(
+    base_url: str | None = None,
+    model: str | None = None,
+) -> OllamaClient:
+    """Construct an :class:`OllamaClient` aimed at the active provider."""
+    cfg = resolve_provider_config(base_url, model)
+    return OllamaClient(
+        base_url=cfg["base_url"],
+        model=cfg["model"],
+        headers=cfg["headers"],
+        chat_path=cfg["chat_path"],
+        provider=cfg["provider"],
+    )

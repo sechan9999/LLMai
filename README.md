@@ -164,6 +164,30 @@ The Web UI will open at `http://127.0.0.1:7777` automatically.
 
 ---
 
+## ☁️ Google Cloud / Gemini (optional)
+
+vixcode is local-first, but the agent loop is happy to talk to any
+OpenAI-compatible endpoint. To run against **Google Gemini** instead
+of Ollama (e.g. when you want Gemini 2.5 Pro for harder tasks):
+
+```bash
+export GEMINI_API_KEY=your-aistudio-key
+# Optional — defaults shown:
+# export GEMINI_MODEL=gemini-2.5-flash
+# export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+```
+
+The CLI banner and the Web UI's `info` event will report
+`Provider: Google Gemini` so you know which backend is active. With
+no `GEMINI_API_KEY` set, vixcode falls back to local Ollama exactly
+as before.
+
+**Vertex AI** works through the same OpenAI-compat layer — set
+`GEMINI_BASE_URL` to your Vertex endpoint and supply a bearer token
+from `gcloud auth print-access-token` via `GEMINI_API_KEY`.
+
+---
+
 ## 🦊 GitLab integration (optional)
 
 When `GITLAB_TOKEN` is set, the agent gets 11 extra tools for triaging

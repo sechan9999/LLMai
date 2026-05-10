@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
-from .llm import OllamaClient
+from .llm import OllamaClient, make_default_client, resolve_provider_config
 from .permissions import PermissionManager
 from .agent import AgentLoop
 
@@ -43,34 +43,44 @@ def load_config() -> dict:
 
 def main():
     config = load_config()
-    ollama_url = config.get("ollama_url", os.environ.get("OLLAMA_URL", "http://localhost:11434"))
-    model      = config.get("model",      os.environ.get("VIXCODE_MODEL", "qwen2.5-coder"))
+    # Config-file overrides; otherwise fall through to environment-driven
+    # provider selection (Gemini if GEMINI_API_KEY is set, else Ollama).
+    cfg_base_url = config.get("ollama_url")
+    cfg_model    = config.get("model")
+    llm = make_default_client(base_url=cfg_base_url, model=cfg_model)
 
-    llm         = OllamaClient(base_url=ollama_url, model=model)
     permissions = PermissionManager()
     agent       = AgentLoop(llm=llm, permissions=permissions)
 
+    provider_label = {
+        "ollama": "Ollama (local)",
+        "gemini": "Google Gemini",
+        "custom": "Custom OpenAI-compat",
+    }.get(llm.provider, llm.provider)
+
     # ── Startup banner ────────────────────────────────────────────────────────
     console.print(Panel(
-        f"[bold cyan]vixcode[/bold cyan]  —  Local AI Coding Agent\n"
-        f"  Model : [yellow]{model}[/yellow]\n"
-        f"  Ollama: [green]{ollama_url}[/green]\n\n"
+        f"[bold cyan]vixcode[/bold cyan]  —  AI Coding Agent\n"
+        f"  Provider: [magenta]{provider_label}[/magenta]\n"
+        f"  Model   : [yellow]{llm.model}[/yellow]\n"
+        f"  URL     : [green]{llm.base_url}[/green]\n\n"
         f"[dim]Commands: /reset  /model <name>  /models  /perms  /tokens  /exit[/dim]",
         border_style="cyan",
         padding=(0, 1),
     ))
 
-    # ── Ollama health check ───────────────────────────────────────────────────
+    # ── Health check (Ollama only — cloud providers can't be probed) ──────────
     if not llm.is_available():
-        console.print(f"[red]✗ Ollama not reachable at {ollama_url}[/red]")
+        console.print(f"[red]✗ Ollama not reachable at {llm.base_url}[/red]")
         console.print("[yellow]  → Run: ollama serve[/yellow]")
         sys.exit(1)
 
-    available = llm.list_models()
-    if available and not any(m.startswith(model.split(":")[0]) for m in available):
-        console.print(f"[yellow]⚠  Model '{model}' not found locally.[/yellow]")
-        console.print(f"[yellow]   Available: {', '.join(available[:5])}[/yellow]")
-        console.print(f"[yellow]   Pull it: ollama pull {model}[/yellow]")
+    if llm.provider == "ollama":
+        available = llm.list_models()
+        if available and not any(m.startswith(llm.model.split(":")[0]) for m in available):
+            console.print(f"[yellow]⚠  Model '{llm.model}' not found locally.[/yellow]")
+            console.print(f"[yellow]   Available: {', '.join(available[:5])}[/yellow]")
+            console.print(f"[yellow]   Pull it: ollama pull {llm.model}[/yellow]")
 
     # ── Main REPL loop ────────────────────────────────────────────────────────
     while True:

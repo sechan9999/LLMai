@@ -14,6 +14,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from vixcode.llm import resolve_provider_config
+
 from .agent_ws import WebSocketAgent
 
 logger = logging.getLogger(__name__)
@@ -57,10 +59,19 @@ async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
 
     config = load_config()
-    ollama_url = os.environ.get("OLLAMA_URL") or config.get("ollama_url", "http://localhost:11434")
-    model      = os.environ.get("VIXCODE_MODEL") or config.get("model", "qwen2.5-coder")
+    cfg_url   = os.environ.get("OLLAMA_URL")    or config.get("ollama_url")
+    cfg_model = os.environ.get("VIXCODE_MODEL") or config.get("model")
+    # Auto-detect provider — Gemini if GEMINI_API_KEY is set, else Ollama.
+    provider_cfg = resolve_provider_config(base_url=cfg_url, model=cfg_model)
 
-    agent = WebSocketAgent(llm_url=ollama_url, model=model, ws=websocket)
+    agent = WebSocketAgent(
+        llm_url=provider_cfg["base_url"],
+        model=provider_cfg["model"],
+        ws=websocket,
+        chat_path=provider_cfg["chat_path"],
+        headers=provider_cfg["headers"],
+        provider=provider_cfg["provider"],
+    )
     agent_task: asyncio.Task | None = None
 
     try:
@@ -89,8 +100,9 @@ async def ws_endpoint(websocket: WebSocket):
             if t == "get_info":
                 await websocket.send_json({
                     "type": "info",
-                    "model": model,
-                    "ollama": ollama_url,
+                    "model": provider_cfg["model"],
+                    "ollama": provider_cfg["base_url"],
+                    "provider": provider_cfg["provider"],
                 })
 
             elif t == "user_message":
