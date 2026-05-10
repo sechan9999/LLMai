@@ -251,7 +251,8 @@ docker compose up -d
     // ── In-page chat against the user's local Ollama ───────────────────────
     // Browsers allow http://localhost from https pages, but Ollama itself
     // must permit cross-origin requests:
-    //   OLLAMA_ORIGINS=https://ll-mai.vercel.app ollama serve
+    //   macOS/Linux: OLLAMA_ORIGINS=https://ll-mai.vercel.app ollama serve
+    //   Windows: $env:OLLAMA_ORIGINS="https://ll-mai.vercel.app"; ollama serve
     const OLLAMA = 'http://localhost:11434';
     // Models we prefer to default to, in priority order. First match wins.
     const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
@@ -297,7 +298,7 @@ docker compose up -d
 
     function showSetupHelp() {
         if (document.getElementById('chat-help-msg')) return;
-        appendMsg('assistant', '__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n```bash\n# 1) Install Ollama\nbrew install ollama          # macOS\n# or download from https://ollama.com\n\n# 2) Pull a model\nollama pull qwen2.5-coder\n\n# 3) Start the server with this origin allowed\nOLLAMA_ORIGINS=' + location.origin + ' ollama serve\n```\n\nThen reload this page.', 'chat-help-msg');
+        appendMsg('assistant', '__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n1) **Install Ollama**\nmacOS: `brew install ollama`\nWindows/Linux: Download from [ollama.com](https://ollama.com)\n\n2) **Pull a model**\n```bash\nollama pull qwen2.5-coder\n```\n\n3) **Start the server with this origin allowed**\n\n**macOS/Linux:**\n```bash\nOLLAMA_ORIGINS=' + location.origin + ' ollama serve\n```\n\n**Windows (PowerShell):**\n```powershell\n$env:OLLAMA_ORIGINS="' + location.origin + '"\nollama serve\n```\n\n*(Note: Quit the Ollama app from your system tray/taskbar first if it is already running)*\n\nThen reload this page.', 'chat-help-msg');
     }
 
     function useChip(btn) {
@@ -391,7 +392,7 @@ docker compose up -d
             }
             history.push({ role: 'assistant', content: full });
         } catch (e) {
-            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, restart Ollama with:\n\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``;
+            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
             renderInto(reply, reply.dataset.raw);
         } finally {
             chatBusy = false;
