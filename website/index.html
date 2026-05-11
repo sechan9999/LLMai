@@ -556,7 +556,124 @@
         .step h3 { font-size: 16px; margin-bottom: 4px; color: var(--text-primary); }
         .step p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
 
-        .code-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; margin-top: 16px; line-height: 1.5; color: var(--text-secondary); white-space: pre; }
+        /* ── Preview Panel (IDE Sandbox) ── */
+        .preview-panel {
+            width: 0;
+            background: var(--bg-main);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+            z-index: 50;
+        }
+        .preview-panel.open {
+            width: 50%;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .preview-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-sidebar);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .preview-content {
+            flex: 1;
+            position: relative;
+            background: #fff;
+        }
+        
+        .sandbox-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+        
+        .sandbox-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 16px;
+            resize: none;
+            outline: none;
+        }
+
+        /* ── Code Bar ── */
+        .chat-bubble pre {
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        .chat-bubble pre code {
+            display: block;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        .code-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+        .code-lang { color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+        .code-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 12px;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .code-action-btn:hover { color: var(--text-primary); }
 
     </style>
 </head>
@@ -714,6 +831,25 @@ vixcode-server</div>
         </div>
     </main>
 
+    <div class="preview-panel" id="preview-panel">
+        <div class="preview-header">
+            <div class="preview-tabs">
+                <button class="tab-btn active" onclick="switchTab('preview')">Preview</button>
+                <button class="tab-btn" onclick="switchTab('code')">Code</button>
+            </div>
+            <div class="preview-actions">
+                <button class="icon-btn" style="font-size:12px;width:auto;padding:0 12px;" onclick="downloadArtifact()" title="Save File (Write)">💾 Save File</button>
+                <button class="icon-btn" onclick="closePreview()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="preview-content">
+            <iframe id="sandbox-frame" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin" class="sandbox-iframe"></iframe>
+            <textarea id="sandbox-code" class="sandbox-editor" style="display:none;" oninput="updateSandbox()"></textarea>
+        </div>
+    </div>
+
     <script>
     // ── In-page chat against the user's local Ollama ───────────────────────
     const OLLAMA = 'http://localhost:11434';
@@ -721,7 +857,7 @@ vixcode-server</div>
 
     let activeModel = null;
     let chatBusy = false;
-    const SYSTEM = "You are a helpful coding assistant. Be concise. Use Markdown and fenced code blocks for code.";
+    const SYSTEM = "You are a highly capable AI coding assistant and Web IDE. You write HTML, SVG, CSS, and Javascript. When you output code, provide complete, runnable blocks because the user can preview and execute them in a real-time web sandbox. You act as a 'Write' tool (saving code) and 'CreateDocument' tool (generating UI). Focus on workflow-centric results.";
     const history = [{ role: 'system', content: SYSTEM }];
 
     const $status = () => document.getElementById('chat-status');
@@ -801,7 +937,44 @@ vixcode-server</div>
     function renderInto(el, raw) {
         if (window.marked) {
             el.innerHTML = marked.parse(raw);
-            if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+            
+            // Add IDE functionality to code blocks
+            el.querySelectorAll('pre').forEach(pre => {
+                if (pre.querySelector('.code-bar')) return; // already processed
+                const code = pre.querySelector('code');
+                if (!code) return;
+                
+                const lang = (code.className.match(/language-(\w+)/) || [])[1] || 'text';
+                
+                const bar = document.createElement('div');
+                bar.className = 'code-bar';
+                
+                const langLabel = document.createElement('span');
+                langLabel.className = 'code-lang';
+                langLabel.textContent = lang;
+                bar.appendChild(langLabel);
+                
+                const actions = document.createElement('div');
+                
+                if (['html', 'svg', 'javascript', 'js'].includes(lang)) {
+                    const runBtn = document.createElement('button');
+                    runBtn.className = 'code-action-btn';
+                    runBtn.innerHTML = '▶ Preview / Run';
+                    runBtn.onclick = () => openSandbox(code.textContent, lang);
+                    actions.appendChild(runBtn);
+                }
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'code-action-btn';
+                copyBtn.innerHTML = '📋 Copy';
+                copyBtn.onclick = () => navigator.clipboard.writeText(code.textContent);
+                actions.appendChild(copyBtn);
+                
+                bar.appendChild(actions);
+                pre.insertBefore(bar, code);
+                
+                if (window.hljs) hljs.highlightElement(code);
+            });
         } else {
             el.textContent = raw;
         }
@@ -888,6 +1061,67 @@ vixcode-server</div>
             scrollToBottom();
         }
     }
+
+    let currentArtifactCode = '';
+    let currentArtifactLang = '';
+
+    window.openSandbox = function(code, lang) {
+        currentArtifactCode = code;
+        currentArtifactLang = lang;
+        document.getElementById('preview-panel').classList.add('open');
+        document.getElementById('sandbox-code').value = code;
+        switchTab('preview');
+    };
+
+    window.closePreview = function() {
+        document.getElementById('preview-panel').classList.remove('open');
+    };
+
+    window.switchTab = function(tab) {
+        const frame = document.getElementById('sandbox-frame');
+        const editor = document.getElementById('sandbox-code');
+        const btns = document.querySelectorAll('.preview-tabs .tab-btn');
+        
+        btns[0].classList.toggle('active', tab === 'preview');
+        btns[1].classList.toggle('active', tab === 'code');
+        
+        if (tab === 'preview') {
+            frame.style.display = 'block';
+            editor.style.display = 'none';
+            updateSandbox();
+        } else {
+            frame.style.display = 'none';
+            editor.style.display = 'block';
+        }
+    };
+
+    window.updateSandbox = function() {
+        const code = document.getElementById('sandbox-code').value;
+        currentArtifactCode = code;
+        const frame = document.getElementById('sandbox-frame');
+        
+        if (currentArtifactLang === 'svg') {
+            frame.srcdoc = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">${code}</div>`;
+        } else if (currentArtifactLang === 'javascript' || currentArtifactLang === 'js') {
+            frame.srcdoc = `<html><body style="font-family:sans-serif;padding:20px;"><h3>JS Execution Sandbox</h3><p>Check the browser console, or see output below:</p><div id="out"></div><script>console.log = function(...args){ document.getElementById('out').innerHTML += args.join(' ') + '<br>'; }; ${code}<\/script></body></html>`;
+        } else {
+            frame.srcdoc = code;
+        }
+    };
+
+    window.downloadArtifact = function() {
+        const code = document.getElementById('sandbox-code').value;
+        const blob = new Blob([code], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = currentArtifactLang === 'svg' ? 'svg' : (currentArtifactLang === 'html' ? 'html' : 'js');
+        a.download = `artifact.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
 
     // Auto-grow textarea + Enter-to-send
     document.addEventListener('DOMContentLoaded', () => {
