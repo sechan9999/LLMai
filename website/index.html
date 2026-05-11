@@ -523,6 +523,41 @@
             opacity: 0.5;
         }
 
+        .info-section {
+            max-width: 800px;
+            width: 100%;
+            margin: 64px auto 0;
+            text-align: left;
+        }
+        .info-section:last-child { margin-bottom: 64px; }
+        .info-section h2 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .feature-icon { font-size: 24px; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--text-primary); }
+        .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+        
+        .steps { display: flex; flex-direction: column; gap: 24px; }
+        .step { display: flex; gap: 16px; }
+        .step-num { width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .step h3 { font-size: 16px; margin-bottom: 4px; color: var(--text-primary); }
+        .step p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        .code-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; margin-top: 16px; line-height: 1.5; color: var(--text-secondary); white-space: pre; }
+
     </style>
 </head>
 <body>
@@ -530,10 +565,10 @@
         <div class="sidebar-header">
             <div class="logo">LLM <span>ai</span></div>
             <nav class="sidebar-nav">
-                <a href="https://github.com/sechan9999/LLMai#features" target="_blank">Features</a>
-                <a href="https://github.com/sechan9999/LLMai#how-it-works" target="_blank">How it works</a>
-                <a href="./promo.html">Demo</a>
-                <a href="https://github.com/sechan9999/LLMai#quick-start" target="_blank">Install</a>
+                <a href="#features" onclick="event.preventDefault(); document.getElementById('features').scrollIntoView({behavior: 'smooth'})">Features</a>
+                <a href="#how-it-works" onclick="event.preventDefault(); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">How it works</a>
+                <a href="./promo.html" target="_blank">Demo</a>
+                <a href="#install" onclick="event.preventDefault(); document.getElementById('install').scrollIntoView({behavior: 'smooth'})">Install</a>
                 <a href="https://github.com/sechan9999/LLMai" target="_blank" class="nav-github">GitHub</a>
             </nav>
         </div>
@@ -580,6 +615,74 @@
                     <button class="chip" onclick="useChip(this)"><span style="color:#8b5cf6">🎬</span> Create a slide deck</button>
                     <button class="chip" onclick="useChip(this)"><span style="color:#eab308">⚡</span> Tech comparison report</button>
                 </div>
+
+                <section id="features" class="info-section">
+                    <h2>Built for power users who care about privacy</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🔒</div>
+                            <h3>100% local</h3>
+                            <p>Runs against a local Ollama instance. No outbound API calls, no telemetry, no account required.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🤖</div>
+                            <h3>Real agentic loop</h3>
+                            <p>Up to 20 iterations of plan → tool → observe per turn. The model chains reads, edits, and tests on its own.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🛡️</div>
+                            <h3>Explicit-permission writes</h3>
+                            <p>Reads and searches auto-run. <code>write_file</code>, <code>edit_file</code>, and <code>run_command</code> require explicit approval.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔧</div>
+                            <h3>Six built-in tools</h3>
+                            <p><code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_files</code>, <code>search_code</code>, <code>run_command</code> — all path-sandboxed.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="how-it-works" class="info-section">
+                    <h2>How it works</h2>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-num">1</div>
+                            <div>
+                                <h3>You ask in plain language</h3>
+                                <p>Type into the UI: <em>"add pagination to the products endpoint and update the tests."</em></p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">2</div>
+                            <div>
+                                <h3>Ollama plans the next step</h3>
+                                <p>The agent calls your local model with the conversation and a list of tools.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">3</div>
+                            <div>
+                                <h3>Tools run, sandboxed to your workspace</h3>
+                                <p>Read-only tools execute immediately. Mutating tools pause for your approval.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="install" class="info-section">
+                    <h2>Run it locally in under a minute</h2>
+                    <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Make sure Ollama is running and a model is pulled.</p>
+                    <div class="code-box">git clone https://github.com/sechan9999/LLMai.git
+cd LLMai
+pip install -e .
+
+# In another terminal:
+ollama serve
+ollama pull qwen2.5-coder
+
+# Launch the Web UI:
+vixcode-server</div>
+                </section>
             </div>
 
             <div class="chat-feed" id="chat-feed">
