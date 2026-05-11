@@ -3,258 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLMai (vixcode) — A 100% local AI coding agent</title>
-    <meta name="description" content="An open-source AI coding agent that runs entirely on your machine via Ollama. Reads, writes, and edits files; runs shell commands. No API keys, no telemetry.">
-
-    <!-- Open Graph / social -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="LLMai (vixcode) — Local AI Coding Agent">
-    <meta property="og:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
-    <meta property="og:url" content="https://ll-mai.vercel.app/">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LLMai (vixcode) — Local AI Coding Agent">
-    <meta name="twitter:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
-
+    <title>Vix Code — Local AI Coding Agent</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #09090b;
+            --bg-sidebar: #121214;
+            --surface: #18181b;
+            --surface-hover: #27272a;
+            --border: #27272a;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-start: #3b82f6;
+            --accent-end: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            --radius: 12px;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 12px;
+            flex-shrink: 0;
+        }
+
+        .burger-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            transition: background 0.2s;
+        }
+        .burger-btn:hover {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+        }
+        .new-chat-btn:hover {
+            background: var(--surface-hover);
+            border-color: #3f3f46;
+        }
+
+        .sidebar-section {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            padding: 0 8px;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .history-item {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            text-align: left;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s, color 0.2s;
+        }
+        .history-item:hover {
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+
+        .sidebar-footer {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 16px 8px 8px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05), transparent 50%);
+        }
+
+        .top-nav {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .logo span {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .status-indicator:hover {
+            background: var(--surface-hover);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #facc15;
+            box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+        }
+        .status-indicator[data-state="ok"] .status-dot {
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+        }
+        .status-indicator[data-state="bad"] .status-dot {
+            background: #f87171;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+        }
+
+        /* ── Center Area (Welcome & Feed) ── */
+        .center-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            scroll-behavior: smooth;
+        }
+        .center-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .center-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        .welcome-screen {
+            max-width: 800px;
+            width: 100%;
+            margin: auto 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .greeting {
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .hero-question {
+            font-size: 40px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 48px;
+        }
+
+        .chips-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            max-width: 700px;
+        }
+
+        .chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px 18px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .chip:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+            border-color: #52525b;
+            transform: translateY(-1px);
+        }
+
+        /* ── Chat Feed ── */
+        .chat-feed {
+            max-width: 800px;
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+            padding-bottom: 40px;
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-user {
+            align-items: flex-end;
+        }
+        .chat-user .chat-bubble {
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 12px 18px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+            font-size: 15px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .chat-assistant {
+            align-items: flex-start;
+        }
+        .chat-assistant .chat-bubble {
+            background: transparent;
+            color: var(--text-primary);
+            padding: 4px 0;
+            border-radius: 0;
+            max-width: 100%;
+            font-size: 15px;
+            line-height: 1.6;
+            width: 100%;
+        }
+
+        .chat-assistant .chat-bubble p { margin-bottom: 12px; }
+        .chat-assistant .chat-bubble p:last-child { margin-bottom: 0; }
+        .chat-assistant .chat-bubble pre {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+        .chat-assistant .chat-bubble code {
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .chat-assistant .chat-bubble pre code { background: none; padding: 0; }
+
+        /* ── Input Area ── */
+        .input-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px 24px;
+        }
+
+        .input-box {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-box:focus-within {
+            border-color: rgba(255,255,255,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139, 92, 246, 0.3);
+        }
+
+        #chat-text {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 15px;
+            resize: none;
+            padding: 4px 8px;
+            min-height: 44px;
+            max-height: 200px;
+            outline: none;
+            line-height: 1.5;
+        }
+        #chat-text::placeholder { color: var(--text-muted); }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 4px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+        .text-btn {
+            width: auto;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 500;
+            gap: 6px;
+            border: 1px solid transparent;
+        }
+        .text-btn:hover {
+            border-color: var(--border);
+        }
+
+        .spacer { flex: 1; }
+
+        .send-btn {
+            background: var(--text-primary);
+            color: var(--bg-main);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            background: var(--accent-start);
+            color: white;
+        }
+        .send-btn:disabled {
+            background: var(--surface-hover);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .footer-links {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+        .cli-link {
+            display: inline-block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-left: 6px;
+            transition: all 0.2s;
+        }
+        .cli-link:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+        
+        .brand-footer {
+            margin-top: 8px;
+            font-size: 11px;
+            opacity: 0.5;
+        }
+
+    </style>
 </head>
 <body>
-    <!-- Background Elements -->
-    <div class="bg-glow bg-glow-purple"></div>
-    <div class="bg-glow bg-glow-blue"></div>
-    <div class="grid-overlay"></div>
-
-    <header>
-        <div class="container header-inner">
-            <div class="logo">
-                <div class="logo-icon">⚡</div>
-                <div class="logo-text">vix<span>code</span></div>
-            </div>
-            <nav>
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How it works</a>
-                <a href="./promo.html">Demo</a>
-                <a href="#quick-start">Install</a>
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-outline">GitHub</a>
-            </nav>
+    <aside class="sidebar">
+        <button class="burger-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <button class="new-chat-btn" onclick="location.reload()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            New chat
+        </button>
+        
+        <div class="sidebar-section">Recent</div>
+        <div class="history-list">
+            <button class="history-item">Evaluate this app and su...</button>
+            <button class="history-item">[mcp_agents_promo.htm...</button>
+            <button class="history-item">Build US stock market al...</button>
         </div>
-    </header>
 
-    <main>
-        <section class="hero">
-            <div class="container hero-content">
-                <div class="badge">Open Source · MIT · Powered by Ollama</div>
-                <h1 class="hero-title">An AI coding agent <br/><span class="text-gradient">that never leaves your laptop</span></h1>
-                <p class="hero-subtitle">
-                    vixcode plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
-                    Your code stays on disk. No API keys, no logs sent anywhere.
-                </p>
-                <div class="hero-actions">
-                    <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-primary">
-                        View on GitHub
-                    </a>
-                    <a href="#quick-start" class="btn btn-secondary">
-                        Install Locally
-                    </a>
-                </div>
+        <div class="sidebar-footer">
+            Unpinned chats are kept for 30 days. Pin ones you want to keep.
+        </div>
+    </aside>
 
-                <!-- Live chat against the user's local Ollama -->
-                <div class="chat-card" id="chat-card">
-                    <div class="chat-status" id="chat-status">
-                        <span class="status-dot"></span>
-                        <span class="status-text">Looking for Ollama on http://localhost:11434…</span>
-                        <span class="status-model" id="chat-model"></span>
-                    </div>
-
-                    <div class="chat-feed" id="chat-feed">
-                        <div class="chat-empty">
-                            <div class="chat-empty-icon">⚡</div>
-                            <div class="chat-empty-title">Try vixcode in your browser</div>
-                            <div class="chat-empty-sub">Connects to <code>localhost:11434</code> &mdash; nothing leaves your machine.</div>
-                        </div>
-                    </div>
-
-                    <form class="chat-input" onsubmit="event.preventDefault(); sendChat();">
-                        <textarea id="chat-text"
-                                  placeholder="Ask vixcode anything…"
-                                  rows="1"
-                                  autocomplete="off"></textarea>
-                        <button type="submit" id="chat-send" aria-label="Send">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </form>
-
-                    <div class="chat-chips">
-                        <button type="button" class="chip" onclick="useChip(this)">Explain async/await in JS</button>
-                        <button type="button" class="chip" onclick="useChip(this)">Write a Python regex for emails</button>
-                        <button type="button" class="chip" onclick="useChip(this)">REST vs GraphQL trade-offs</button>
-                        <button type="button" class="chip" onclick="useChip(this)">Sort an array in 5 languages</button>
-                    </div>
-                </div>
-
-                <p class="hero-fineprint">
-                    Want full agentic power &mdash; file edits, shell commands, the whole loop?
-                    <a href="#quick-start">Install vixcode locally</a>.
-                </p>
+    <main class="main-content">
+        <header class="top-nav">
+            <div class="logo">Vix <span>Code</span></div>
+            <div class="status-indicator" id="chat-status" data-state="loading" onclick="showSetupHelp()">
+                <span class="status-dot"></span>
+                <span id="chat-model">Connecting to Ollama...</span>
             </div>
-        </section>
+        </header>
 
-        <section id="features" class="features container">
-            <div class="section-head">
-                <h2>Built for power users who care about privacy</h2>
-                <p>Six tools, two interfaces, one principle: your code never leaves your machine.</p>
-            </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🔒</div>
-                    <h3>100% local</h3>
-                    <p>Runs against a local Ollama instance. No outbound API calls, no telemetry, no account required.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>Real agentic loop</h3>
-                    <p>Up to 20 iterations of plan&nbsp;→&nbsp;tool&nbsp;→&nbsp;observe per turn. The model chains reads, edits, and tests on its own &mdash; not just one-shot chat.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Explicit-permission writes</h3>
-                    <p>Reads and searches auto-run. <code>write_file</code>, <code>edit_file</code>, and <code>run_command</code> require explicit approval &mdash; configurable per tool.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔧</div>
-                    <h3>Six built-in tools</h3>
-                    <p><code>read_file</code> · <code>write_file</code> · <code>edit_file</code> · <code>list_files</code> · <code>search_code</code> · <code>run_command</code> &mdash; all path-sandboxed to your workspace.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3>Works with any model</h3>
-                    <p>Native function-calling for Qwen and Llama 3.x; XML-based fallback for Gemma, Phi, and Mistral. The agent picks the right mode automatically.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🌐</div>
-                    <h3>CLI <em>and</em> Web UI</h3>
-                    <p>Rich terminal REPL for fast iteration, plus a dark-mode browser UI over WebSocket for visual permission prompts and tool traces.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🖥️</div>
-                    <h3>Cross-platform</h3>
-                    <p>Native PowerShell on Windows, POSIX shell on macOS and Linux. Path traversal and a destructive-command blocklist are enforced everywhere.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📦</div>
-                    <h3>Context compression</h3>
-                    <p>When the conversation grows past ~50k tokens, older turns are auto-summarized so long sessions don't blow your model's context window.</p>
+        <div class="center-area" id="center-area">
+            <div class="welcome-screen" id="welcome-screen">
+                <h2 class="greeting">Hi sechan9999</h2>
+                <h1 class="hero-question">How can I help you today?</h1>
+                
+                <div class="chips-grid">
+                    <button class="chip" onclick="useChip(this)"><span style="color:#3b82f6">🌐</span> Build a landing page</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#10b981">💡</span> Find AI tools</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#a855f7">📄</span> Project proposal</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#06b6d4">🔍</span> Search latest news</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#f43f5e">📊</span> Sales analysis Excel</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#f59e0b">📈</span> Build a dashboard</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#8b5cf6">🎬</span> Create a slide deck</button>
+                    <button class="chip" onclick="useChip(this)"><span style="color:#eab308">⚡</span> Tech comparison report</button>
                 </div>
             </div>
-        </section>
 
-        <section id="how-it-works" class="how-it-works">
-            <div class="container">
-                <div class="section-head">
-                    <h2>How it works</h2>
-                    <p>A small, readable Python loop &mdash; not a framework.</p>
-                </div>
-                <div class="steps">
-                    <div class="step">
-                        <div class="step-num">1</div>
-                        <div>
-                            <h3>You ask in plain language</h3>
-                            <p>Type into the REPL or the Web UI: <em>"add pagination to the products endpoint and update the tests."</em></p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">2</div>
-                        <div>
-                            <h3>Ollama plans the next step</h3>
-                            <p>The agent calls your local model with the conversation and a list of tools. The model decides whether to read a file, run a command, or answer.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">3</div>
-                        <div>
-                            <h3>Tools run, sandboxed to your workspace</h3>
-                            <p>Read-only tools execute immediately. Anything that mutates state pauses for your approval &mdash; in the terminal or as a card in the Web UI.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">4</div>
-                        <div>
-                            <h3>Loop until the task is done</h3>
-                            <p>Tool results feed back into the model. It plans the next step, runs another tool, and repeats up to 20 times until it has a final answer.</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="chat-feed" id="chat-feed">
+                <!-- Chat messages will be injected here -->
             </div>
-        </section>
+        </div>
 
-        <section id="quick-start" class="cta-section">
-            <div class="container cta-container">
-                <h2>Run it locally in under a minute</h2>
-                <p>Pick the install path you prefer. Make sure Ollama is running and a model is pulled.</p>
-
-                <div class="code-box">
-                    <input type="radio" name="qs" id="qs-pip" class="qs-toggle" checked>
-                    <input type="radio" name="qs" id="qs-docker" class="qs-toggle">
-                    <div class="code-box-header">
-                        <label for="qs-pip" class="qs-tab">Python (pip)</label>
-                        <label for="qs-docker" class="qs-tab">Docker</label>
-                    </div>
-                    <pre class="qs-panel qs-panel-pip"><code>git clone https://github.com/sechan9999/LLMai.git
-cd LLMai
-pip install -e .
-
-# In another terminal:
-ollama serve
-ollama pull qwen2.5-coder
-
-# Launch the Web UI (or run `vixcode` for CLI):
-vixcode-server
-# → open http://localhost:7777</code></pre>
-                    <pre class="qs-panel qs-panel-docker"><code>git clone https://github.com/sechan9999/LLMai.git
-cd LLMai
-
-# Make sure Ollama is reachable on the host
-docker compose up -d
-
-# → open http://localhost:7777</code></pre>
+        <div class="input-container">
+            <div class="input-box">
+                <textarea id="chat-text" placeholder="Ask Vix Code anything" rows="1"></textarea>
+                <div class="input-actions">
+                    <button class="icon-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <button class="icon-btn text-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.121 2.121 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                        Tools
+                    </button>
+                    <div class="spacer"></div>
+                    <button id="chat-send" class="send-btn" onclick="sendChat()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    </button>
                 </div>
-
-                <p class="cta-fineprint">
-                    Need a smaller model? Try <code>ollama pull gemma3:4b</code> &mdash; vixcode auto-detects that Gemma needs the XML tool-calling fallback and switches.
-                </p>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container footer-inner">
-            <div class="logo">
-                <div class="logo-icon small">⚡</div>
-                <div class="logo-text">vix<span>code</span></div>
             </div>
             <div class="footer-links">
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
-                <a href="https://github.com/sechan9999/LLMai#readme" target="_blank" rel="noopener">Docs</a>
-                <a href="https://github.com/sechan9999/LLMai/issues" target="_blank" rel="noopener">Report an issue</a>
-                <a href="https://ollama.ai" target="_blank" rel="noopener">Ollama</a>
+                Run it in the terminal <a href="https://github.com/sechan9999/LLMai" target="_blank" class="cli-link">Vix Code CLI ↗</a>
+                <div class="brand-footer">vibeindex.ai</div>
             </div>
-            <p class="copyright">&copy; 2026 sechan9999 &middot; MIT Licensed &middot; Alpha</p>
         </div>
-    </footer>
+    </main>
 
     <script>
     // ── In-page chat against the user's local Ollama ───────────────────────
-    // Browsers allow http://localhost from https pages, but Ollama itself
-    // must permit cross-origin requests:
-    //   macOS/Linux: OLLAMA_ORIGINS=https://ll-mai.vercel.app ollama serve
-    //   Windows: $env:OLLAMA_ORIGINS="https://ll-mai.vercel.app"; ollama serve
     const OLLAMA = 'http://localhost:11434';
-    // Models we prefer to default to, in priority order. First match wins.
     const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
 
     let activeModel = null;
@@ -263,64 +565,76 @@ docker compose up -d
     const history = [{ role: 'system', content: SYSTEM }];
 
     const $status = () => document.getElementById('chat-status');
+    const $model  = () => document.getElementById('chat-model');
     const $feed   = () => document.getElementById('chat-feed');
+    const $welcome= () => document.getElementById('welcome-screen');
     const $text   = () => document.getElementById('chat-text');
     const $send   = () => document.getElementById('chat-send');
-    const $model  = () => document.getElementById('chat-model');
+    const $center = () => document.getElementById('center-area');
 
-    function setStatus(state, text, modelName) {
+    function setStatus(state, text) {
         const el = $status();
-        el.dataset.state = state; // ok | bad | loading
-        el.querySelector('.status-text').textContent = text;
-        $model().textContent = modelName ? '· ' + modelName : '';
+        el.dataset.state = state;
+        $model().textContent = text;
     }
 
     async function detectOllama() {
-        setStatus('loading', 'Looking for Ollama on http://localhost:11434…');
+        setStatus('loading', 'Looking for Ollama...');
         try {
             const r = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const data = await r.json();
             const models = (data.models || []).map(m => m.name);
             if (!models.length) {
-                setStatus('bad', 'Ollama is running but has no models — try `ollama pull qwen2.5-coder`.');
+                setStatus('bad', 'Ollama has no models (click)');
                 return;
             }
-            // Pick a model: first preferred match, else the first one available
             activeModel = models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
-            setStatus('ok', 'Connected to local Ollama', activeModel);
+            setStatus('ok', activeModel);
+            $send().disabled = false;
         } catch (e) {
-            setStatus('bad', "Can't reach Ollama. Click for setup help.");
-            $status().style.cursor = 'pointer';
-            $status().onclick = showSetupHelp;
+            setStatus('bad', "Can't reach Ollama (click)");
         }
     }
 
     function showSetupHelp() {
         if (document.getElementById('chat-help-msg')) return;
-        appendMsg('assistant', '__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n1) **Install Ollama**\nmacOS: `brew install ollama`\nWindows/Linux: Download from [ollama.com](https://ollama.com)\n\n2) **Pull a model**\n```bash\nollama pull qwen2.5-coder\n```\n\n3) **Start the server with this origin allowed**\n\n**macOS/Linux:**\n```bash\nOLLAMA_ORIGINS=' + location.origin + ' ollama serve\n```\n\n**Windows (PowerShell):**\n```powershell\n$env:OLLAMA_ORIGINS="' + location.origin + '"\nollama serve\n```\n\n*(Note: Quit the Ollama app from your system tray/taskbar first if it is already running)*\n\nThen reload this page.', 'chat-help-msg');
+        $welcome().style.display = 'none';
+        $feed().style.display = 'flex';
+        
+        const helpText = `__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n1) **Install Ollama**\nmacOS: \`brew install ollama\`\nWindows/Linux: Download from [ollama.com](https://ollama.com)\n\n2) **Pull a model**\n\`\`\`bash\nollama pull qwen2.5-coder\n\`\`\`\n\n3) **Start the server with this origin allowed**\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\`\n\n*(Note: Quit the Ollama app from your system tray/taskbar first if it is already running)*\n\nThen reload this page.`;
+        
+        appendMsg('assistant', helpText, 'chat-help-msg');
     }
 
     function useChip(btn) {
-        $text().value = btn.textContent;
+        // Extract text content ignoring the emoji span
+        const clone = btn.cloneNode(true);
+        const span = clone.querySelector('span');
+        if (span) span.remove();
+        const text = clone.textContent.trim();
+        
+        $text().value = text;
         $text().focus();
+        sendChat();
     }
 
     function appendMsg(role, content, id) {
-        // Hide empty-state on first message
-        const empty = $feed().querySelector('.chat-empty');
-        if (empty) empty.remove();
+        $welcome().style.display = 'none';
+        $feed().style.display = 'flex';
 
         const row = document.createElement('div');
         row.className = `chat-msg chat-${role}`;
         if (id) row.id = id;
+        
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble';
         bubble.dataset.raw = content || '';
         renderInto(bubble, content || '');
+        
         row.appendChild(bubble);
         $feed().appendChild(row);
-        $feed().scrollTop = $feed().scrollHeight;
+        scrollToBottom();
         return bubble;
     }
 
@@ -336,7 +650,11 @@ docker compose up -d
     function appendDelta(bubble, delta) {
         bubble.dataset.raw += delta;
         renderInto(bubble, bubble.dataset.raw);
-        $feed().scrollTop = $feed().scrollHeight;
+        scrollToBottom();
+    }
+    
+    function scrollToBottom() {
+        $center().scrollTop = $center().scrollHeight;
     }
 
     async function sendChat() {
@@ -407,6 +725,7 @@ docker compose up -d
             chatBusy = false;
             $send().disabled = false;
             $text().focus();
+            scrollToBottom();
         }
     }
 
@@ -418,7 +737,10 @@ docker compose up -d
             ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
         });
         ta.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                sendChat(); 
+            }
         });
         if (window.marked) {
             marked.setOptions({ breaks: true, gfm: true });
