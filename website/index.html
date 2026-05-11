@@ -728,10 +728,10 @@
         <div class="sidebar-header">
             <div class="logo">LLM <span>ai</span></div>
             <nav class="sidebar-nav">
-                <a href="#features" onclick="event.preventDefault(); document.getElementById('features').scrollIntoView({behavior: 'smooth'})">Features</a>
-                <a href="#how-it-works" onclick="event.preventDefault(); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">How it works</a>
+                <a href="#features" onclick="event.preventDefault(); scrollToSection('features')">Features</a>
+                <a href="#how-it-works" onclick="event.preventDefault(); scrollToSection('how-it-works')">How it works</a>
                 <a href="./promo.html" target="_blank">Demo</a>
-                <a href="#install" onclick="event.preventDefault(); document.getElementById('install').scrollIntoView({behavior: 'smooth'})">Install</a>
+                <a href="#install" onclick="event.preventDefault(); scrollToSection('install')">Install</a>
                 <a href="https://github.com/sechan9999/LLMai" target="_blank" class="nav-github">GitHub</a>
             </nav>
         </div>
@@ -1066,12 +1066,22 @@ vixcode-server</div>
             await detectOllama();
         }
 
-        // ── Demo path: canned reply, no network ───────────────────────────
-        if (demoMode) {
+        // ── Canned-reply path ─────────────────────────────────────────────
+        // Trigger when:
+        //   1. we're in demo mode (no Ollama → only canned replies available), OR
+        //   2. the prompt exactly matches one of the 8 chip labels.
+        // The chip prompts are intentionally short ("Tech comparison report")
+        // and small local models can't infer the intent from three words —
+        // they tend to reply with "I need more information…". Routing those
+        // exact prompts through the curated DEMO_REPLIES keeps the showcase
+        // chips reliable regardless of which model the user has installed.
+        // Custom text typed by the user still goes to the live model.
+        const cannedReply = DEMO_REPLIES[txt];
+        if (demoMode || cannedReply) {
             const reply = appendMsg('assistant', '');
-            const canned = DEMO_REPLIES[txt] || DEMO_FALLBACK;
-            await typeOut(reply, canned, 6);
-            history.push({ role: 'assistant', content: canned });
+            const body = cannedReply || DEMO_FALLBACK;
+            await typeOut(reply, body, 6);
+            history.push({ role: 'assistant', content: body });
             saveHistory();
             chatBusy = false;
             $send().disabled = false;
@@ -1184,6 +1194,25 @@ vixcode-server</div>
             feed.style.display = 'none';
         }
         if ($welcome()) $welcome().style.display = '';
+    };
+
+    // Sidebar nav (#features, #how-it-works, #install) target sections that
+    // live INSIDE the welcome-screen. Once a chat starts, welcome-screen is
+    // hidden — so a raw scrollIntoView lands on a 0×0 hidden element. Swap
+    // back to the welcome view first, then scroll. The chat history is
+    // preserved in memory + localStorage; sending another message or
+    // tapping a chip restores the feed via appendMsg().
+    window.scrollToSection = function(id) {
+        const welcome = $welcome();
+        const feed = $feed();
+        if (welcome) welcome.style.display = '';
+        if (feed) feed.style.display = 'none';
+        requestAnimationFrame(() => {
+            const el = document.getElementById(id);
+            if (el && el.scrollIntoView) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
     };
 
     let currentArtifactCode = '';
