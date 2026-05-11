@@ -156,6 +156,131 @@ header::after {
   position: relative;
 }
 
+/* Chat column wraps feed + input bar so the preview can sit beside it. */
+.chat-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;          /* allow flex shrink for long code lines */
+  overflow: hidden;
+}
+
+/* ── Preview panel (Web IDE sandbox) ───────────────────────────── */
+.preview-side {
+  width: 0;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width .28s cubic-bezier(.4,0,.2,1);
+}
+body.split-mode .preview-side { width: 50%; }
+body.split-mode .preview-side { aria-hidden: false; }
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  gap: 8px;
+}
+.preview-tabs { display: flex; gap: 4px; }
+.preview-tab {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  font: 500 12.5px var(--sans);
+  cursor: pointer;
+  transition: all .15s;
+}
+.preview-tab:hover { color: var(--text); background: var(--surface2); }
+.preview-tab.active {
+  color: var(--text);
+  background: var(--surface3);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.preview-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preview-lang {
+  font: 600 11px var(--mono);
+  color: var(--accent2);
+  background: rgba(124,106,247,.12);
+  border: 1px solid rgba(124,106,247,.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+}
+
+.preview-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.preview-pane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+#preview-iframe { background: #ffffff; }
+.preview-editor {
+  background: var(--bg);
+  color: var(--text);
+  font: 13.5px/1.6 var(--mono);
+  padding: 16px 18px;
+  resize: none;
+  outline: none;
+  display: none;          /* tab toggle controls visibility */
+}
+body.preview-tab-code #preview-iframe { display: none; }
+body.preview-tab-code #preview-editor { display: block; }
+
+/* ── Run button injected into AI code blocks ──────────────────── */
+.ai-content pre { position: relative; }
+.run-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: white;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  font: 600 11px var(--sans);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity .2s, transform .2s, filter .15s;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(124,106,247,.35);
+}
+.ai-content pre:hover .run-btn,
+.run-btn:focus-visible { opacity: 1; transform: translateY(0); }
+.run-btn:hover { filter: brightness(1.15); }
+.run-btn:active { transform: translateY(1px); }
+
+/* Smooth preview transitions on small screens — stack vertically */
+@media (max-width: 900px) {
+  body.split-mode .main { flex-direction: column; }
+  body.split-mode .preview-side { width: 100%; height: 50%; border-left: 0; border-top: 1px solid var(--border); }
+}
+
 /* ── Feed ──────────────────────────────────────────────────────── */
 #feed {
   flex: 1;
@@ -592,41 +717,63 @@ header::after {
 
 <!-- Main area -->
 <div class="main">
-  <div id="feed-wrap" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+  <div class="chat-side" id="chat-side">
+    <div id="feed-wrap" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
 
-    <!-- Welcome -->
-    <div id="welcome">
-      <div class="welcome-logo">⚡</div>
-      <div class="welcome-title">vixcode</div>
-      <div class="welcome-sub">Local AI Coding Agent — powered by Ollama</div>
-      <div class="welcome-hints">
-        <div class="hint-chip" onclick="fillInput(this)">현재 디렉토리 파일 목록 보여줘</div>
-        <div class="hint-chip" onclick="fillInput(this)">README.md 파일 읽어줘</div>
-        <div class="hint-chip" onclick="fillInput(this)">git status 확인해줘</div>
-        <div class="hint-chip" onclick="fillInput(this)">간단한 Python 스크립트 만들어줘</div>
+      <!-- Welcome -->
+      <div id="welcome">
+        <div class="welcome-logo">⚡</div>
+        <div class="welcome-title">vixcode</div>
+        <div class="welcome-sub">Local AI Coding Agent — powered by Ollama</div>
+        <div class="welcome-hints">
+          <div class="hint-chip" onclick="fillInput(this)">현재 디렉토리 파일 목록 보여줘</div>
+          <div class="hint-chip" onclick="fillInput(this)">README.md 파일 읽어줘</div>
+          <div class="hint-chip" onclick="fillInput(this)">git status 확인해줘</div>
+          <div class="hint-chip" onclick="fillInput(this)">간단한 Python 스크립트 만들어줘</div>
+        </div>
+      </div>
+
+      <!-- Messages injected here -->
+      <div id="feed" style="display:none; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
+
+    </div>
+
+    <!-- Input -->
+    <div id="bar-wrap">
+      <div id="bar">
+        <textarea id="inp"
+          placeholder="코딩 작업을 입력하세요…"
+          rows="1"></textarea>
+        <div class="bar-footer">
+          <span class="bar-hint">Enter 전송 &nbsp;·&nbsp; Shift+Enter 줄바꿈</span>
+          <button id="sendbtn" onclick="send()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send
+          </button>
+        </div>
       </div>
     </div>
-
-    <!-- Messages injected here -->
-    <div id="feed" style="display:none; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
-
   </div>
-</div>
 
-<!-- Input -->
-<div id="bar-wrap">
-  <div id="bar">
-    <textarea id="inp"
-      placeholder="코딩 작업을 입력하세요…"
-      rows="1"></textarea>
-    <div class="bar-footer">
-      <span class="bar-hint">Enter 전송 &nbsp;·&nbsp; Shift+Enter 줄바꿈</span>
-      <button id="sendbtn" onclick="send()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Send
-      </button>
+  <!-- ── Preview side: sandbox + editor (hidden by default) ───────────── -->
+  <aside class="preview-side" id="preview-side" aria-hidden="true">
+    <div class="preview-header">
+      <div class="preview-tabs">
+        <button type="button" class="preview-tab active" data-tab="preview" onclick="switchPreviewTab('preview')">▶ Preview</button>
+        <button type="button" class="preview-tab" data-tab="code" onclick="switchPreviewTab('code')">{ } Code</button>
+      </div>
+      <div class="preview-actions">
+        <span class="preview-lang" id="preview-lang">html</span>
+        <button type="button" class="hbtn" onclick="refreshPreview()" title="Re-run code">↻</button>
+        <button type="button" class="hbtn" onclick="saveCurrentFile()" title="Download as file">💾 Save File</button>
+        <button type="button" class="hbtn" onclick="closePreview()" title="Close preview">✕</button>
+      </div>
     </div>
-  </div>
+    <div class="preview-content">
+      <iframe id="preview-iframe" class="preview-pane" sandbox="allow-scripts allow-forms allow-modals"></iframe>
+      <textarea id="preview-editor" class="preview-pane preview-editor" spellcheck="false"></textarea>
+    </div>
+  </aside>
 </div>
 
 <script>
@@ -766,6 +913,7 @@ function appendAi(text) {
   curAiEl._raw = (curAiEl._raw || '') + text
   curAiEl.innerHTML = marked.parse(curAiEl._raw)
   curAiEl.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b))
+  injectRunButtons(curAiEl)
   scrollDown()
 }
 
@@ -925,7 +1073,159 @@ inp.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
 })
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && busy) { e.preventDefault(); cmd('cancel') }
+  if (e.key === 'Escape') {
+    if (document.body.classList.contains('split-mode')) { e.preventDefault(); closePreview() }
+    else if (busy) { e.preventDefault(); cmd('cancel') }
+  }
+})
+
+// ── Web IDE: code preview sandbox ────────────────────────────────────────────
+// Languages we can render in the sandbox. Anything else (python, bash, …)
+// the user just reads — no Run button is offered.
+const PREVIEWABLE_LANGS = new Set(['html','svg','css','js','javascript'])
+const SAVE_EXT = { html:'html', svg:'svg', css:'css', js:'js', javascript:'js' }
+
+let previewState = { code: '', lang: 'html', dirty: false }
+const $iframe = () => document.getElementById('preview-iframe')
+const $editor = () => document.getElementById('preview-editor')
+const $langPill = () => document.getElementById('preview-lang')
+
+function injectRunButtons(container) {
+  if (!container) return
+  container.querySelectorAll('pre').forEach(pre => {
+    if (pre.querySelector('.run-btn')) return        // already added
+    const codeEl = pre.querySelector('code')
+    if (!codeEl) return
+    const lang = (codeEl.className.match(/language-(\w+)/) || [])[1] || ''
+    if (!PREVIEWABLE_LANGS.has(lang.toLowerCase())) return
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'run-btn'
+    btn.textContent = '▶ Preview / Run'
+    btn.title = `Run this ${lang} block in the sandbox`
+    btn.onclick = () => openPreview(codeEl.textContent, lang.toLowerCase())
+    pre.appendChild(btn)
+  })
+}
+
+function openPreview(code, lang) {
+  previewState = { code, lang, dirty: false }
+  $langPill().textContent = lang
+  $editor().value = code
+  document.body.classList.add('split-mode')
+  switchPreviewTab('preview')
+  renderPreview()
+}
+
+function closePreview() {
+  document.body.classList.remove('split-mode')
+}
+
+function switchPreviewTab(tab) {
+  document.querySelectorAll('.preview-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab))
+  document.body.classList.toggle('preview-tab-code', tab === 'code')
+  if (tab === 'code') {
+    setTimeout(() => $editor().focus(), 50)
+  } else {
+    // Always re-sync from the editor when returning to preview — covers the
+    // case where the input-debounce timer fired while still on the code tab
+    // (it sets dirty=false without rendering, since the iframe is hidden).
+    previewState.code = $editor().value
+    previewState.dirty = false
+    renderPreview()
+  }
+}
+
+function refreshPreview() {
+  previewState.code = $editor().value
+  previewState.dirty = false
+  renderPreview()
+}
+
+function renderPreview() {
+  const { code, lang } = previewState
+  $iframe().srcdoc = buildSandboxDoc(code, lang)
+}
+
+function buildSandboxDoc(code, lang) {
+  // The sandboxed iframe runs with allow-scripts but NOT allow-same-origin,
+  // so even a malicious script cannot read this page's DOM or storage.
+  const safe = String(code)
+  if (lang === 'html') {
+    if (/^\s*<!doctype|^\s*<html/i.test(safe)) return safe
+    return `<!doctype html><html><head><meta charset="utf-8"><style>body{font:14px system-ui;padding:16px;}</style></head><body>${safe}</body></html>`
+  }
+  if (lang === 'svg') {
+    return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;}body{display:flex;align-items:center;justify-content:center;background:#fafafa;}svg{max-width:90%;max-height:90%;}</style></head><body>${safe}</body></html>`
+  }
+  if (lang === 'css') {
+    return `<!doctype html><html><head><meta charset="utf-8"><style>${safe}</style></head><body>
+      <h1>Heading</h1>
+      <p>Paragraph with <a href="#">a link</a> and <code>inline code</code>.</p>
+      <button>Button</button>
+      <ul><li>Item one</li><li>Item two</li></ul>
+    </body></html>`
+  }
+  // js / javascript — capture console.log into a visible pre
+  const escaped = safe
+    .replace(/<\/script>/gi, '<\\/script>')
+  return `<!doctype html><html><head><meta charset="utf-8">
+<style>body{font:13px ui-monospace,Consolas,monospace;background:#0e0e18;color:#e2e4f0;margin:0;padding:14px;}
+#out{white-space:pre-wrap;}
+.err{color:#ef4444;}
+</style></head><body><div id="out"></div><script>
+(function(){
+  const out = document.getElementById('out');
+  function show(args, cls) {
+    const line = Array.from(args).map(v => typeof v === 'object' ? (function(){try{return JSON.stringify(v,null,2);}catch(e){return String(v);}})() : String(v)).join(' ');
+    const el = document.createElement('div'); if (cls) el.className = cls; el.textContent = line; out.appendChild(el);
+  }
+  const _log = console.log, _err = console.error, _warn = console.warn;
+  console.log   = function(){ _log.apply(console, arguments); show(arguments); };
+  console.warn  = function(){ _warn.apply(console, arguments); show(arguments, 'err'); };
+  console.error = function(){ _err.apply(console, arguments); show(arguments, 'err'); };
+  window.addEventListener('error', e => show(['Error:', e.message], 'err'));
+  try { ${escaped} } catch (e) { show(['Error:', e && e.message || e], 'err'); }
+})();
+<\/script></body></html>`
+}
+
+function saveCurrentFile() {
+  const code = $editor().value
+  const ext = SAVE_EXT[previewState.lang] || 'txt'
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const filename = `vixcode-${ts}.${ext}`
+  const blob = new Blob([code], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  // Free the object URL after the browser has a chance to use it.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+// Live preview as the user edits (debounced)
+let _editTimer = null
+document.getElementById('preview-editor').addEventListener('input', () => {
+  previewState.dirty = true
+  clearTimeout(_editTimer)
+  _editTimer = setTimeout(() => {
+    previewState.code = $editor().value
+    previewState.dirty = false
+    if (!document.body.classList.contains('preview-tab-code')) renderPreview()
+  }, 400)
+})
+
+// Ctrl/Cmd+S inside the editor → Save File
+document.getElementById('preview-editor').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault()
+    saveCurrentFile()
+  }
 })
 inp.addEventListener('input', () => {
   inp.style.height = 'auto'
