@@ -32,7 +32,7 @@ It ships with **two interfaces**:
 - 🔒 **100% Local** — No API keys, no cloud. Everything runs on your machine via Ollama.
 - 🤖 **Agentic Loop** — Not just chat: the LLM can chain multiple tool calls (read → edit → test) autonomously.
 - 🛡️ **Permission System** — Read-only operations auto-approve; writes & shell commands require your explicit approval.
-- 🔧 **6 Built-in Tools** — `read_file`, `write_file`, `edit_file`, `run_command`, `list_files`, `search_code`
+- 🔧 **17 Built-in Tools** — 6 core file/shell tools (`read_file`, `write_file`, `edit_file`, `run_command`, `list_files`, `search_code`) plus 11 GitLab integration tools
 - 🛡️ **Path Sandboxing** — All file operations are restricted to the workspace directory
 - 🖥️ **Cross-platform** — Windows (PowerShell) and Unix shell support
 - 🌐 **Dual Interface** — Rich terminal REPL (via [Rich](https://github.com/Textualize/rich)) + beautiful dark-mode Web UI
@@ -209,6 +209,22 @@ export GITLAB_PROJECT=group/repo      # optional, auto-detected from `git remote
 
 Read-only tools auto-allow; anything that creates issues/MRs or posts
 comments still goes through vixcode's normal permission prompt.
+
+---
+
+## 📚 Documentation & Guides
+
+We provide several detailed guides (in Korean) to help you understand the architecture, setup, and how Vixcode compares to other open-source tools:
+
+- [AI Coding Agent Open Source Comparison](docs/tips/oss-comparison.md) - Compares Vixcode with Claude Code, Aider, Open Interpreter, and Goose.
+- [Agent Architecture Guide](docs/tips/agent-architecture.md) - Deep dive into how the agent loop works.
+- [Local LLM Setup Guide](docs/tips/local-llm-setup.md) - Best practices for running Ollama locally.
+- [Permission System Guide](docs/tips/permission-system.md) - How to configure read/write/ask permissions.
+- [Tool System Guide](docs/tips/tool-system.md) - How the tools work under the hood.
+
+*Promo Materials:*
+- [Promo Video Script](docs/PROMO_VIDEO.md)
+- [3-Minute Voiceover Script](docs/VOICEOVER_3MIN.md)
 
 ---
 

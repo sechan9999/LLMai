@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLMai (vixcode) — A 100% local AI coding agent</title>
+    <meta name="description" content="An open-source AI coding agent that runs entirely on your machine via Ollama. Reads, writes, and edits files; runs shell commands. No API keys, no telemetry.">
+
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta property="og:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
+    <meta property="og:url" content="https://ll-mai.vercel.app/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta name="twitter:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-glow bg-glow-purple"></div>
+    <div class="bg-glow bg-glow-blue"></div>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <div class="container header-inner">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">vix<span>code</span></div>
+            </div>
+            <nav>
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it works</a>
+                <a href="./promo.html">Demo</a>
+                <a href="#quick-start">Install</a>
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-outline">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-content">
+                <div class="badge">Open Source · MIT · Powered by Ollama</div>
+                <h1 class="hero-title">An AI coding agent <br/><span class="text-gradient">that never leaves your laptop</span></h1>
+                <p class="hero-subtitle">
+                    vixcode plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
+                    Your code stays on disk. No API keys, no logs sent anywhere.
+                </p>
+                <div class="hero-actions">
+                    <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-primary">
+                        View on GitHub
+                    </a>
+                    <a href="#quick-start" class="btn btn-secondary">
+                        Install Locally
+                    </a>
+                </div>
+
+                <!-- Live chat against the user's local Ollama -->
+                <div class="chat-card" id="chat-card">
+                    <div class="chat-status" id="chat-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Looking for Ollama on http://localhost:11434…</span>
+                        <span class="status-model" id="chat-model"></span>
+                    </div>
+
+                    <div class="chat-feed" id="chat-feed">
+                        <div class="chat-empty">
+                            <div class="chat-empty-icon">⚡</div>
+                            <div class="chat-empty-title">Try vixcode in your browser</div>
+                            <div class="chat-empty-sub">Connects to <code>localhost:11434</code> &mdash; nothing leaves your machine.</div>
+                        </div>
+                    </div>
+
+                    <form class="chat-input" onsubmit="event.preventDefault(); sendChat();">
+                        <textarea id="chat-text"
+                                  placeholder="Ask vixcode anything…"
+                                  rows="1"
+                                  autocomplete="off"></textarea>
+                        <button type="submit" id="chat-send" aria-label="Send">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </form>
+
+                    <div class="chat-chips">
+                        <button type="button" class="chip" onclick="useChip(this)">Explain async/await in JS</button>
+                        <button type="button" class="chip" onclick="useChip(this)">Write a Python regex for emails</button>
+                        <button type="button" class="chip" onclick="useChip(this)">REST vs GraphQL trade-offs</button>
+                        <button type="button" class="chip" onclick="useChip(this)">Sort an array in 5 languages</button>
+                    </div>
+                </div>
+
+                <p class="hero-fineprint">
+                    Want full agentic power &mdash; file edits, shell commands, the whole loop?
+                    <a href="#quick-start">Install vixcode locally</a>.
+                </p>
+            </div>
+        </section>
+
+        <section id="features" class="features container">
+            <div class="section-head">
+                <h2>Built for power users who care about privacy</h2>
+                <p>Six tools, two interfaces, one principle: your code never leaves your machine.</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% local</h3>
+                    <p>Runs against a local Ollama instance. No outbound API calls, no telemetry, no account required.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Real agentic loop</h3>
+                    <p>Up to 20 iterations of plan&nbsp;→&nbsp;tool&nbsp;→&nbsp;observe per turn. The model chains reads, edits, and tests on its own &mdash; not just one-shot chat.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Explicit-permission writes</h3>
+                    <p>Reads and searches auto-run. <code>write_file</code>, <code>edit_file</code>, and <code>run_command</code> require explicit approval &mdash; configurable per tool.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Six built-in tools</h3>
+                    <p><code>read_file</code> · <code>write_file</code> · <code>edit_file</code> · <code>list_files</code> · <code>search_code</code> · <code>run_command</code> &mdash; all path-sandboxed to your workspace.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Works with any model</h3>
+                    <p>Native function-calling for Qwen and Llama 3.x; XML-based fallback for Gemma, Phi, and Mistral. The agent picks the right mode automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>CLI <em>and</em> Web UI</h3>
+                    <p>Rich terminal REPL for fast iteration, plus a dark-mode browser UI over WebSocket for visual permission prompts and tool traces.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🖥️</div>
+                    <h3>Cross-platform</h3>
+                    <p>Native PowerShell on Windows, POSIX shell on macOS and Linux. Path traversal and a destructive-command blocklist are enforced everywhere.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Context compression</h3>
+                    <p>When the conversation grows past ~50k tokens, older turns are auto-summarized so long sessions don't blow your model's context window.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <div class="section-head">
+                    <h2>How it works</h2>
+                    <p>A small, readable Python loop &mdash; not a framework.</p>
+                </div>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div>
+                            <h3>You ask in plain language</h3>
+                            <p>Type into the REPL or the Web UI: <em>"add pagination to the products endpoint and update the tests."</em></p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div>
+                            <h3>Ollama plans the next step</h3>
+                            <p>The agent calls your local model with the conversation and a list of tools. The model decides whether to read a file, run a command, or answer.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div>
+                            <h3>Tools run, sandboxed to your workspace</h3>
+                            <p>Read-only tools execute immediately. Anything that mutates state pauses for your approval &mdash; in the terminal or as a card in the Web UI.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div>
+                            <h3>Loop until the task is done</h3>
+                            <p>Tool results feed back into the model. It plans the next step, runs another tool, and repeats up to 20 times until it has a final answer.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="quick-start" class="cta-section">
+            <div class="container cta-container">
+                <h2>Run it locally in under a minute</h2>
+                <p>Pick the install path you prefer. Make sure Ollama is running and a model is pulled.</p>
+
+                <div class="code-box">
+                    <input type="radio" name="qs" id="qs-pip" class="qs-toggle" checked>
+                    <input type="radio" name="qs" id="qs-docker" class="qs-toggle">
+                    <div class="code-box-header">
+                        <label for="qs-pip" class="qs-tab">Python (pip)</label>
+                        <label for="qs-docker" class="qs-tab">Docker</label>
+                    </div>
+                    <pre class="qs-panel qs-panel-pip"><code>git clone https://github.com/sechan9999/LLMai.git
+cd LLMai
+pip install -e .
+
+# In another terminal:
+ollama serve
+ollama pull qwen2.5-coder
+
+# Launch the Web UI (or run `vixcode` for CLI):
+vixcode-server
+# → open http://localhost:7777</code></pre>
+                    <pre class="qs-panel qs-panel-docker"><code>git clone https://github.com/sechan9999/LLMai.git
+cd LLMai
+
+# Make sure Ollama is reachable on the host
+docker compose up -d
+
+# → open http://localhost:7777</code></pre>
+                </div>
+
+                <p class="cta-fineprint">
+                    Need a smaller model? Try <code>ollama pull gemma3:4b</code> &mdash; vixcode auto-detects that Gemma needs the XML tool-calling fallback and switches.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-inner">
+            <div class="logo">
+                <div class="logo-icon small">⚡</div>
+                <div class="logo-text">vix<span>code</span></div>
+            </div>
+            <div class="footer-links">
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/sechan9999/LLMai#readme" target="_blank" rel="noopener">Docs</a>
+                <a href="https://github.com/sechan9999/LLMai/issues" target="_blank" rel="noopener">Report an issue</a>
+                <a href="https://ollama.ai" target="_blank" rel="noopener">Ollama</a>
+            </div>
+            <p class="copyright">&copy; 2026 sechan9999 &middot; MIT Licensed &middot; Alpha</p>
+        </div>
+    </footer>
+
+    <script>
+    // ── In-page chat against the user's local Ollama ───────────────────────
+    // Browsers allow http://localhost from https pages, but Ollama itself
+    // must permit cross-origin requests:
+    //   macOS/Linux: OLLAMA_ORIGINS=https://ll-mai.vercel.app ollama serve
+    //   Windows: $env:OLLAMA_ORIGINS="https://ll-mai.vercel.app"; ollama serve
+    const OLLAMA = 'http://localhost:11434';
+    // Models we prefer to default to, in priority order. First match wins.
+    const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
+
+    let activeModel = null;
+    let chatBusy = false;
+    const SYSTEM = "You are a helpful coding assistant. Be concise. Use Markdown and fenced code blocks for code.";
+    const history = [{ role: 'system', content: SYSTEM }];
+
+    const $status = () => document.getElementById('chat-status');
+    const $feed   = () => document.getElementById('chat-feed');
+    const $text   = () => document.getElementById('chat-text');
+    const $send   = () => document.getElementById('chat-send');
+    const $model  = () => document.getElementById('chat-model');
+
+    function setStatus(state, text, modelName) {
+        const el = $status();
+        el.dataset.state = state; // ok | bad | loading
+        el.querySelector('.status-text').textContent = text;
+        $model().textContent = modelName ? '· ' + modelName : '';
+    }
+
+    async function detectOllama() {
+        setStatus('loading', 'Looking for Ollama on http://localhost:11434…');
+        try {
+            const r = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            const models = (data.models || []).map(m => m.name);
+            if (!models.length) {
+                setStatus('bad', 'Ollama is running but has no models — try `ollama pull qwen2.5-coder`.');
+                return;
+            }
+            // Pick a model: first preferred match, else the first one available
+            activeModel = models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
+            setStatus('ok', 'Connected to local Ollama', activeModel);
+        } catch (e) {
+            setStatus('bad', "Can't reach Ollama. Click for setup help.");
+            $status().style.cursor = 'pointer';
+            $status().onclick = showSetupHelp;
+        }
+    }
+
+    function showSetupHelp() {
+        if (document.getElementById('chat-help-msg')) return;
+        appendMsg('assistant', '__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n1) **Install Ollama**\nmacOS: `brew install ollama`\nWindows/Linux: Download from [ollama.com](https://ollama.com)\n\n2) **Pull a model**\n```bash\nollama pull qwen2.5-coder\n```\n\n3) **Start the server with this origin allowed**\n\n**macOS/Linux:**\n```bash\nOLLAMA_ORIGINS=' + location.origin + ' ollama serve\n```\n\n**Windows (PowerShell):**\n```powershell\n$env:OLLAMA_ORIGINS="' + location.origin + '"\nollama serve\n```\n\n*(Note: Quit the Ollama app from your system tray/taskbar first if it is already running)*\n\nThen reload this page.', 'chat-help-msg');
+    }
+
+    function useChip(btn) {
+        $text().value = btn.textContent;
+        $text().focus();
+    }
+
+    function appendMsg(role, content, id) {
+        // Hide empty-state on first message
+        const empty = $feed().querySelector('.chat-empty');
+        if (empty) empty.remove();
+
+        const row = document.createElement('div');
+        row.className = `chat-msg chat-${role}`;
+        if (id) row.id = id;
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.dataset.raw = content || '';
+        renderInto(bubble, content || '');
+        row.appendChild(bubble);
+        $feed().appendChild(row);
+        $feed().scrollTop = $feed().scrollHeight;
+        return bubble;
+    }
+
+    function renderInto(el, raw) {
+        if (window.marked) {
+            el.innerHTML = marked.parse(raw);
+            if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+        } else {
+            el.textContent = raw;
+        }
+    }
+
+    function appendDelta(bubble, delta) {
+        bubble.dataset.raw += delta;
+        renderInto(bubble, bubble.dataset.raw);
+        $feed().scrollTop = $feed().scrollHeight;
+    }
+
+    async function sendChat() {
+        const txt = $text().value.trim();
+        if (!txt || chatBusy) return;
+
+        chatBusy = true;
+        $send().disabled = true;
+        $text().value = '';
+        $text().style.height = 'auto';
+
+        appendMsg('user', txt);
+        history.push({ role: 'user', content: txt });
+
+        if (!activeModel) {
+            await detectOllama();
+            if (!activeModel) {
+                const existingHelp = document.getElementById('chat-help-msg');
+                if (existingHelp) existingHelp.remove();
+                showSetupHelp();
+                chatBusy = false;
+                $send().disabled = false;
+                $text().focus();
+                return;
+            }
+        }
+
+        const reply = appendMsg('assistant', '');
+
+        try {
+            const resp = await fetch(`${OLLAMA}/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: activeModel,
+                    messages: history,
+                    stream: true,
+                }),
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            let full = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                let idx;
+                while ((idx = buf.indexOf('\n')) >= 0) {
+                    const line = buf.slice(0, idx).trim();
+                    buf = buf.slice(idx + 1);
+                    if (!line || line === 'data: [DONE]') continue;
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const obj = JSON.parse(line.slice(6));
+                        const piece = obj.choices?.[0]?.delta?.content || '';
+                        if (piece) { full += piece; appendDelta(reply, piece); }
+                    } catch { /* ignore partial */ }
+                }
+            }
+            history.push({ role: 'assistant', content: full });
+        } catch (e) {
+            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
+            renderInto(reply, reply.dataset.raw);
+        } finally {
+            chatBusy = false;
+            $send().disabled = false;
+            $text().focus();
+        }
+    }
+
+    // Auto-grow textarea + Enter-to-send
+    document.addEventListener('DOMContentLoaded', () => {
+        const ta = $text();
+        ta.addEventListener('input', () => {
+            ta.style.height = 'auto';
+            ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+        });
+        ta.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+        });
+        if (window.marked) {
+            marked.setOptions({ breaks: true, gfm: true });
+        }
+        detectOllama();
+    });
+    </script>
+</body>
+</html>
