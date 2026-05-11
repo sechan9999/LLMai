@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vixcode-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8089", "--directory", "server/static"],
+      "port": 8089
+    },
+    {
+      "name": "vixcode-landing",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "website"],
+      "port": 8090
+    }
+  ]
+}

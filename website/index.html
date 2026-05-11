@@ -241,6 +241,52 @@
             background: #4ade80;
             box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
         }
+        .status-indicator[data-state="demo"] .status-dot {
+            background: #f59e0b;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+        .status-indicator[data-state="demo"] {
+            border-color: rgba(245, 158, 11, 0.35);
+            background: linear-gradient(90deg, rgba(245,158,11,0.12), var(--surface));
+            color: var(--text-primary);
+        }
+        .status-indicator[data-state="demo"] #chat-model::before {
+            content: 'Demo Mode';
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.18);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            font: 600 9px var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 1px 6px;
+            border-radius: 100px;
+            margin-right: 6px;
+            vertical-align: 1px;
+        }
+
+        /* Top-nav actions wrapper + Clear button */
+        .top-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .clear-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font: 500 12px var(--font-sans);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .clear-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-end);
+            background: var(--surface-hover);
+        }
+
         .status-indicator[data-state="bad"] .status-dot {
             background: #f87171;
             box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
@@ -682,10 +728,10 @@
         <div class="sidebar-header">
             <div class="logo">LLM <span>ai</span></div>
             <nav class="sidebar-nav">
-                <a href="#features" onclick="event.preventDefault(); document.getElementById('features').scrollIntoView({behavior: 'smooth'})">Features</a>
-                <a href="#how-it-works" onclick="event.preventDefault(); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">How it works</a>
+                <a href="#features" onclick="event.preventDefault(); scrollToSection('features')">Features</a>
+                <a href="#how-it-works" onclick="event.preventDefault(); scrollToSection('how-it-works')">How it works</a>
                 <a href="./promo.html" target="_blank">Demo</a>
-                <a href="#install" onclick="event.preventDefault(); document.getElementById('install').scrollIntoView({behavior: 'smooth'})">Install</a>
+                <a href="#install" onclick="event.preventDefault(); scrollToSection('install')">Install</a>
                 <a href="https://github.com/sechan9999/LLMai" target="_blank" class="nav-github">GitHub</a>
             </nav>
         </div>
@@ -711,9 +757,12 @@
     <main class="main-content">
         <header class="top-nav">
             <div class="logo">LLM <span>ai</span></div>
-            <div class="status-indicator" id="chat-status" data-state="loading" onclick="showSetupHelp()">
-                <span class="status-dot"></span>
-                <span id="chat-model">Connecting to Ollama...</span>
+            <div class="top-nav-actions">
+                <button type="button" class="clear-btn" id="clear-chat-btn" onclick="clearChat()" title="Clear conversation">✕ Clear</button>
+                <div class="status-indicator" id="chat-status" data-state="loading" onclick="showSetupHelp()">
+                    <span class="status-dot"></span>
+                    <span id="chat-model">Connecting to Ollama...</span>
+                </div>
             </div>
         </header>
 
@@ -857,6 +906,8 @@ vixcode-server</div>
 
     let activeModel = null;
     let chatBusy = false;
+    let demoMode = false;            // true → no Ollama; canned replies via DEMO_REPLIES
+    const STORAGE_KEY = 'llmai.chat.v1';
     const SYSTEM = "You are a highly capable AI coding assistant and Web IDE. You write HTML, SVG, CSS, and Javascript. When you output code, provide complete, runnable blocks because the user can preview and execute them in a real-time web sandbox. You act as a 'Write' tool (saving code) and 'CreateDocument' tool (generating UI). Focus on workflow-centric results.";
     const history = [{ role: 'system', content: SYSTEM }];
 
@@ -882,14 +933,22 @@ vixcode-server</div>
             const data = await r.json();
             const models = (data.models || []).map(m => m.name);
             if (!models.length) {
-                setStatus('bad', 'Ollama has no models (click)');
+                demoMode = true;
+                activeModel = 'demo';
+                setStatus('demo', 'Demo Mode — no models found');
+                $send().disabled = false;
                 return;
             }
+            demoMode = false;
             activeModel = models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
             setStatus('ok', activeModel);
             $send().disabled = false;
         } catch (e) {
-            setStatus('bad', "Can't reach Ollama (click)");
+            // Drop into demo mode instead of leaving the page useless.
+            demoMode = true;
+            activeModel = 'demo';
+            setStatus('demo', 'Demo Mode — install Ollama for real chat');
+            $send().disabled = false;
         }
     }
 
@@ -1001,18 +1060,33 @@ vixcode-server</div>
 
         appendMsg('user', txt);
         history.push({ role: 'user', content: txt });
+        saveHistory();
 
         if (!activeModel) {
             await detectOllama();
-            if (!activeModel) {
-                const existingHelp = document.getElementById('chat-help-msg');
-                if (existingHelp) existingHelp.remove();
-                showSetupHelp();
-                chatBusy = false;
-                $send().disabled = false;
-                $text().focus();
-                return;
-            }
+        }
+
+        // ── Canned-reply path ─────────────────────────────────────────────
+        // Trigger when:
+        //   1. we're in demo mode (no Ollama → only canned replies available), OR
+        //   2. the prompt exactly matches one of the 8 chip labels.
+        // The chip prompts are intentionally short ("Tech comparison report")
+        // and small local models can't infer the intent from three words —
+        // they tend to reply with "I need more information…". Routing those
+        // exact prompts through the curated DEMO_REPLIES keeps the showcase
+        // chips reliable regardless of which model the user has installed.
+        // Custom text typed by the user still goes to the live model.
+        const cannedReply = DEMO_REPLIES[txt];
+        if (demoMode || cannedReply) {
+            const reply = appendMsg('assistant', '');
+            const body = cannedReply || DEMO_FALLBACK;
+            await typeOut(reply, body, 6);
+            history.push({ role: 'assistant', content: body });
+            saveHistory();
+            chatBusy = false;
+            $send().disabled = false;
+            $text().focus();
+            return;
         }
 
         const reply = appendMsg('assistant', '');
@@ -1051,6 +1125,7 @@ vixcode-server</div>
                 }
             }
             history.push({ role: 'assistant', content: full });
+            saveHistory();
         } catch (e) {
             reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
             renderInto(reply, reply.dataset.raw);
@@ -1061,6 +1136,84 @@ vixcode-server</div>
             scrollToBottom();
         }
     }
+
+    // ── Demo-mode canned replies (one per chip + a generic fallback) ───────
+    const DEMO_REPLIES = {
+        "Build a landing page": "Here's a complete, drop-in landing page — paste into a `.html` file and open in a browser:\n\n```html\n<!doctype html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>Acme — ship faster</title>\n<style>\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font:16px/1.5 system-ui,sans-serif;background:#0b0b14;color:#e6e7ee;text-align:center}\n.hero{padding:96px 20px}\nh1{font-size:clamp(36px,6vw,72px);font-weight:800;letter-spacing:-2px;margin-bottom:20px}\nh1 span{background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;color:transparent}\np{font-size:18px;color:#a8aac0;max-width:560px;margin:0 auto 32px}\na.btn{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border-radius:10px;text-decoration:none;font-weight:600}\n</style></head>\n<body>\n  <section class=\"hero\">\n    <h1>Ship <span>faster</span>.</h1>\n    <p>Acme bundles every tool your team needs into one workspace. No context-switching, no integrations to babysit.</p>\n    <a class=\"btn\" href=\"#\">Start free</a>\n  </section>\n</body>\n</html>\n```\n\nClick **▶ Preview / Run** on the block to see it instantly.",
+        "Find AI tools": "Curated set I'd reach for in early 2026, by job-to-be-done:\n\n- **Local LLM runtime** — [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), [llama.cpp](https://github.com/ggerganov/llama.cpp)\n- **Coding agents** — LLM ai (this project), [Aider](https://aider.chat), [Continue](https://continue.dev)\n- **Code search / embeddings** — [Sourcegraph Cody](https://sourcegraph.com/cody), [Voyage AI](https://voyageai.com)\n- **Eval / observability** — [Arize Phoenix](https://phoenix.arize.com), [Langfuse](https://langfuse.com)\n- **Voice / transcription** — [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), [Deepgram](https://deepgram.com)\n- **Web automation** — [Browserbase](https://browserbase.com), [Playwright + LLM](https://playwright.dev)\n\nPair LLM ai (local agent) with Phoenix (local trace viewer) for an entirely on-device dev loop.",
+        "Project proposal": "Here's a one-page proposal template — keep it short and skimmable:\n\n```markdown\n# Project: <name>\n\n**Sponsor:** <person>  **Lead:** <person>  **Timeline:** <weeks>\n\n## Problem\nOne paragraph. What's broken, who feels it, what's the cost of doing nothing.\n\n## Outcome\n3 bullets. Specific, measurable, dated.\n- e.g. \"Onboarding time drops from 4 days to 1 by Q3.\"\n\n## Approach\n3–5 bullets. The shape of the work, not the implementation details.\n\n## Risks & mitigations\n| Risk | Likelihood | Mitigation |\n|------|------------|-----------|\n| ... | M | ... |\n\n## Milestones\n- Week 2 — spike done\n- Week 4 — alpha to 5 users\n- Week 8 — GA\n\n## Out of scope\nName the obvious things you are NOT doing. Saves arguments later.\n```\n\nWith Ollama running, the agent can fill this in from a short brief and write it to `docs/proposals/<name>.md` for you.",
+        "Search latest news": "This page is sandboxed and can't fetch live news from the browser. With Ollama running, LLM ai can use `run_command` to call a public API and summarize:\n\n```bash\n# What the agent would run for you:\ncurl -s 'https://hn.algolia.com/api/v1/search?tags=front_page' \\\n  | jq -r '.hits[0:5] | .[] | \"- \\(.title) — \\(.url)\"'\n```\n\nInstall Ollama and ask: *\"summarize the top 5 Hacker News stories right now.\"*",
+        "Sales analysis Excel": "Self-contained Python — drop next to your CSV and run `python sales_report.py`:\n\n```python\nimport pandas as pd\nfrom openpyxl import Workbook\nfrom openpyxl.chart import BarChart, Reference\nfrom openpyxl.styles import Font, PatternFill\n\ndf = pd.read_csv('sales.csv', parse_dates=['date'])\ndf['month'] = df['date'].dt.to_period('M').astype(str)\n\nby_month  = df.groupby('month')['amount'].sum().reset_index()\nby_region = df.groupby('region')['amount'].sum().sort_values(ascending=False).reset_index()\n\nwb = Workbook()\nws = wb.active; ws.title = 'Monthly'\nws.append(['Month', 'Total'])\nfor _, r in by_month.iterrows():\n    ws.append([r['month'], float(r['amount'])])\nfor c in ws[1]:\n    c.font = Font(bold=True); c.fill = PatternFill('solid', fgColor='3B82F6')\n\nchart = BarChart(); chart.title = 'Sales by month'\nchart.add_data(Reference(ws, min_col=2, min_row=1, max_row=ws.max_row), titles_from_data=True)\nchart.set_categories(Reference(ws, min_col=1, min_row=2, max_row=ws.max_row))\nws.add_chart(chart, 'D2')\n\nws2 = wb.create_sheet('Region')\nws2.append(['Region', 'Total'])\nfor _, r in by_region.iterrows():\n    ws2.append([r['region'], float(r['amount'])])\n\nwb.save('sales_report.xlsx')\nprint('Wrote sales_report.xlsx')\n```\n\nLLM ai would normally read `sales.csv` first to confirm the columns, then write this script and run it — all behind a permission prompt.",
+        "Build a dashboard": "Single-file dashboard. Save as `dashboard.html` and open — no build step:\n\n```html\n<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Ops dashboard</title>\n<style>\nbody{font:14px system-ui;margin:0;padding:24px;background:#0b0b14;color:#e6e7ee}\nh1{font-weight:700;margin-bottom:18px}\n.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}\n.card{background:#18181b;border:1px solid #27272a;border-radius:12px;padding:18px}\n.label{color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:.5px}\n.num{font:700 32px system-ui;margin:6px 0 4px}\n.delta{font-size:12px}\n.up{color:#4ade80}.down{color:#ef4444}\nsvg{width:100%;height:48px;margin-top:6px}\n</style></head><body>\n<h1>Last 30 days</h1>\n<div class=\"grid\">\n  <div class=\"card\"><div class=\"label\">Revenue</div><div class=\"num\">$48.2k</div><div class=\"delta up\">▲ 12.4%</div></div>\n  <div class=\"card\"><div class=\"label\">Active users</div><div class=\"num\">8,142</div><div class=\"delta up\">▲ 3.1%</div></div>\n  <div class=\"card\"><div class=\"label\">Churn</div><div class=\"num\">2.7%</div><div class=\"delta down\">▼ 0.4 pp</div></div>\n  <div class=\"card\"><div class=\"label\">NPS</div><div class=\"num\">+38</div><div class=\"delta up\">▲ 5</div></div>\n  <div class=\"card\" style=\"grid-column:span 2\"><div class=\"label\">Daily signups</div>\n    <svg viewBox=\"0 0 200 50\" preserveAspectRatio=\"none\">\n      <polyline fill=\"none\" stroke=\"#3b82f6\" stroke-width=\"2\" points=\"0,42 14,38 28,40 42,30 56,32 70,24 84,28 98,20 112,18 126,12 140,16 154,10 168,8 182,12 196,6\"/>\n    </svg>\n  </div>\n</div></body></html>\n```\n\nReplace the static numbers with `fetch()` calls to your API and it's a real dashboard in ~40 lines.",
+        "Create a slide deck": "Markdown outline ready for [Marp](https://marp.app), [Slidev](https://sli.dev), or reveal.js:\n\n```markdown\n---\nmarp: true\ntheme: default\npaginate: true\n---\n\n# LLM ai\nA local AI coding agent that never leaves your laptop.\n\n---\n\n## The problem\n- Code gets uploaded to vendor GPUs\n- Vendor lock-in, latency, cost\n- Privacy & compliance friction\n\n---\n\n## What LLM ai is\n- 100% local via Ollama (Gemini optional)\n- Real agentic loop, up to 20 iterations\n- 17 tools (6 file/shell + 11 GitLab)\n- Path-sandboxed, permission-gated, MIT licensed\n\n---\n\n## The money shot\n\"Fix the failing pipeline on MR !42\":\n1. `gitlab_get_mr` + `gitlab_get_job_log`\n2. `read_file` + `edit_file` (approved)\n3. `run_command(git push)`\n4. `gitlab_create_mr` → !43 opened\n\n---\n\n## Try it\n```bash\ngit clone https://github.com/sechan9999/LLMai\ncd LLMai && pip install -e .\nollama serve && vixcode-server\n```\n```\n\nWith Ollama, the agent can render this to PDF via `marp-cli` for you.",
+        "Tech comparison report": "Snapshot of the local-AI-coding-agent space in 2026:\n\n| Tool | Backend | Agent loop | File ops | Shell exec | License | Local-only |\n|------|---------|-----------|----------|-----------|---------|-----------|\n| **LLM ai** (this) | Ollama / Gemini | up to 20 iter | yes | yes (gated) | MIT | yes |\n| Aider | OpenAI / Anthropic | yes | yes | partial | Apache-2 | no |\n| Continue.dev | any provider | partial | yes | yes | Apache-2 | yes (with local model) |\n| Cursor | proprietary | yes | yes | yes | proprietary | no |\n| Cody | Sourcegraph cloud | partial | yes | no | Apache-2 | no |\n| GitHub Copilot Workspace | OpenAI | yes | yes | yes | proprietary | no |\n\n**Why pick LLM ai:** the *only* MIT-licensed, agentic, local-by-default option that also gives you a browser Web IDE for instant preview. Honest trade-off: smaller models than the frontier — fine for most refactors, less suited to brand-new architecture work.",
+    };
+
+    const DEMO_FALLBACK = "**Demo mode** — this page is replying from a small canned-response set. For a real answer from a local model, install Ollama and reload:\n\n```bash\nbrew install ollama          # or: https://ollama.com\nollama pull qwen2.5-coder\nOLLAMA_ORIGINS=" + (typeof location !== 'undefined' ? location.origin : '<this-page>') + " ollama serve\n```\n\nWith Ollama running, the same chat box will stream replies from your local model.";
+
+    // Fake-stream canned text so demo mode feels like real Ollama streaming.
+    async function typeOut(bubble, fullText, charsPerTick) {
+        const step = Math.max(2, charsPerTick || 4);
+        for (let i = 0; i < fullText.length; i += step) {
+            appendDelta(bubble, fullText.slice(i, i + step));
+            await new Promise(r => setTimeout(r, 14));
+        }
+    }
+
+    // ── Conversation persistence (localStorage) ───────────────────────────
+    function saveHistory() {
+        try {
+            // Drop the system prompt; only save user/assistant turns.
+            const persistable = history.slice(1);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+        } catch (_) { /* quota or private-mode — ignore */ }
+    }
+
+    function restoreHistory() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const msgs = JSON.parse(raw);
+            if (!Array.isArray(msgs) || !msgs.length) return;
+            for (const m of msgs) {
+                if (m.role === 'user' || m.role === 'assistant') {
+                    history.push({ role: m.role, content: m.content });
+                    appendMsg(m.role, m.content);
+                }
+            }
+        } catch (_) { /* corrupt entry — ignore */ }
+    }
+
+    window.clearChat = function() {
+        history.length = 1;       // keep only system prompt
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        // Wipe the rendered feed and restore the welcome screen.
+        const feed = $feed();
+        if (feed) {
+            feed.innerHTML = '';
+            feed.style.display = 'none';
+        }
+        if ($welcome()) $welcome().style.display = '';
+    };
+
+    // Sidebar nav (#features, #how-it-works, #install) target sections that
+    // live INSIDE the welcome-screen. Once a chat starts, welcome-screen is
+    // hidden — so a raw scrollIntoView lands on a 0×0 hidden element. Swap
+    // back to the welcome view first, then scroll. The chat history is
+    // preserved in memory + localStorage; sending another message or
+    // tapping a chip restores the feed via appendMsg().
+    window.scrollToSection = function(id) {
+        const welcome = $welcome();
+        const feed = $feed();
+        if (welcome) welcome.style.display = '';
+        if (feed) feed.style.display = 'none';
+        requestAnimationFrame(() => {
+            const el = document.getElementById(id);
+            if (el && el.scrollIntoView) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    };
 
     let currentArtifactCode = '';
     let currentArtifactLang = '';
@@ -1139,6 +1292,7 @@ vixcode-server</div>
         if (window.marked) {
             marked.setOptions({ breaks: true, gfm: true });
         }
+        restoreHistory();
         detectOllama();
     });
     </script>
