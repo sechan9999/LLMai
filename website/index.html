@@ -242,6 +242,9 @@
 
         .pill[data-state="ok"] .dot { background: var(--green); }
         .pill[data-state="bad"] .dot { background: var(--red); }
+        .pill[data-state="cloud"] .dot { background: var(--blue); }
+        .mode-label[data-mode="cloud"] { color: var(--blue); }
+        .mode-label[data-mode="cloud"] .dot { background: var(--blue); }
 
         .top-actions {
             display: flex;
@@ -823,7 +826,7 @@
                                 <div class="composer-box">
                                     <textarea id="chat-text" rows="2" placeholder="Ask a local model, or click a prompt above"></textarea>
                                     <div class="composer-actions">
-                                        <span class="mode-label"><span class="dot"></span> Local-first mode</span>
+                                        <span class="mode-label" id="mode-label" data-mode="local"><span class="dot"></span> <span id="mode-label-text">Local-first mode</span></span>
                                         <button id="chat-send" class="send" type="button" onclick="sendChat()" aria-label="Send">↑</button>
                                     </div>
                                 </div>
@@ -944,9 +947,11 @@ vixcode-server
 
     <script>
     const OLLAMA = 'http://localhost:11434';
+    const CLOUD_API = '/api/chat';
     const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
     const SYSTEM = "You are LLM ai, a privacy-first enterprise AI assistant. Be concise, practical, and explicit about privacy, tool risk, and cost tradeoffs. Use Markdown when helpful.";
 
+    let mode = 'unknown'; // 'local' | 'cloud' | 'unavailable'
     let activeModel = null;
     let chatBusy = false;
     const history = [{ role: 'system', content: SYSTEM }];
@@ -956,28 +961,68 @@ vixcode-server
     const $feed = () => document.getElementById('chat-feed');
     const $text = () => document.getElementById('chat-text');
     const $send = () => document.getElementById('chat-send');
+    const $modeLabel = () => document.getElementById('mode-label');
+    const $modeText = () => document.getElementById('mode-label-text');
 
     function setStatus(state, text) {
         $status().dataset.state = state;
         $model().textContent = text;
     }
 
-    async function detectOllama() {
-        setStatus('loading', 'Checking local Ollama');
+    function setMode(next, modelName) {
+        mode = next;
+        if (next === 'local') {
+            activeModel = modelName;
+            setStatus('ok', `Local model: ${modelName}`);
+            $modeLabel().dataset.mode = 'local';
+            $modeText().textContent = 'Local-first mode';
+        } else if (next === 'cloud') {
+            activeModel = modelName;
+            setStatus('cloud', `Cloud demo · ${modelName}`);
+            $modeLabel().dataset.mode = 'cloud';
+            $modeText().textContent = 'Cloud demo · prompts leave your machine';
+        } else {
+            activeModel = null;
+            setStatus('bad', 'Setup help: connect Ollama');
+            $modeLabel().dataset.mode = 'local';
+            $modeText().textContent = 'Local-first mode';
+        }
+    }
+
+    async function tryOllama() {
         try {
             const response = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
-            if (!response.ok) throw new Error('HTTP ' + response.status);
+            if (!response.ok) return null;
             const data = await response.json();
-            const models = (data.models || []).map(model => model.name);
-            if (!models.length) {
-                setStatus('bad', 'Ollama has no models');
-                return;
-            }
-            activeModel = models.find(model => PREFERRED.some(preferred => model.startsWith(preferred))) || models[0];
-            setStatus('ok', `Local model: ${activeModel}`);
-        } catch (error) {
-            setStatus('bad', 'Setup help: connect Ollama');
+            const models = (data.models || []).map(m => m.name);
+            if (!models.length) return null;
+            return models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
+        } catch {
+            return null;
         }
+    }
+
+    async function tryCloud() {
+        try {
+            const response = await fetch(CLOUD_API, { method: 'GET' });
+            if (!response.ok) return null;
+            const info = await response.json();
+            return info && info.available ? (info.model || 'cloud') : null;
+        } catch {
+            return null;
+        }
+    }
+
+    async function detectBackend() {
+        setStatus('loading', 'Checking local Ollama');
+        const localModel = await tryOllama();
+        if (localModel) { setMode('local', localModel); return; }
+
+        setStatus('loading', 'Checking cloud demo');
+        const cloudModel = await tryCloud();
+        if (cloudModel) { setMode('cloud', cloudModel); return; }
+
+        setMode('unavailable');
     }
 
     function detectPlatform() {
@@ -1000,21 +1045,21 @@ vixcode-server
             : `\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``;
         const label = platform === 'windows' ? 'Windows (PowerShell)' : platform === 'macos' ? 'macOS' : 'Linux';
 
-        appendMsg('assistant', `__Local Ollama is not reachable from this browser.__
+        appendMsg('assistant', `__No model is reachable.__
 
-To enable private in-browser chat:
+The hosted cloud demo is not configured on this deployment, and local Ollama isn't responding either.
 
-1. Install Ollama and pull a model:
+For private in-browser chat, install Ollama and pull a model:
 
 \`\`\`bash
 ollama pull qwen2.5-coder
 \`\`\`
 
-2. Start Ollama with this hosted origin allowed — detected: **${label}**
+Then start Ollama with this origin allowed — detected: **${label}**
 
 ${serveCmd}
 
-Then reload this page.`, 'setup-help');
+Reload this page once Ollama is running.`, 'setup-help');
     }
 
     function useChip(button) {
@@ -1058,6 +1103,36 @@ Then reload this page.`, 'setup-help');
         $feed().scrollTop = $feed().scrollHeight;
     }
 
+    async function streamChatCompletions(response, bubble) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let full = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let index;
+            while ((index = buffer.indexOf('\n')) >= 0) {
+                const line = buffer.slice(0, index).trim();
+                buffer = buffer.slice(index + 1);
+                if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue;
+                try {
+                    const payload = JSON.parse(line.slice(6));
+                    const piece = payload.choices?.[0]?.delta?.content || '';
+                    if (piece) {
+                        full += piece;
+                        appendDelta(bubble, piece);
+                    }
+                } catch {
+                    /* Skip incomplete chunks. */
+                }
+            }
+        }
+        return full;
+    }
+
     async function sendChat() {
         const prompt = $text().value.trim();
         if (!prompt || chatBusy) return;
@@ -1070,67 +1145,47 @@ Then reload this page.`, 'setup-help');
         appendMsg('user', prompt);
         history.push({ role: 'user', content: prompt });
 
-        if (!activeModel) {
-            await detectOllama();
-            if (!activeModel) {
-                showSetupHelp();
-                chatBusy = false;
-                $send().disabled = false;
-                $text().focus();
-                return;
-            }
+        if (mode === 'unknown' || mode === 'unavailable') {
+            await detectBackend();
+        }
+
+        if (mode === 'unavailable') {
+            showSetupHelp();
+            chatBusy = false;
+            $send().disabled = false;
+            $text().focus();
+            return;
         }
 
         const reply = appendMsg('assistant', '');
 
         try {
-            const response = await fetch(`${OLLAMA}/v1/chat/completions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: activeModel,
-                    messages: history,
-                    stream: true
-                })
-            });
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let full = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                let index;
-                while ((index = buffer.indexOf('\n')) >= 0) {
-                    const line = buffer.slice(0, index).trim();
-                    buffer = buffer.slice(index + 1);
-                    if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue;
-                    try {
-                        const payload = JSON.parse(line.slice(6));
-                        const piece = payload.choices?.[0]?.delta?.content || '';
-                        if (piece) {
-                            full += piece;
-                            appendDelta(reply, piece);
-                        }
-                    } catch {
-                        /* Ignore incomplete stream chunks. */
-                    }
-                }
+            let response;
+            if (mode === 'local') {
+                response = await fetch(`${OLLAMA}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: activeModel, messages: history, stream: true }),
+                });
+            } else {
+                response = await fetch(CLOUD_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: history }),
+                });
             }
+
+            if (!response.ok) {
+                const detail = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status}${detail ? ' — ' + detail.slice(0, 200) : ''}`);
+            }
+
+            const full = await streamChatCompletions(response, reply);
             history.push({ role: 'assistant', content: full });
         } catch (error) {
-            reply.dataset.raw = `__Request failed:__ ${error.message}
-
-If this is a CORS error, restart Ollama with this site allowed:
-
-\`\`\`powershell
-$env:OLLAMA_ORIGINS="${location.origin}"
-ollama serve
-\`\`\``;
+            reply.dataset.raw = mode === 'local'
+                ? `__Local request failed:__ ${error.message}\n\nIf this is a CORS error, restart Ollama with this site allowed:\n\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``
+                : `__Cloud demo request failed:__ ${error.message}\n\nThe hosted demo may be rate-limited or temporarily unavailable. You can still run LLM ai locally — see the install section below.`;
             renderInto(reply, reply.dataset.raw);
         } finally {
             chatBusy = false;
@@ -1185,7 +1240,7 @@ ollama serve
         });
         if (window.marked) marked.setOptions({ breaks: true, gfm: true });
         animateMeters();
-        detectOllama();
+        detectBackend();
     });
     </script>
 </body>

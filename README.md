@@ -286,6 +286,25 @@ All other models (e.g., `gemma3`, `phi3`, `mistral`) use an XML-based tool-calli
 
 ---
 
+## 🌐 Hosted demo (Vercel) — optional cloud fallback
+
+The marketing site at [ll-mai.vercel.app](https://ll-mai.vercel.app/) ships with a live chat widget. Local Ollama is always tried first; if no local backend is reachable, the page falls back to a Vercel serverless function (`api/chat.js`) that proxies to Groq.
+
+The status pill and composer label switch to **"Cloud demo · prompts leave your machine"** whenever the cloud path is active, so visitors see the privacy tradeoff explicitly.
+
+To enable the cloud fallback on your own fork:
+
+1. Get a free API key at [console.groq.com](https://console.groq.com/keys).
+2. In the Vercel project settings, add an environment variable:
+   - **Name:** `GROQ_API_KEY`
+   - **Value:** your key
+   - (Optional) `GROQ_MODEL` — defaults to `llama-3.3-70b-versatile`.
+3. Redeploy. The serverless function will report `available: true` from `GET /api/chat`, and the browser will route fallback requests there.
+
+If `GROQ_API_KEY` is not set, the endpoint returns `available: false` and the UI prompts the visitor to install Ollama locally — there is no silent cloud egress.
+
+---
+
 ## 📜 License
 
 MIT
