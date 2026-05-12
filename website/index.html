@@ -1,956 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM ai - Enterprise AI without leaks or overspending</title>
-    <meta name="description" content="LLM ai is a local-first enterprise AI workspace that keeps code on your machine, routes tasks to affordable models, and asks before risky actions.">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="LLM ai - Enterprise AI without leaks or overspending">
-    <meta property="og:description" content="A local-first AI coding workspace with privacy gates, cost-aware model routing, and explicit permission controls.">
-    <meta property="og:url" content="https://ll-mai.vercel.app/">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LLM ai - Enterprise AI without leaks or overspending">
-    <meta name="twitter:description" content="A local-first AI coding workspace with privacy gates, cost-aware model routing, and explicit permission controls.">
-    <meta name="theme-color" content="#07090c">
-    <link rel="canonical" href="https://ll-mai.vercel.app/">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2346d39a'/%3E%3Cstop offset='1' stop-color='%236aa9ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='42' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='32' font-weight='800' text-anchor='middle' fill='%23071014'%3EL%3C/text%3E%3C/svg%3E">
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "LLM ai",
-      "url": "https://ll-mai.vercel.app/",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Windows, macOS, Linux",
-      "description": "Local-first enterprise AI workspace with privacy gates, cost-aware model routing, and explicit permission controls.",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "codeRepository": "https://github.com/sechan9999/LLMai",
-      "license": "https://opensource.org/licenses/MIT"
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM ai — Local AI Coding Agent</title>
+  <meta name="description" content="Privacy-first local AI coding agent powered by Ollama. Runs on your machine, no API keys required.">
+  <meta property="og:title" content="LLM ai — Local AI Coding Agent">
+  <meta property="og:description" content="Privacy-first local AI coding agent. Runs locally via Ollama with permission gates for writes and shell commands.">
+  <meta property="og:url" content="https://ll-mai.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#07090c">
+  <link rel="canonical" href="https://ll-mai.vercel.app/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2346d39a'/%3E%3Cstop offset='1' stop-color='%236aa9ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='42' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='32' font-weight='800' text-anchor='middle' fill='%23071014'%3EL%3C/text%3E%3C/svg%3E">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LLM ai","url":"https://ll-mai.vercel.app/","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"codeRepository":"https://github.com/sechan9999/LLMai"}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    :root {
+      --bg:    #07090c;
+      --p1:    #101419;
+      --p2:    #151b22;
+      --p3:    #1d2630;
+      --line:  #26313d;
+      --text:  #f5f7fa;
+      --muted: #aab4c0;
+      --quiet: #758293;
+      --green: #46d39a;
+      --blue:  #6aa9ff;
+      --amber: #f6c56f;
+      --red:   #ff7b8a;
+      --r: 8px;
+      --sans: "Inter", system-ui, sans-serif;
+      --mono: "JetBrains Mono", Consolas, monospace;
     }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <style>
-        :root {
-            --bg: #07090c;
-            --panel: #101419;
-            --panel-2: #151b22;
-            --panel-3: #1d2630;
-            --line: #26313d;
-            --line-soft: rgba(255,255,255,.08);
-            --text: #f5f7fa;
-            --muted: #aab4c0;
-            --quiet: #758293;
-            --green: #46d39a;
-            --green-soft: rgba(70,211,154,.12);
-            --blue: #6aa9ff;
-            --blue-soft: rgba(106,169,255,.14);
-            --amber: #f6c56f;
-            --amber-soft: rgba(246,197,111,.12);
-            --red: #ff7b8a;
-            --red-soft: rgba(255,123,138,.12);
-            --purple: #b993ff;
-            --shadow: 0 24px 60px rgba(0,0,0,.42);
-            --radius: 8px;
-            --sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-        }
-
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background:
-                linear-gradient(135deg, rgba(70,211,154,.06), transparent 30%),
-                linear-gradient(215deg, rgba(106,169,255,.08), transparent 36%),
-                var(--bg);
-            color: var(--text);
-            font-family: var(--sans);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-            background-size: 44px 44px;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 72%);
-            z-index: -1;
-        }
-
-        a { color: inherit; text-decoration: none; }
-        button, textarea { font: inherit; }
-        code { font-family: var(--mono); }
-
-        .skip-link {
-            position: absolute;
-            left: 12px;
-            top: -40px;
-            background: var(--text);
-            color: #071014;
-            padding: 8px 14px;
-            border-radius: var(--radius);
-            font-weight: 700;
-            z-index: 100;
-            transition: top .15s ease;
-        }
-        .skip-link:focus { top: 12px; outline: 2px solid var(--green); }
-
-        .meter span {
-            transition: width 900ms cubic-bezier(.22,.61,.36,1);
-        }
-        .meter.animated span { width: var(--target, 0%) !important; }
-        @media (prefers-reduced-motion: reduce) {
-            .meter span { transition: none; }
-        }
-
-        .panel-note {
-            margin-top: 8px;
-            color: var(--quiet);
-            font: 500 11px var(--mono);
-            letter-spacing: .02em;
-        }
-
-        .shell {
-            width: min(1440px, 100%);
-            margin: 0 auto;
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-        }
-
-        .sidebar {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            padding: 24px;
-            border-right: 1px solid var(--line-soft);
-            background: rgba(9,12,16,.78);
-            backdrop-filter: blur(16px);
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            letter-spacing: -.03em;
-            font-size: 20px;
-        }
-
-        .brand-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(135deg, var(--green), var(--blue));
-            color: #071014;
-            font: 800 18px var(--mono);
-        }
-
-        .nav {
-            display: grid;
-            gap: 8px;
-        }
-
-        .nav a {
-            color: var(--muted);
-            padding: 9px 10px;
-            border-radius: var(--radius);
-            font-size: 14px;
-        }
-
-        .nav a:hover {
-            color: var(--text);
-            background: var(--panel-2);
-        }
-
-        .side-card {
-            margin-top: auto;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 16px;
-        }
-
-        .side-card p {
-            margin: 8px 0 14px;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.55;
-        }
-
-        .side-stat {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            padding: 9px 0;
-            border-top: 1px solid var(--line-soft);
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .side-stat strong { color: var(--text); font-weight: 700; }
-
-        .main {
-            min-width: 0;
-            padding: 28px clamp(20px, 4vw, 56px) 56px;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            margin-bottom: 34px;
-        }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid var(--line);
-            background: rgba(21,27,34,.76);
-            color: var(--muted);
-            padding: 7px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 650;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--amber);
-            box-shadow: 0 0 16px currentColor;
-        }
-
-        .pill[data-state="ok"] .dot { background: var(--green); }
-        .pill[data-state="bad"] .dot { background: var(--red); }
-        .pill[data-state="cloud"] .dot { background: var(--blue); }
-        .mode-label[data-mode="cloud"] { color: var(--blue); }
-        .mode-label[data-mode="cloud"] .dot { background: var(--blue); }
-
-        .top-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 38px;
-            padding: 0 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--line);
-            background: var(--panel-2);
-            color: var(--text);
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn:hover { border-color: rgba(255,255,255,.2); background: var(--panel-3); }
-        .btn-primary { background: #f5f7fa; color: #071014; border-color: #f5f7fa; }
-        .btn-primary:hover { background: var(--green); border-color: var(--green); }
-
-        .hero {
-            display: grid;
-            grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr);
-            gap: clamp(24px, 4vw, 52px);
-            align-items: center;
-            min-height: calc(100vh - 130px);
-        }
-
-        .eyebrow {
-            color: var(--green);
-            font: 700 12px var(--mono);
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            margin-bottom: 18px;
-        }
-
-        h1 {
-            margin: 0;
-            max-width: 760px;
-            font-size: clamp(42px, 6vw, 82px);
-            line-height: .96;
-            letter-spacing: -.065em;
-        }
-
-        .lead {
-            max-width: 660px;
-            color: var(--muted);
-            font-size: clamp(17px, 1.6vw, 21px);
-            line-height: 1.6;
-            margin: 24px 0 28px;
-        }
-
-        .hero-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 28px;
-        }
-
-        .proof-strip {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            max-width: 690px;
-        }
-
-        .proof {
-            border: 1px solid var(--line);
-            background: rgba(16,20,25,.72);
-            border-radius: var(--radius);
-            padding: 13px;
-        }
-
-        .proof strong {
-            display: block;
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
-
-        .proof span {
-            color: var(--quiet);
-            font-size: 12px;
-            line-height: 1.35;
-        }
-
-        .workspace {
-            background: rgba(16,20,25,.9);
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .workspace-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--line);
-            background: #0b0f13;
-        }
-
-        .window-dots {
-            display: flex;
-            gap: 7px;
-        }
-
-        .window-dots span {
-            width: 11px;
-            height: 11px;
-            border-radius: 50%;
-            background: var(--line);
-        }
-
-        .window-dots span:nth-child(1) { background: #ff7b8a; }
-        .window-dots span:nth-child(2) { background: #f6c56f; }
-        .window-dots span:nth-child(3) { background: #46d39a; }
-
-        .workspace-title {
-            color: var(--muted);
-            font: 600 12px var(--mono);
-        }
-
-        .workspace-grid {
-            display: grid;
-            grid-template-columns: 1fr 260px;
-            min-height: 560px;
-        }
-
-        .chat {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .chat-feed {
-            min-height: 0;
-            height: 404px;
-            overflow-y: auto;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .empty-state {
-            border: 1px dashed var(--line);
-            background: rgba(21,27,34,.58);
-            border-radius: var(--radius);
-            padding: 18px;
-        }
-
-        .empty-state h2 {
-            margin: 0 0 8px;
-            font-size: 18px;
-            letter-spacing: -.02em;
-        }
-
-        .empty-state p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.55;
-            font-size: 14px;
-        }
-
-        .quick-row {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .chip {
-            border: 1px solid var(--line);
-            background: var(--panel-2);
-            color: var(--muted);
-            border-radius: var(--radius);
-            padding: 10px;
-            text-align: left;
-            cursor: pointer;
-            font-size: 13px;
-            line-height: 1.35;
-        }
-
-        .chip:hover { border-color: rgba(255,255,255,.22); color: var(--text); }
-
-        .message {
-            display: flex;
-        }
-
-        .message.user { justify-content: flex-end; }
-        .bubble {
-            max-width: 86%;
-            border-radius: 12px;
-            padding: 11px 13px;
-            font-size: 14px;
-            line-height: 1.55;
-            overflow-wrap: anywhere;
-        }
-
-        .message.user .bubble {
-            background: var(--blue);
-            color: #06101d;
-            border-bottom-right-radius: 4px;
-            font-weight: 600;
-        }
-
-        .message.assistant .bubble {
-            background: var(--panel-2);
-            border: 1px solid var(--line);
-            color: var(--text);
-            border-bottom-left-radius: 4px;
-        }
-
-        .bubble p { margin: 0 0 10px; }
-        .bubble p:last-child { margin-bottom: 0; }
-        .bubble pre {
-            margin: 10px 0;
-            padding: 12px;
-            overflow: auto;
-            background: #080b0f;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-        }
-
-        .composer {
-            border-top: 1px solid var(--line);
-            padding: 14px;
-            background: #0b0f13;
-        }
-
-        .composer-box {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--panel);
-            padding: 10px;
-        }
-
-        #chat-text {
-            width: 100%;
-            min-height: 54px;
-            max-height: 180px;
-            resize: none;
-            border: 0;
-            outline: 0;
-            color: var(--text);
-            background: transparent;
-            line-height: 1.5;
-        }
-
-        #chat-text::placeholder { color: var(--quiet); }
-
-        .composer-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding-top: 8px;
-        }
-
-        .mode-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .send {
-            width: 34px;
-            height: 34px;
-            border: 0;
-            border-radius: 50%;
-            background: var(--text);
-            color: #071014;
-            display: grid;
-            place-items: center;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        .send:disabled {
-            opacity: .45;
-            cursor: not-allowed;
-        }
-
-        .control-panel {
-            border-left: 1px solid var(--line);
-            background: #0c1116;
-            padding: 14px;
-            display: grid;
-            align-content: start;
-            gap: 12px;
-        }
-
-        .panel-block {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 13px;
-        }
-
-        .panel-block h3 {
-            margin: 0 0 10px;
-            font-size: 13px;
-            letter-spacing: .01em;
-        }
-
-        .meter-row {
-            display: grid;
-            gap: 7px;
-            margin-top: 10px;
-        }
-
-        .meter-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .meter {
-            height: 7px;
-            border-radius: 999px;
-            overflow: hidden;
-            background: var(--panel-3);
-        }
-
-        .meter span {
-            display: block;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, var(--green), var(--blue));
-        }
-
-        .route {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 0;
-            border-top: 1px solid var(--line-soft);
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .route:first-of-type { border-top: 0; }
-        .route strong { color: var(--text); font-size: 13px; }
-
-        .badge {
-            border-radius: 999px;
-            padding: 4px 8px;
-            font: 700 11px var(--mono);
-        }
-
-        .badge.local { color: var(--green); background: var(--green-soft); }
-        .badge.ask { color: var(--amber); background: var(--amber-soft); }
-        .badge.stop { color: var(--red); background: var(--red-soft); }
-        .badge.cloud { color: var(--blue); background: var(--blue-soft); }
-
-        .section {
-            padding: 76px 0 0;
-        }
-
-        .section-head {
-            max-width: 760px;
-            margin-bottom: 24px;
-        }
-
-        .section h2 {
-            margin: 0 0 10px;
-            font-size: clamp(28px, 3.2vw, 44px);
-            letter-spacing: -.04em;
-        }
-
-        .section p {
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-        }
-
-        .card {
-            background: rgba(16,20,25,.82);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 18px;
-        }
-
-        .card h3 {
-            margin: 0 0 8px;
-            font-size: 16px;
-        }
-
-        .card p {
-            margin: 0;
-            font-size: 14px;
-        }
-
-        .flow {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .step {
-            position: relative;
-            background: rgba(16,20,25,.82);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 18px;
-        }
-
-        .step-num {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            display: grid;
-            place-items: center;
-            background: var(--blue-soft);
-            color: var(--blue);
-            font: 800 13px var(--mono);
-            margin-bottom: 14px;
-        }
-
-        .code-box {
-            max-width: 780px;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            overflow: hidden;
-            background: #070a0d;
-        }
-
-        .code-title {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 11px 14px;
-            border-bottom: 1px solid var(--line);
-            background: var(--panel);
-            color: var(--muted);
-            font: 600 12px var(--mono);
-        }
-
-        .code-box pre {
-            margin: 0;
-            padding: 18px;
-            overflow: auto;
-            color: #dbe7f3;
-            font: 13px/1.7 var(--mono);
-        }
-
-        footer {
-            padding: 72px 0 28px;
-            color: var(--quiet);
-            font-size: 13px;
-        }
-
-        .copy-btn {
-            background: transparent;
-            border: 1px solid var(--line);
-            color: var(--muted);
-            padding: 3px 9px;
-            border-radius: 6px;
-            cursor: pointer;
-            font: 11px var(--mono);
-            transition: all .15s;
-        }
-        .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
-        .copy-btn.copied { color: var(--green); border-color: var(--green); }
-
-        @media (max-width: 1120px) {
-            .shell { grid-template-columns: 1fr; }
-            .sidebar {
-                position: static;
-                height: auto;
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-                padding: 16px 20px;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .nav {
-                display: flex;
-                overflow-x: auto;
-                gap: 4px;
-                padding-bottom: 2px;
-            }
-            .nav a { white-space: nowrap; }
-            .side-card { display: none; }
-            .hero { grid-template-columns: 1fr; min-height: 0; }
-            .workspace-grid { grid-template-columns: 1fr; }
-            .control-panel { border-left: 0; border-top: 1px solid var(--line); grid-template-columns: repeat(3, 1fr); }
-        }
-
-        @media (max-width: 760px) {
-            .main { padding: 20px 14px 42px; }
-            .topbar { align-items: flex-start; flex-direction: column; }
-            .top-actions { justify-content: flex-start; }
-            .proof-strip, .cards, .flow, .control-panel, .quick-row { grid-template-columns: 1fr; }
-            .workspace { border-radius: var(--radius); }
-            .workspace-grid { min-height: 0; }
-            .chat-feed { height: 420px; }
-            .bubble { max-width: 94%; }
-        }
-    </style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, textarea { font: inherit; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; }
+
+    /* ── Header ── */
+    header {
+      height: 52px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10,13,18,.96);
+      backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+    .brand-mark {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: #071014; font: 700 14px var(--mono);
+    }
+    .tabs { display: flex; gap: 2px; }
+    .tab {
+      background: none; border: none; color: var(--muted);
+      padding: 5px 13px; border-radius: var(--r);
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all .15s;
+    }
+    .tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .tab.active { color: var(--text); background: var(--p2); }
+    .spacer { flex: 1; }
+    .status-pill {
+      display: flex; align-items: center; gap: 6px;
+      border: 1px solid var(--line); background: rgba(21,27,34,.8);
+      color: var(--muted); padding: 5px 10px; border-radius: 999px;
+      font-size: 11px; font-family: var(--mono); cursor: pointer;
+      white-space: nowrap; transition: border-color .15s;
+    }
+    .status-pill:hover { border-color: rgba(255,255,255,.15); }
+    .s-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--amber); box-shadow: 0 0 8px currentColor; flex-shrink: 0;
+    }
+    .status-pill[data-state="ok"]    .s-dot { background: var(--green); }
+    .status-pill[data-state="bad"]   .s-dot { background: var(--red);   }
+    .status-pill[data-state="cloud"] .s-dot { background: var(--blue);  }
+    .gh-btn {
+      display: flex; align-items: center; gap: 6px;
+      border: 1px solid var(--line); background: var(--p2);
+      color: var(--text); padding: 5px 12px; border-radius: var(--r);
+      font-size: 13px; font-weight: 600; flex-shrink: 0;
+      transition: all .15s;
+    }
+    .gh-btn:hover { border-color: rgba(255,255,255,.2); background: var(--p3); }
+
+    /* ── Main ── */
+    main { flex: 1; overflow: hidden; display: flex; }
+    .panel { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .panel.active { display: flex; }
+
+    /* ── Chat panel ── */
+    #chat-feed {
+      flex: 1; overflow-y: auto;
+      padding: 20px clamp(16px, 4vw, 60px);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    /* empty state */
+    #empty-state {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 40px 20px; gap: 8px;
+    }
+    .e-logo {
+      width: 54px; height: 54px; border-radius: 14px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: #071014; font: 800 26px var(--mono);
+      margin-bottom: 6px;
+    }
+    .e-title { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+    .e-sub { color: var(--muted); font-size: 13px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+    .chip {
+      border: 1px solid var(--line); background: var(--p2);
+      color: var(--muted); border-radius: var(--r);
+      padding: 8px 12px; cursor: pointer; font-size: 12px;
+      line-height: 1.4; text-align: left; transition: all .15s;
+    }
+    .chip:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+    /* messages */
+    .msg { display: flex; }
+    .msg.user { justify-content: flex-end; }
+    .bubble {
+      max-width: min(80%, 720px); padding: 10px 14px;
+      border-radius: 12px; font-size: 14px; line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+    .msg.user .bubble {
+      background: var(--blue); color: #06101d;
+      border-bottom-right-radius: 4px; font-weight: 500;
+    }
+    .msg.assistant .bubble {
+      background: var(--p2); border: 1px solid var(--line);
+      color: var(--text); border-bottom-left-radius: 4px;
+    }
+    .bubble p { margin: 0 0 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { padding-left: 18px; margin-bottom: 8px; }
+    .bubble pre { margin: 8px 0; padding: 12px; background: #080b0f; border: 1px solid var(--line); border-radius: var(--r); overflow: auto; }
+    .bubble pre code { font: 12px/1.6 var(--mono); background: none; border: none; padding: 0; }
+    .bubble code { font-family: var(--mono); font-size: 12.5px; }
+    .bubble h1,.bubble h2,.bubble h3 { margin: 10px 0 6px; }
+    .bubble strong { font-weight: 600; }
+    .bubble a { color: var(--blue); }
+    /* input bar */
+    .input-wrap {
+      border-top: 1px solid var(--line); padding: 12px 20px 16px; flex-shrink: 0;
+    }
+    .input-box {
+      background: var(--p1); border: 1px solid var(--line);
+      border-radius: 12px; overflow: hidden;
+      max-width: 800px; margin: 0 auto;
+      transition: border-color .15s;
+    }
+    .input-box:focus-within { border-color: var(--green); }
+    #chat-text {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-size: 14px;
+      padding: 12px 14px 0; resize: none;
+      min-height: 50px; max-height: 180px; line-height: 1.6;
+    }
+    #chat-text::placeholder { color: var(--quiet); }
+    #chat-text:disabled { opacity: .5; }
+    .input-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px 10px;
+    }
+    .mode-label {
+      display: flex; align-items: center; gap: 6px;
+      font: 11px var(--mono); color: var(--muted);
+    }
+    .m-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+    .mode-label[data-mode="local"]  .m-dot { background: var(--green); }
+    .mode-label[data-mode="cloud"]  .m-dot { background: var(--blue);  }
+    .mode-label[data-mode="error"]  .m-dot { background: var(--red);   }
+    .send-btn {
+      width: 32px; height: 32px; border: none; border-radius: 50%;
+      background: var(--text); color: #071014;
+      font-size: 16px; font-weight: 900; cursor: pointer;
+      display: grid; place-items: center; transition: all .15s;
+    }
+    .send-btn:hover:not(:disabled) { background: var(--green); }
+    .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .input-hint { text-align: center; font: 11px var(--mono); color: var(--quiet); margin-top: 5px; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+    /* ── About panel ── */
+    #panel-about { overflow-y: auto; }
+    .about-inner {
+      padding: 44px clamp(20px, 6vw, 80px) 60px;
+      max-width: 960px; width: 100%; margin: 0 auto;
+    }
+    .eyebrow { font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+    .big-title { font-size: clamp(28px, 4vw, 46px); font-weight: 800; letter-spacing: -.04em; line-height: 1.1; margin-bottom: 14px; }
+    .lead { color: var(--muted); font-size: 16px; line-height: 1.65; margin-bottom: 36px; max-width: 640px; }
+    .proof-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 44px; }
+    .proof { border: 1px solid var(--line); background: var(--p1); border-radius: var(--r); padding: 14px; }
+    .proof strong { display: block; font-size: 22px; margin-bottom: 4px; }
+    .proof span { color: var(--quiet); font-size: 12px; }
+    .sec-label { font: 600 11px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 44px; }
+    .card { background: var(--p1); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+    .card h3 { font-size: 15px; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 13px; line-height: 1.55; margin: 0; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .step { background: var(--p1); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+    .step-num { width: 26px; height: 26px; border-radius: 6px; background: rgba(106,169,255,.14); color: var(--blue); font: 800 12px var(--mono); display: grid; place-items: center; margin-bottom: 12px; }
+    .step h4 { font-size: 13px; margin-bottom: 6px; }
+    .step p { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 0; }
+
+    /* ── Install panel ── */
+    #panel-install { overflow-y: auto; }
+    .install-inner {
+      padding: 44px clamp(20px, 6vw, 80px) 60px;
+      max-width: 780px; width: 100%; margin: 0 auto;
+    }
+    .code-box { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: #070a0d; }
+    .code-title {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+      background: var(--p1); color: var(--muted); font: 600 12px var(--mono);
+    }
+    .code-box pre { margin: 0; padding: 20px; overflow: auto; }
+    .code-box code { font: 13px/1.7 var(--mono); color: #dbe7f3; }
+    .copy-btn {
+      background: transparent; border: 1px solid var(--line); color: var(--muted);
+      padding: 3px 9px; border-radius: 6px; cursor: pointer; font: 11px var(--mono);
+      transition: all .15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+    .copy-btn.ok { color: var(--green); border-color: var(--green); }
+    .info-box {
+      margin-top: 24px; padding: 18px; background: var(--p1);
+      border: 1px solid var(--line); border-radius: var(--r);
+    }
+    .info-box h3 { font-size: 14px; margin-bottom: 8px; }
+    .info-box p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .info-box code { font-family: var(--mono); font-size: 12px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .tab { padding: 5px 9px; font-size: 12px; }
+      .brand span:last-child { display: none; }
+      .proof-strip, .cards, .flow { grid-template-columns: 1fr; }
+      .about-inner, .install-inner { padding: 24px 16px 40px; }
+    }
+    @media (max-width: 480px) {
+      .gh-btn span { display: none; }
+    }
+  </style>
 </head>
 <body>
-    <a class="skip-link" href="#top">Skip to main content</a>
-    <div class="shell">
-        <aside class="sidebar">
-            <a class="brand" href="#top" aria-label="LLM ai home">
-                <span class="brand-mark">L</span>
-                <span>LLM ai</span>
-            </a>
-            <nav class="nav" aria-label="Primary">
-                <a href="#controls">Controls</a>
-                <a href="#architecture">How it works</a>
-                <a href="./promo.html" target="_blank" rel="noopener">Demo video</a>
-                <a href="#install">Install</a>
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
-            </nav>
-            <div class="side-card">
-                <strong>Enterprise-ready direction</strong>
-                <p>Private by default, cost-aware when cloud models are useful, and gated before anything touches files or shells.</p>
-                <div class="side-stat"><span>Default data path</span><strong>Local</strong></div>
-                <div class="side-stat"><span>Mutating tools</span><strong>Ask</strong></div>
-                <div class="side-stat"><span>Cloud spend</span><strong>Opt-in</strong></div>
-            </div>
-        </aside>
 
-        <main class="main" id="top">
-            <div class="topbar">
-                <button class="pill" id="chat-status" type="button" onclick="showSetupHelp()" data-state="loading">
-                    <span class="dot"></span>
-                    <span id="chat-model">Checking local Ollama</span>
-                </button>
-                <div class="top-actions">
-                    <a class="btn" href="./promo.html" target="_blank" rel="noopener">Watch demo</a>
-                    <a class="btn btn-primary" href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">View GitHub</a>
-                </div>
-            </div>
+<header>
+  <a class="brand" href="#">
+    <span class="brand-mark">L</span>
+    <span>LLM ai</span>
+  </a>
+  <nav class="tabs">
+    <button class="tab active" data-tab="chat"    onclick="switchTab('chat')">Chat</button>
+    <button class="tab"        data-tab="about"   onclick="switchTab('about')">About</button>
+    <button class="tab"        data-tab="install" onclick="switchTab('install')">Install</button>
+  </nav>
+  <div class="spacer"></div>
+  <button class="status-pill" id="chat-status" data-state="loading" onclick="showSetupHelp()" type="button">
+    <span class="s-dot"></span>
+    <span id="chat-model">Checking…</span>
+  </button>
+  <a class="gh-btn" href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.165 6.839 9.49.5.09.682-.218.682-.483 0-.237-.008-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.461-1.11-1.461-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.272.098-2.65 0 0 .84-.269 2.75 1.026A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.295 2.747-1.026 2.747-1.026.546 1.378.202 2.397.1 2.65.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    <span>GitHub</span>
+  </a>
+</header>
 
-            <section class="hero" aria-labelledby="hero-title">
-                <div>
-                    <div class="eyebrow">Enterprise AI without leaks or overspending</div>
-                    <h1 id="hero-title">AI work that stays private, routed, and under control.</h1>
-                    <p class="lead">
-                        LLM ai is a privacy-first AI coding workspace: run sensitive work on your machine,
-                        route heavier tasks only when approved, and keep every write behind a clear permission gate.
-                    </p>
-                    <div class="hero-actions">
-                        <a class="btn btn-primary" href="#install">Install locally</a>
-                        <a class="btn" href="#controls">Explore controls</a>
-                    </div>
-                    <div class="proof-strip" aria-label="Product highlights">
-                        <div class="proof"><strong>0</strong><span>required API keys for local work</span></div>
-                        <div class="proof"><strong>17</strong><span>file, shell, and GitLab tools</span></div>
-                        <div class="proof"><strong>Ask</strong><span>before writes, shell commands, or cloud use</span></div>
-                    </div>
-                </div>
+<main>
 
-                <div class="workspace" aria-label="LLM ai workspace">
-                    <div class="workspace-head">
-                        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-                        <div class="workspace-title">privacy-and-spend-console.local</div>
-                    </div>
-                    <div class="workspace-grid">
-                        <section class="chat" aria-label="Local model chat">
-                            <div class="chat-feed" id="chat-feed">
-                                <div class="empty-state" id="empty-state">
-                                    <h2>Try the local chat bridge</h2>
-                                    <p>
-                                        If Ollama is running on your machine, this page can talk to it directly at
-                                        <code>localhost:11434</code>. The hosted page never receives your prompt.
-                                    </p>
-                                    <div class="quick-row">
-                                        <button class="chip" type="button" onclick="useChip(this)">Review this repo for privacy risks</button>
-                                        <button class="chip" type="button" onclick="useChip(this)">Estimate token cost for a support workflow</button>
-                                        <button class="chip" type="button" onclick="useChip(this)">Draft a safe GitLab MR summary</button>
-                                        <button class="chip" type="button" onclick="useChip(this)">Explain how local tool permissions work</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="composer">
-                                <div class="composer-box">
-                                    <textarea id="chat-text" rows="2" placeholder="Ask a local model, or click a prompt above"></textarea>
-                                    <div class="composer-actions">
-                                        <span class="mode-label" id="mode-label" data-mode="local"><span class="dot"></span> <span id="mode-label-text">Local-first mode</span></span>
-                                        <button id="chat-send" class="send" type="button" onclick="sendChat()" aria-label="Send">↑</button>
-                                    </div>
-                                </div>
-                                <p style="margin:5px 0 0;font-size:11px;color:var(--quiet);font-family:var(--mono)">Enter to send &nbsp;·&nbsp; Shift+Enter for newline</p>
-                            </div>
-                        </section>
+  <!-- ── Chat tab ── -->
+  <div class="panel active" id="panel-chat">
+    <div id="chat-feed">
+      <div id="empty-state">
+        <div class="e-logo">L</div>
+        <div class="e-title">LLM ai</div>
+        <div class="e-sub">Privacy-first local AI coding agent · powered by Ollama</div>
+        <div class="chips">
+          <button class="chip" onclick="useChip(this)">Review this repo for privacy risks</button>
+          <button class="chip" onclick="useChip(this)">Estimate token cost for a support workflow</button>
+          <button class="chip" onclick="useChip(this)">Draft a safe GitLab MR summary</button>
+          <button class="chip" onclick="useChip(this)">Explain how local tool permissions work</button>
+        </div>
+      </div>
+    </div>
+    <div class="input-wrap">
+      <div class="input-box">
+        <textarea id="chat-text" rows="2" placeholder="Ask a coding question or describe a task…"></textarea>
+        <div class="input-footer">
+          <span class="mode-label" id="mode-label" data-mode="local">
+            <span class="m-dot"></span>
+            <span id="mode-text">Local-first mode</span>
+          </span>
+          <button id="chat-send" class="send-btn" onclick="sendChat()" aria-label="Send">↑</button>
+        </div>
+      </div>
+      <p class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for newline</p>
+    </div>
+  </div>
 
-                        <aside class="control-panel" id="controls" aria-label="Governance controls">
-                            <div class="panel-block">
-                                <h3>Data boundary</h3>
-                                <div class="route"><strong>Codebase context</strong><span class="badge local">local</span></div>
-                                <div class="route"><strong>Secrets detected</strong><span class="badge stop">block</span></div>
-                                <div class="route"><strong>Cloud escalation</strong><span class="badge ask">ask</span></div>
-                            </div>
-                            <div class="panel-block">
-                                <h3>Spend router</h3>
-                                <div class="meter-row">
-                                    <div class="meter-top"><span>Local tasks</span><span>74%</span></div>
-                                    <div class="meter" data-target="74%"><span style="width:0"></span></div>
-                                </div>
-                                <div class="meter-row">
-                                    <div class="meter-top"><span>Cloud tasks</span><span>18%</span></div>
-                                    <div class="meter" data-target="18%"><span style="width:0"></span></div>
-                                </div>
-                                <div class="meter-row">
-                                    <div class="meter-top"><span>Blocked or needs approval</span><span>8%</span></div>
-                                    <div class="meter" data-target="8%"><span style="width:0;background:linear-gradient(90deg,var(--amber),var(--red))"></span></div>
-                                </div>
-                                <p class="panel-note">* Illustrative routing mix.</p>
-                            </div>
-                            <div class="panel-block">
-                                <h3>Tool policy</h3>
-                                <div class="route"><strong>read_file</strong><span class="badge local">allow</span></div>
-                                <div class="route"><strong>edit_file</strong><span class="badge ask">ask</span></div>
-                                <div class="route"><strong>run_command</strong><span class="badge ask">ask</span></div>
-                            </div>
-                        </aside>
-                    </div>
-                </div>
-            </section>
+  <!-- ── About tab ── -->
+  <div class="panel" id="panel-about">
+    <div class="about-inner">
+      <div class="eyebrow">Enterprise AI without leaks or overspending</div>
+      <h1 class="big-title">AI work that stays private,<br>routed, and under control.</h1>
+      <p class="lead">
+        A local-first AI coding workspace: run sensitive work on your machine,
+        route heavier tasks only when approved, and keep every write behind a clear permission gate.
+      </p>
 
-            <section class="section" aria-labelledby="controls-title">
-                <div class="section-head">
-                    <h2 id="controls-title">Controls that match enterprise reality</h2>
-                    <p>
-                        Most AI tools force a tradeoff between capability and governance. LLM ai starts local,
-                        preserves an audit-friendly tool loop, and makes cloud model use an explicit decision instead of a hidden default.
-                    </p>
-                </div>
-                <div class="cards">
-                    <div class="card">
-                        <h3>Private by default</h3>
-                        <p>Local Ollama models handle sensitive code and documents without sending prompts to an external API.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Cost-aware routing</h3>
-                        <p>Small routine work can stay on local models. Expensive cloud models become a deliberate escalation path.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Permissioned execution</h3>
-                        <p>Read-only actions can run quickly, while writes and shell commands stop for human approval.</p>
-                    </div>
-                </div>
-            </section>
+      <div class="proof-strip">
+        <div class="proof"><strong>0</strong><span>required API keys for local work</span></div>
+        <div class="proof"><strong>17</strong><span>file, shell, and GitLab tools</span></div>
+        <div class="proof"><strong>Ask</strong><span>before writes, shell, or cloud use</span></div>
+      </div>
 
-            <section class="section" id="architecture" aria-labelledby="architecture-title">
-                <div class="section-head">
-                    <h2 id="architecture-title">How the agent loop works</h2>
-                    <p>A compact Python agent coordinates the model, tools, permissions, and workspace sandbox.</p>
-                </div>
-                <div class="flow">
-                    <div class="step">
-                        <div class="step-num">1</div>
-                        <h3>Classify the task</h3>
-                        <p>Decide whether it can run locally, needs a tool, or requires a higher-cost model.</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">2</div>
-                        <h3>Use sandboxed tools</h3>
-                        <p>Read files, search code, inspect GitLab, or request a permissioned mutation.</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">3</div>
-                        <h3>Ask before risk</h3>
-                        <p>Writes, shell commands, issue creation, and cloud escalation are visible approval points.</p>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">4</div>
-                        <h3>Return the result</h3>
-                        <p>The final response includes what changed, what ran, and where the user still has control.</p>
-                    </div>
-                </div>
-            </section>
+      <div class="sec-label">Controls</div>
+      <div class="cards">
+        <div class="card">
+          <h3>Private by default</h3>
+          <p>Local Ollama models handle sensitive code without sending prompts to external APIs.</p>
+        </div>
+        <div class="card">
+          <h3>Cost-aware routing</h3>
+          <p>Small tasks stay local. Cloud becomes an explicit escalation, not a hidden default.</p>
+        </div>
+        <div class="card">
+          <h3>Permissioned execution</h3>
+          <p>Read-only actions run freely. Writes and shell commands stop for approval.</p>
+        </div>
+      </div>
 
-            <section class="section" id="install" aria-labelledby="install-title">
-                <div class="section-head">
-                    <h2 id="install-title">Run it locally</h2>
-                    <p>Clone the repo, install the package, start Ollama, and open the web UI.</p>
-                </div>
-                <div class="code-box">
-                    <div class="code-title"><span>quick-start</span><span style="display:flex;align-items:center;gap:8px"><span>PowerShell, macOS, Linux</span><button class="copy-btn" id="copy-install" onclick="copyInstall()" type="button">copy</button></span></div>
-                    <pre><code>git clone https://github.com/sechan9999/LLMai.git
+      <div class="sec-label">How the agent loop works</div>
+      <div class="flow">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h4>Classify the task</h4>
+          <p>Decide local, tool-use, or cloud escalation.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h4>Use sandboxed tools</h4>
+          <p>Read files, search code, inspect GitLab.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h4>Ask before risk</h4>
+          <p>Writes, shell, and cloud all require approval.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h4>Return the result</h4>
+          <p>Final answer with full audit of what ran.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Install tab ── -->
+  <div class="panel" id="panel-install">
+    <div class="install-inner">
+      <h2 style="font-size:clamp(24px,3vw,36px);letter-spacing:-.03em;margin-bottom:10px">Run it locally</h2>
+      <p style="color:var(--muted);margin-bottom:28px;line-height:1.6">
+        Clone, install, start Ollama, and open the web UI — no API key required.
+      </p>
+      <div class="code-box">
+        <div class="code-title">
+          <span>quick-start · PowerShell, macOS, Linux</span>
+          <button class="copy-btn" id="copy-btn" onclick="copyInstall()" type="button">copy</button>
+        </div>
+        <pre><code id="install-code">git clone https://github.com/sechan9999/LLMai.git
 cd LLMai
 pip install -e .
 
@@ -959,351 +412,267 @@ ollama pull qwen2.5-coder
 
 vixcode-server
 # open http://localhost:7777</code></pre>
-                </div>
-            </section>
-
-            <footer>
-                LLM ai by sechan9999. MIT licensed. Built on the LLMai / vixcode local agent.
-            </footer>
-        </main>
+      </div>
+      <div class="info-box">
+        <h3>Try the chat demo first</h3>
+        <p>
+          If Ollama is already running on your machine, the Chat tab connects directly via
+          <code>localhost:11434</code>. Your prompts never leave the browser.
+        </p>
+      </div>
     </div>
+  </div>
 
-    <script>
-    const OLLAMA = 'http://localhost:11434';
-    const CLOUD_API = '/api/chat';
-    const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
-    const SYSTEM = "You are LLM ai, a privacy-first enterprise AI assistant. Be concise, practical, and explicit about privacy, tool risk, and cost tradeoffs. Use Markdown when helpful.";
+</main>
 
-    let mode = 'unknown'; // 'local' | 'cloud' | 'unavailable'
-    let activeModel = null;
-    let chatBusy = false;
-    const history = [{ role: 'system', content: SYSTEM }];
+<script>
+  const OLLAMA   = 'http://localhost:11434';
+  const CLOUD    = '/api/chat';
+  const PREFS    = ['qwen2.5-coder','qwen2.5','llama3.1','llama3.2','gemma3','phi3','mistral'];
+  const SYSTEM   = 'You are LLM ai, a privacy-first AI coding assistant. Be concise and explicit about privacy, tool risk, and cost tradeoffs. Use Markdown when helpful.';
 
-    const $status = () => document.getElementById('chat-status');
-    const $model = () => document.getElementById('chat-model');
-    const $feed = () => document.getElementById('chat-feed');
-    const $text = () => document.getElementById('chat-text');
-    const $send = () => document.getElementById('chat-send');
-    const $modeLabel = () => document.getElementById('mode-label');
-    const $modeText = () => document.getElementById('mode-label-text');
+  let mode = 'unknown', activeModel = null, chatBusy = false;
+  const history = [{ role: 'system', content: SYSTEM }];
 
-    function setStatus(state, text) {
-        $status().dataset.state = state;
-        $model().textContent = text;
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab')
+      .forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.panel')
+      .forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+  }
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const $status = () => document.getElementById('chat-status');
+  const $model  = () => document.getElementById('chat-model');
+  const $feed   = () => document.getElementById('chat-feed');
+  const $text   = () => document.getElementById('chat-text');
+  const $send   = () => document.getElementById('chat-send');
+  const $ml     = () => document.getElementById('mode-label');
+  const $mt     = () => document.getElementById('mode-text');
+
+  // ── Status ─────────────────────────────────────────────────────────────────
+  function setStatus(state, text) {
+    $status().dataset.state = state;
+    $model().textContent = text;
+  }
+
+  function setMode(next, modelName) {
+    mode = next;
+    if (next === 'local') {
+      activeModel = modelName;
+      setStatus('ok', `Local · ${modelName}`);
+      $ml().dataset.mode = 'local';
+      $mt().textContent = 'Local-first mode';
+    } else if (next === 'cloud') {
+      activeModel = modelName;
+      setStatus('cloud', `Cloud · ${modelName}`);
+      $ml().dataset.mode = 'cloud';
+      $mt().textContent = 'Cloud mode — prompts leave machine';
+    } else {
+      activeModel = null;
+      setStatus('bad', 'Ollama not found');
+      $ml().dataset.mode = 'error';
+      $mt().textContent = 'No backend';
+      const empty = document.getElementById('empty-state');
+      if (empty && !document.getElementById('offline-note')) {
+        const p = document.createElement('p');
+        p.id = 'offline-note';
+        p.style.cssText = 'margin-top:12px;font-size:12px;color:var(--quiet)';
+        p.innerHTML = 'Ollama not detected on localhost:11434. '
+          + '<button type="button" onclick="switchTab(\'install\')" '
+          + 'style="background:none;border:none;color:var(--blue);cursor:pointer;font:inherit;font-size:12px;text-decoration:underline">'
+          + 'See install guide →</button>';
+        empty.appendChild(p);
+      }
     }
+  }
 
-    function setMode(next, modelName) {
-        mode = next;
-        if (next === 'local') {
-            activeModel = modelName;
-            setStatus('ok', `Local model: ${modelName}`);
-            $modeLabel().dataset.mode = 'local';
-            $modeText().textContent = 'Local-first mode';
-        } else if (next === 'cloud') {
-            activeModel = modelName;
-            setStatus('cloud', `Cloud demo · ${modelName}`);
-            $modeLabel().dataset.mode = 'cloud';
-            $modeText().textContent = 'Cloud demo · prompts leave your machine';
-        } else {
-            activeModel = null;
-            setStatus('bad', 'Ollama not found');
-            $modeLabel().dataset.mode = 'local';
-            $modeText().textContent = 'No backend — see install guide ↓';
-            const empty = document.getElementById('empty-state');
-            if (empty && !document.getElementById('offline-note')) {
-                const note = document.createElement('p');
-                note.id = 'offline-note';
-                note.style.cssText = 'margin:12px 0 0;font-size:12px;color:var(--quiet);border-top:1px solid rgba(255,255,255,.08);padding-top:10px;';
-                note.innerHTML = 'Ollama not detected on <code>localhost:11434</code>. <a href="#install" style="color:var(--blue)">See install guide ↓</a>';
-                empty.appendChild(note);
-            }
-        }
+  // ── Backend detection ──────────────────────────────────────────────────────
+  async function tryOllama() {
+    try {
+      const r = await fetch(`${OLLAMA}/api/tags`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      const models = (d.models || []).map(m => m.name);
+      if (!models.length) return null;
+      return models.find(m => PREFS.some(p => m.startsWith(p))) || models[0];
+    } catch { return null; }
+  }
+
+  async function tryCloud() {
+    try {
+      const r = await fetch(CLOUD);
+      if (!r.ok) return null;
+      const info = await r.json();
+      if (!info?.available) return null;
+      const p = String(info.provider || 'cloud');
+      return p.charAt(0).toUpperCase() + p.slice(1);
+    } catch { return null; }
+  }
+
+  async function detectBackend() {
+    setStatus('loading', 'Checking…');
+    const local = await tryOllama();
+    if (local) { setMode('local', local); return; }
+    const cloud = await tryCloud();
+    if (cloud) { setMode('cloud', cloud); return; }
+    setMode('unavailable');
+  }
+
+  function showSetupHelp() { switchTab('install'); }
+
+  // ── Chat ───────────────────────────────────────────────────────────────────
+  function useChip(btn) {
+    $text().value = btn.textContent.trim();
+    $text().focus();
+    setTimeout(sendChat, 50);
+  }
+
+  function appendMsg(role, content, id) {
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.remove();
+    const row = document.createElement('div');
+    row.className = `msg ${role}`;
+    if (id) row.id = id;
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    bub.dataset.raw = content || '';
+    renderInto(bub, content || '');
+    row.appendChild(bub);
+    $feed().appendChild(row);
+    $feed().scrollTop = $feed().scrollHeight;
+    return bub;
+  }
+
+  function renderInto(el, raw) {
+    if (window.marked) {
+      el.innerHTML = marked.parse(raw || '');
+      if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+    } else {
+      el.textContent = raw || '';
     }
+  }
 
-    async function tryOllama() {
+  function appendDelta(bub, delta) {
+    bub.dataset.raw += delta;
+    renderInto(bub, bub.dataset.raw);
+    $feed().scrollTop = $feed().scrollHeight;
+  }
+
+  async function streamChat(response, bub) {
+    const reader = response.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', full = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue;
         try {
-            const response = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
-            if (!response.ok) return null;
-            const data = await response.json();
-            const models = (data.models || []).map(m => m.name);
-            if (!models.length) return null;
-            return models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
-        } catch {
-            return null;
-        }
+          const piece = JSON.parse(line.slice(6)).choices?.[0]?.delta?.content || '';
+          if (piece) { full += piece; appendDelta(bub, piece); }
+        } catch {}
+      }
+    }
+    return full;
+  }
+
+  async function sendChat() {
+    const prompt = $text().value.trim();
+    if (!prompt || chatBusy) return;
+    chatBusy = true;
+    $send().disabled = true;
+    $text().value = '';
+    $text().style.height = 'auto';
+    appendMsg('user', prompt);
+    history.push({ role: 'user', content: prompt });
+
+    if (mode === 'unknown' || mode === 'unavailable') await detectBackend();
+
+    if (mode === 'unavailable') {
+      appendMsg('assistant',
+        'Ollama is not running on `localhost:11434`.\n\n'
+        + 'Switch to the **Install** tab to set it up, then reload this page.');
+      chatBusy = false; $send().disabled = false; $text().focus();
+      return;
     }
 
-    async function tryCloud() {
-        try {
-            const response = await fetch(CLOUD_API, { method: 'GET' });
-            if (!response.ok) return null;
-            const info = await response.json();
-            if (!info || !info.available) return null;
-            const provider = (info.provider || 'cloud').toString();
-            return provider.charAt(0).toUpperCase() + provider.slice(1);
-        } catch {
-            return null;
-        }
-    }
-
-    async function detectBackend() {
-        setStatus('loading', 'Checking local Ollama');
-        const localModel = await tryOllama();
-        if (localModel) { setMode('local', localModel); return; }
-
-        setStatus('loading', 'Checking cloud demo');
-        const cloudModel = await tryCloud();
-        if (cloudModel) { setMode('cloud', cloudModel); return; }
-
-        setMode('unavailable');
-    }
-
-    function detectPlatform() {
-        const hint = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
-        if (hint.includes('win')) return 'windows';
-        if (hint.includes('mac')) return 'macos';
-        return 'linux';
-    }
-
-    function showSetupHelp() {
-        const existing = document.getElementById('setup-help');
-        if (existing) {
-            existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        const platform = detectPlatform();
-        const serveCmd = platform === 'windows'
-            ? `\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``
-            : `\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``;
-        const label = platform === 'windows' ? 'Windows (PowerShell)' : platform === 'macos' ? 'macOS' : 'Linux';
-
-        appendMsg('assistant', `__No model is reachable.__
-
-The hosted cloud demo is not configured on this deployment, and local Ollama isn't responding either.
-
-For private in-browser chat, install Ollama and pull a model:
-
-\`\`\`bash
-ollama pull qwen2.5-coder
-\`\`\`
-
-Then start Ollama with this origin allowed — detected: **${label}**
-
-${serveCmd}
-
-Reload this page once Ollama is running.`, 'setup-help');
-    }
-
-    function useChip(button) {
-        $text().value = button.textContent.trim();
-        $text().focus();
-        setTimeout(sendChat, 50);
-    }
-
-    function copyInstall() {
-        const code = document.querySelector('.code-box pre code');
-        if (!code) return;
-        const btn = document.getElementById('copy-install');
-        const done = () => {
-            if (!btn) return;
-            btn.textContent = 'copied!'; btn.classList.add('copied');
-            setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
-        };
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(code.textContent).then(done).catch(() => _fallbackCopy(code.textContent, done));
-        } else {
-            _fallbackCopy(code.textContent, done);
-        }
-    }
-    function _fallbackCopy(text, cb) {
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-        document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); cb(); } catch {}
-        document.body.removeChild(ta);
-    }
-
-    function appendMsg(role, content, id) {
-        const empty = document.getElementById('empty-state');
-        if (empty) empty.remove();
-
-        const row = document.createElement('div');
-        row.className = `message ${role}`;
-        if (id) row.id = id;
-
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.dataset.raw = content || '';
-        renderInto(bubble, content || '');
-
-        row.appendChild(bubble);
-        $feed().appendChild(row);
-        $feed().scrollTop = $feed().scrollHeight;
-        return bubble;
-    }
-
-    function renderInto(element, raw) {
-        if (window.marked) {
-            element.innerHTML = marked.parse(raw || '');
-            if (window.hljs) {
-                element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-            }
-        } else {
-            element.textContent = raw || '';
-        }
-    }
-
-    function appendDelta(bubble, delta) {
-        bubble.dataset.raw += delta;
-        renderInto(bubble, bubble.dataset.raw);
-        $feed().scrollTop = $feed().scrollHeight;
-    }
-
-    async function streamChatCompletions(response, bubble) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let full = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            let index;
-            while ((index = buffer.indexOf('\n')) >= 0) {
-                const line = buffer.slice(0, index).trim();
-                buffer = buffer.slice(index + 1);
-                if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue;
-                try {
-                    const payload = JSON.parse(line.slice(6));
-                    const piece = payload.choices?.[0]?.delta?.content || '';
-                    if (piece) {
-                        full += piece;
-                        appendDelta(bubble, piece);
-                    }
-                } catch {
-                    /* Skip incomplete chunks. */
-                }
-            }
-        }
-        return full;
-    }
-
-    async function sendChat() {
-        const prompt = $text().value.trim();
-        if (!prompt || chatBusy) return;
-
-        chatBusy = true;
-        $send().disabled = true;
-        $text().value = '';
-        $text().style.height = 'auto';
-
-        appendMsg('user', prompt);
-        history.push({ role: 'user', content: prompt });
-
-        if (mode === 'unknown' || mode === 'unavailable') {
-            await detectBackend();
-        }
-
-        if (mode === 'unavailable') {
-            showSetupHelp();
-            chatBusy = false;
-            $send().disabled = false;
-            $text().focus();
-            return;
-        }
-
-        const reply = appendMsg('assistant', '');
-
-        try {
-            let response;
-            if (mode === 'local') {
-                response = await fetch(`${OLLAMA}/v1/chat/completions`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: activeModel, messages: history, stream: true }),
-                });
-            } else {
-                response = await fetch(CLOUD_API, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: history }),
-                });
-            }
-
-            if (!response.ok) {
-                if (mode === 'cloud' && response.status === 429) {
-                    const retry = response.headers.get('Retry-After') || '60';
-                    throw new Error(`rate-limited (retry in ~${retry}s)`);
-                }
-                const detail = await response.text().catch(() => '');
-                throw new Error(`HTTP ${response.status}${detail ? ' — ' + detail.slice(0, 200) : ''}`);
-            }
-
-            const full = await streamChatCompletions(response, reply);
-            history.push({ role: 'assistant', content: full });
-        } catch (error) {
-            reply.dataset.raw = mode === 'local'
-                ? `__Local request failed:__ ${error.message}\n\nIf this is a CORS error, restart Ollama with this site allowed:\n\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``
-                : `__Cloud demo unavailable:__ ${error.message}\n\nThe hosted demo enforces a small rate limit to keep it free. You can wait a moment and retry, or run LLM ai locally for unlimited use — see the install section below.`;
-            renderInto(reply, reply.dataset.raw);
-        } finally {
-            chatBusy = false;
-            $send().disabled = false;
-            $text().focus();
-        }
-    }
-
-    function animateMeters() {
-        const meters = document.querySelectorAll('.meter[data-target]');
-        if (!meters.length) return;
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        const apply = meter => {
-            const bar = meter.firstElementChild;
-            if (!bar) return;
-            const target = meter.dataset.target || '0%';
-            if (reduceMotion) {
-                bar.style.width = target;
-            } else {
-                meter.style.setProperty('--target', target);
-                meter.classList.add('animated');
-            }
-        };
-
-        if (!('IntersectionObserver' in window) || reduceMotion) {
-            meters.forEach(apply);
-            return;
-        }
-        const io = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    apply(entry.target);
-                    io.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.4 });
-        meters.forEach(meter => io.observe(meter));
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const textarea = $text();
-        textarea.addEventListener('input', () => {
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 180) + 'px';
+    const reply = appendMsg('assistant', '');
+    try {
+      let response;
+      if (mode === 'local') {
+        response = await fetch(`${OLLAMA}/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: activeModel, messages: history, stream: true }),
         });
-        textarea.addEventListener('keydown', event => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendChat();
-            }
+      } else {
+        response = await fetch(CLOUD, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: history }),
         });
-        if (window.marked) marked.setOptions({ breaks: true, gfm: true });
-        animateMeters();
-        detectBackend();
-        textarea.focus();
+      }
+      if (!response.ok) {
+        if (mode === 'cloud' && response.status === 429)
+          throw new Error('rate-limited — retry in ~60 s or run LLM ai locally');
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const full = await streamChat(response, reply);
+      history.push({ role: 'assistant', content: full });
+    } catch (e) {
+      const errMsg = mode === 'local'
+        ? `**Local request failed:** ${e.message}\n\nIf this is a CORS error, restart Ollama:\n\`\`\`\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``
+        : `**Cloud unavailable:** ${e.message}`;
+      reply.dataset.raw = errMsg;
+      renderInto(reply, errMsg);
+    } finally {
+      chatBusy = false; $send().disabled = false; $text().focus();
+    }
+  }
+
+  // ── Install copy ───────────────────────────────────────────────────────────
+  function copyInstall() {
+    const code = document.getElementById('install-code')?.textContent;
+    const btn  = document.getElementById('copy-btn');
+    if (!code || !btn) return;
+    const done = () => {
+      btn.textContent = 'copied!'; btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 2000);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(done).catch(() => _fcopy(code, done));
+    } else {
+      _fcopy(code, done);
+    }
+  }
+  function _fcopy(text, cb) {
+    const t = document.createElement('textarea');
+    t.value = text; t.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); cb(); } catch {}
+    document.body.removeChild(t);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.marked) marked.setOptions({ breaks: true, gfm: true });
+    const ta = $text();
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
     });
-    </script>
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+    });
+    ta.focus();
+    detectBackend();
+  });
+</script>
 </body>
 </html>
