@@ -3,20 +3,21 @@
   <img src="https://img.shields.io/badge/ollama-local%20LLM-green?style=flat-square" />
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" />
   <img src="https://img.shields.io/badge/status-alpha-orange?style=flat-square" />
+  <a href="https://ll-mai.vercel.app"><img src="https://img.shields.io/badge/demo-ll--mai.vercel.app-6aa9ff?style=flat-square" /></a>
 </p>
 
-<h1 align="center">⚡ LLMai (vixcode)</h1>
+<h1 align="center">LLM ai</h1>
 
 <p align="center">
-  <strong>A local AI coding agent powered by Ollama</strong><br/>
-  <em>Read, write, edit files and run shell commands — all orchestrated by your local LLM.</em>
+  <strong>A local-first AI coding agent powered by Ollama</strong><br/>
+  <em>Read, write, edit files and run shell commands — orchestrated by your local LLM, with explicit permission gates.</em>
 </p>
 
 ---
 
-## 🎯 What is LLMai?
+## What is LLM ai?
 
-**LLMai** (internally named **vixcode**) is a fully local, privacy-first AI coding assistant that connects to [Ollama](https://ollama.ai) to power an agentic loop — meaning the LLM can autonomously plan, read files, write code, and execute commands to complete your tasks, all without sending data to external APIs.
+**LLM ai** is a fully local, privacy-first AI coding assistant that connects to [Ollama](https://ollama.ai) to power an agentic loop. The LLM can autonomously plan, read files, write code, and execute commands to complete tasks — all without sending data to external APIs.
 
 It ships with **two interfaces**:
 
@@ -25,24 +26,26 @@ It ships with **two interfaces**:
 | **CLI (REPL)** | `vixcode` or `python -m vixcode` | Terminal power-users |
 | **Web UI** | `vixcode-server` or `python run_server.py` | Visual, browser-based interaction |
 
+**Live demo:** [ll-mai.vercel.app](https://ll-mai.vercel.app) — connects directly to your local Ollama from the browser, no proxy.
+
 ---
 
-## ✨ Key Features
+## Key Features
 
 - 🔒 **100% Local** — No API keys, no cloud. Everything runs on your machine via Ollama.
-- 🤖 **Agentic Loop** — Not just chat: the LLM can chain multiple tool calls (read → edit → test) autonomously.
-- 🛡️ **Permission System** — Read-only operations auto-approve; writes & shell commands require your explicit approval.
-- 🔧 **17 Built-in Tools** — 6 core file/shell tools (`read_file`, `write_file`, `edit_file`, `run_command`, `list_files`, `search_code`) plus 11 GitLab integration tools
-- 🛡️ **Path Sandboxing** — All file operations are restricted to the workspace directory
-- 🖥️ **Cross-platform** — Windows (PowerShell) and Unix shell support
-- 🌐 **Dual Interface** — Rich terminal REPL (via [Rich](https://github.com/Textualize/rich)) + beautiful dark-mode Web UI
-- 🔄 **Dual Tool-Calling Modes** — Native OpenAI-compatible tools for supported models (Qwen, Llama 3.x, etc.) + XML-based fallback for other models (Gemma, Phi, Mistral, etc.)
-- 📦 **Context Management** — Automatic context compression when conversation gets too long
-- ⚡ **WebSocket-based** — Real-time streaming communication between Web UI and server
+- 🤖 **Agentic Loop** — The LLM chains tool calls (read → edit → test) autonomously until the task is done.
+- 🛡️ **Permission System** — Read-only ops auto-approve; writes and shell commands require explicit approval.
+- 🔧 **19 Built-in Tools** — 8 core tools (`read_file`, `write_file`, `edit_file`, `run_command`, `list_files`, `search_code`, `fetch_url`, `create_directory`) + 11 GitLab tools.
+- 🗂️ **Path Sandboxing** — All file operations restricted to the workspace directory.
+- 🖥️ **Cross-platform** — Windows (PowerShell) and Unix shell support.
+- 🌐 **Dual Interface** — Rich terminal REPL + dark-mode Web UI with session history.
+- 🔄 **Dual Tool-Calling Modes** — Native OpenAI-compatible tools for supported models + XML fallback for others.
+- 📦 **Context Compression** — Automatic summarisation when conversation history grows large.
+- ⚡ **WebSocket Streaming** — Real-time token streaming in the Web UI.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -54,40 +57,41 @@ It ships with **two interfaces**:
 │  └───────┬─────────┘    └────────┬─────────────────┘ │
 │          │                       │                    │
 │  ┌───────▼───────────────────────▼─────────────────┐ │
-│  │             Agent Loop (20 max iterations)       │ │
-│  │  vixcode/agent.py  |  server/agent_ws.py        │ │
+│  │         Agent Loop (20 max iterations)           │ │
+│  │   vixcode/agent.py  |  server/agent_ws.py        │ │
 │  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
-│  │           Ollama (localhost:11434)                │ │
-│  │           /v1/chat/completions (OpenAI compat.)  │ │
-│  └─────────────────────────────────────────────────┘ │
+│  │         LLM Backend (OpenAI-compat API)          │ │
+│  │   Ollama localhost:11434  |  Gemini  |  custom   │ │
+│  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
-│  │            Tools (vixcode/tools.py)              │ │
+│  │            Tools  (vixcode/tools.py)             │ │
 │  │  read_file · write_file · edit_file             │ │
-│  │  run_bash  · list_files  · search_code          │ │
-│  └─────────────────────────────────────────────────┘ │
+│  │  run_command · list_files · search_code         │ │
+│  │  fetch_url · create_directory                   │ │
+│  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
-│  │         Permissions (vixcode/permissions.py)     │ │
+│  │       Permissions  (vixcode/permissions.py)      │ │
 │  │  allow: read_file, list_files, search_code      │ │
-│  │  ask:   write_file, edit_file, run_bash         │ │
+│  │  ask:   write_file, edit_file, run_command      │ │
 │  └─────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Python 3.10+**
 - **[Ollama](https://ollama.ai)** installed and running (`ollama serve`)
-- A downloaded model (e.g., `ollama pull gemma3:4b` or `ollama pull qwen2.5-coder`)
+- A downloaded model — e.g. `ollama pull qwen2.5-coder` (recommended)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone & Install
 
@@ -97,66 +101,103 @@ cd LLMai
 pip install -e .
 ```
 
-### 2. Make sure Ollama is running
+### 2. Start Ollama
 
 ```bash
 ollama serve
-# In another terminal, pull a model:
-ollama pull gemma3:4b
+# Pull a model if you haven't already:
+ollama pull qwen2.5-coder
 ```
 
 ### 3. Configure (optional)
-
-Copy the example config and customize:
 
 ```bash
 cp config.example.json config.json
 ```
 
-Edit `config.json` to set your preferred model and Ollama URL:
-
 ```json
 {
   "ollama_url": "http://localhost:11434",
-  "model": "gemma3:4b",
+  "model": "qwen2.5-coder",
   "permissions": {
-    "read_file":   "allow",
-    "list_files":  "allow",
-    "search_code": "allow",
-    "write_file":  "ask",
-    "edit_file":   "ask",
-    "run_command": "ask"
+    "read_file":         "allow",
+    "list_files":        "allow",
+    "search_code":       "allow",
+    "fetch_url":         "allow",
+    "write_file":        "ask",
+    "edit_file":         "ask",
+    "run_command":       "ask",
+    "create_directory":  "ask"
   }
 }
 ```
 
 ### 4. Run
 
-**CLI mode:**
-```bash
-vixcode
-# or
-python -m vixcode
-```
-
-**Web UI mode:**
+**Web UI** (recommended):
 ```bash
 vixcode-server
-# or
-python run_server.py
+# Opens at http://127.0.0.1:7777
 ```
 
-The Web UI will open at `http://127.0.0.1:7777` automatically.
+**CLI:**
+```bash
+vixcode
+```
 
 ---
 
-## 💻 CLI Commands
+## Web UI Features
+
+The Web UI (`vixcode-server`) provides a full-featured chat interface:
+
+| Feature | Description |
+|---------|-------------|
+| **Session history** | Conversations saved to browser localStorage; restore any past session from the sidebar |
+| **Export** | Download the current conversation as a Markdown file |
+| **Workspace path** | Current workspace directory shown in the header |
+| **Tool cards** | Each tool call shown inline — expand to see full output |
+| **Permission gates** | Allow/Deny buttons appear inline for write and shell operations |
+| **Streaming** | Token-by-token streaming with syntax highlighting |
+
+---
+
+## Tools Reference
+
+### Core Tools (always available)
+
+| Tool | Permission | Description |
+|------|-----------|-------------|
+| `read_file` | allow | Read file with line numbers; supports offset/limit |
+| `write_file` | ask | Write content to a file, creating parents as needed |
+| `edit_file` | ask | Replace a unique string in a file |
+| `run_command` | ask | Execute a shell command (dangerous patterns blocked) |
+| `list_files` | allow | List directory contents with optional glob filter |
+| `search_code` | allow | Search for patterns across files (regex, ripgrep-style) |
+| `fetch_url` | allow | Fetch plain text from a URL (first 8 000 chars) |
+| `create_directory` | ask | Create a directory and missing parents |
+
+### GitLab Tools (when `GITLAB_TOKEN` is set)
+
+| Tool | Use case |
+|------|----------|
+| `gitlab_list_issues`, `gitlab_get_issue` | Triage open bugs |
+| `gitlab_create_issue`, `gitlab_comment_issue` | Create issues from findings |
+| `gitlab_list_mrs`, `gitlab_get_mr` | Review open merge requests |
+| `gitlab_create_mr`, `gitlab_comment_mr` | Open MRs programmatically |
+| `gitlab_list_pipelines`, `gitlab_get_pipeline`, `gitlab_get_job_log` | Diagnose CI failures |
+
+Read-only tools auto-allow; write tools (create/comment) use the normal permission prompt.
+
+---
+
+## CLI Commands
 
 | Command | Description |
 |---------|-------------|
 | `/reset` | Clear conversation context |
 | `/model <name>` | Switch to a different model |
-| `/models` | List locally available models |
+| `/models` | List locally available Ollama models |
 | `/tokens` | Show estimated token count |
 | `/perms` | Show current permission settings |
 | `/compress` | Force context compression |
@@ -164,177 +205,145 @@ The Web UI will open at `http://127.0.0.1:7777` automatically.
 
 ---
 
-## ☁️ Google Cloud / Gemini (optional)
-
-vixcode is local-first, but the agent loop is happy to talk to any
-OpenAI-compatible endpoint. To run against **Google Gemini** instead
-of Ollama (e.g. when you want Gemini 2.5 Pro for harder tasks):
-
-```bash
-export GEMINI_API_KEY=your-aistudio-key
-# Optional — defaults shown:
-# export GEMINI_MODEL=gemini-2.5-flash
-# export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-```
-
-The CLI banner and the Web UI's `info` event will report
-`Provider: Google Gemini` so you know which backend is active. With
-no `GEMINI_API_KEY` set, vixcode falls back to local Ollama exactly
-as before.
-
-**Vertex AI** works through the same OpenAI-compat layer — set
-`GEMINI_BASE_URL` to your Vertex endpoint and supply a bearer token
-from `gcloud auth print-access-token` via `GEMINI_API_KEY`.
-
----
-
-## 🦊 GitLab integration (optional)
-
-When `GITLAB_TOKEN` is set, the agent gets 11 extra tools for triaging
-issues, MRs, and CI pipelines without leaving the chat:
-
-```bash
-export GITLAB_TOKEN=glpat-…           # personal access token, scope: api
-export GITLAB_URL=https://gitlab.com  # optional, defaults to gitlab.com
-export GITLAB_PROJECT=group/repo      # optional, auto-detected from `git remote`
-```
-
-| Tool | Use case |
-|------|----------|
-| `gitlab_list_issues`, `gitlab_get_issue` | "Triage open bugs labeled 'priority::high'" |
-| `gitlab_create_issue`, `gitlab_comment_issue` | "Open an issue summarising what I just found" |
-| `gitlab_list_mrs`, `gitlab_get_mr` | "Show me open MRs targeting main" |
-| `gitlab_create_mr`, `gitlab_comment_mr` | "Open an MR from this branch and link issue #42" |
-| `gitlab_list_pipelines`, `gitlab_get_pipeline`, `gitlab_get_job_log` | "Why did the latest pipeline on `main` fail?" |
-
-Read-only tools auto-allow; anything that creates issues/MRs or posts
-comments still goes through vixcode's normal permission prompt.
-
----
-
-## 📚 Documentation & Guides
-
-We provide several detailed guides (in Korean) to help you understand the architecture, setup, and how Vixcode compares to other open-source tools:
-
-- [AI Coding Agent Open Source Comparison](docs/tips/oss-comparison.md) - Compares Vixcode with Claude Code, Aider, Open Interpreter, and Goose.
-- [Agent Architecture Guide](docs/tips/agent-architecture.md) - Deep dive into how the agent loop works.
-- [Local LLM Setup Guide](docs/tips/local-llm-setup.md) - Best practices for running Ollama locally.
-- [Permission System Guide](docs/tips/permission-system.md) - How to configure read/write/ask permissions.
-- [Tool System Guide](docs/tips/tool-system.md) - How the tools work under the hood.
-
-*Promo Materials:*
-- [Promo Video Script](docs/PROMO_VIDEO.md)
-- [3-Minute Voiceover Script](docs/VOICEOVER_3MIN.md)
-
----
-
-## 📂 Project Structure
-
-```
-LLMai/
-├── config.example.json  # Configuration template
-├── pyproject.toml       # Package metadata & dependencies
-├── requirements.txt     # Pip dependencies
-├── run_server.py        # Web UI server entry point
-├── LICENSE              # MIT license
-├── README.md            # This file
-├── .github/workflows/
-│   └── ci.yml           # GitHub Actions CI
-├── server/
-│   ├── __init__.py
-│   ├── app.py           # FastAPI app (routes + WebSocket)
-│   ├── agent_ws.py      # WebSocket agent loop (async)
-│   └── static/
-│       └── index.html   # Web UI (single-page app, i18n)
-├── tests/
-│   ├── test_tools.py    # Tool & path-safety tests
-│   ├── test_permissions.py
-│   ├── test_agent.py    # Agent loop tests (mocked LLM)
-│   └── test_llm.py      # HTTP client tests
-└── vixcode/
-    ├── __init__.py
-    ├── main.py           # CLI entry point (REPL)
-    ├── agent.py          # Core agent loop (sync)
-    ├── llm.py            # Ollama client (HTTP)
-    ├── tools.py          # Tool definitions & implementations
-    └── permissions.py    # Permission management
-```
-
----
-
-## 🔧 Supported Models
+## Supported Models
 
 ### Native Tool-Calling (recommended)
-Models that support OpenAI-compatible tool calling:
-- `qwen2.5-coder`, `qwen2.5`, `qwen3`
-- `llama3.1`, `llama3.2`, `llama3.3`
-- `mistral-nemo`, `firefunction`
-- `command-r`, `command-r-plus`
+
+| Model family | Example pull |
+|---|---|
+| Qwen 2.5 / 2.5-Coder / 3 | `ollama pull qwen2.5-coder` |
+| Llama 3.1 / 3.2 / 3.3 | `ollama pull llama3.2` |
+| Mistral NeMo / FireFunction | `ollama pull mistral-nemo` |
+| Command-R / Command-R+ | `ollama pull command-r` |
 
 ### XML Fallback Mode
-All other models (e.g., `gemma3`, `phi3`, `mistral`) use an XML-based tool-calling format parsed from the model's text output.
+
+Models that don't support OpenAI-compatible tool calling (`gemma3`, `phi3`, `mistral`, etc.) use an XML-based format parsed from the model's text output. Performance is slightly lower but functional.
 
 ---
 
-## 🔐 Permission Modes
+## Permission Modes
 
-| Mode | Behavior |
-|------|----------|
-| `allow` | Auto-approve (default for read operations) |
-| `ask` | Prompt user for approval (default for writes & shell) |
+| Mode | Behaviour |
+|------|-----------|
+| `allow` | Auto-approve — used for read-only operations |
+| `ask` | Show an Allow/Deny prompt before executing |
 | `deny` | Always block |
 
 ---
 
-## 🌐 Hosted demo (Vercel) — optional cloud fallback
+## Cloud Backends (optional)
 
-The marketing site at [ll-mai.vercel.app](https://ll-mai.vercel.app/) ships with a live chat widget. Local Ollama is always tried first; if no local backend is reachable, the page falls back to a Vercel serverless function (`api/chat.js`) that proxies to Groq.
+The agent loop speaks the OpenAI `/v1/chat/completions` contract, so it works with any compatible backend.
 
-The status pill and composer label switch to **"Cloud demo · prompts leave your machine"** whenever the cloud path is active, so visitors see the privacy tradeoff explicitly.
+### Google Gemini
 
-To enable the cloud fallback on your own fork:
+```bash
+export GEMINI_API_KEY=your-aistudio-key
+# Optional overrides:
+# export GEMINI_MODEL=gemini-2.5-flash
+# export GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+```
 
-1. Get a free API key at [console.groq.com](https://console.groq.com/keys).
-2. In the Vercel project settings, add an environment variable:
-   - **Name:** `GROQ_API_KEY`
-   - **Value:** your key
-   - (Optional) `GROQ_MODEL` — defaults to `llama-3.3-70b-versatile`.
-3. Redeploy. The serverless function will report `available: true` from `GET /api/chat`, and the browser will route fallback requests there.
+The CLI banner and Web UI header report `Provider: Google Gemini` when active. Without `GEMINI_API_KEY`, the app falls back to local Ollama.
 
-If `GROQ_API_KEY` is not set, the endpoint returns `available: false` and the UI prompts the visitor to install Ollama locally — there is no silent cloud egress.
+**Vertex AI** works via the same layer — set `GEMINI_BASE_URL` to your Vertex OpenAI-compat endpoint and supply a bearer token via `GEMINI_API_KEY`.
 
-### Recommended: rate limiting (Upstash)
+### Custom endpoint
 
-The `/api/chat` endpoint is public and spends real money on your Groq account. Add Upstash Redis to enforce a per-IP and global rate limit (the function gracefully runs without it but **leaves your budget unguarded**):
-
-1. Create a free Redis at [console.upstash.com](https://console.upstash.com/).
-2. Add two more environment variables in Vercel:
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
-3. Redeploy. The function now caps each IP at **10 requests/minute** and the deployment as a whole at **1000 requests/day** (sliding window). Excess requests get `429` with a `Retry-After` header.
-
-### Built-in hardening
-
-The function applies these defaults regardless of Upstash:
-
-- **Server-pinned system prompt.** Client-supplied `role: 'system'` messages are stripped; only `user` and `assistant` roles are forwarded. Visitors cannot override the assistant persona.
-- **Input caps.** 40 messages max, 8 000 chars per message, 12 000 chars total. Exceeding any returns `413`.
-- **Fixed sampling.** `temperature`, `top_p`, and `max_tokens` are not pass-through — fixed server-side so a malicious caller cannot inflate cost.
-- **Client-disconnect cancellation.** `req.signal` is wired to the upstream `fetch`, so closing the browser stops Groq billing immediately.
-- **Opaque errors.** Upstream error bodies stay in Vercel logs; clients get a short `{ error, requestId }` envelope.
+Set `ollama_url` in `config.json` to any OpenAI-compatible base URL (LM Studio, vLLM, etc.).
 
 ---
 
-## 📜 License
+## GitLab Integration
+
+```bash
+export GITLAB_TOKEN=glpat-…           # personal access token, scope: api
+export GITLAB_URL=https://gitlab.com  # optional, defaults to gitlab.com
+export GITLAB_PROJECT=group/repo      # optional, auto-detected from git remote
+```
+
+---
+
+## Hosted Demo (Vercel)
+
+[ll-mai.vercel.app](https://ll-mai.vercel.app) — a tab-based interface with three views:
+
+- **Chat** (default) — full-height chat that connects directly to your local Ollama at `localhost:11434`; prompts never leave the browser
+- **About** — features, agent loop diagram, and product highlights
+- **Install** — copy-ready quick-start commands
+
+The status pill shows `Local · <model>` when Ollama is detected, or `Cloud · <provider>` when the optional cloud fallback is active. If neither is reachable, the UI links to the Install tab.
+
+### Optional cloud fallback for your fork
+
+1. Get a free API key at [console.groq.com](https://console.groq.com/keys).
+2. Add to Vercel environment: `GROQ_API_KEY` (and optionally `GROQ_MODEL`, default `llama-3.3-70b-versatile`).
+3. Redeploy. The serverless function will return `available: true` and the browser will route fallback requests there.
+
+**Rate limiting (Upstash):** add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` to cap each IP at 10 req/min and the deployment at 1 000 req/day.
+
+---
+
+## Project Structure
+
+```
+LLMai/
+├── config.example.json   # Configuration template
+├── pyproject.toml        # Package metadata & dependencies
+├── run_server.py         # Web UI server entry point
+├── Dockerfile
+├── docker-compose.yml
+├── vercel.json           # Vercel deployment (outputDirectory: website)
+├── .github/workflows/ci.yml
+├── api/
+│   └── chat.js           # Vercel serverless cloud fallback
+├── server/
+│   ├── app.py            # FastAPI app (routes + WebSocket)
+│   ├── agent_ws.py       # Async agent loop (native + XML modes)
+│   └── static/
+│       └── index.html    # Web UI — session history, export, streaming
+├── vixcode/
+│   ├── main.py           # CLI entry point (REPL)
+│   ├── agent.py          # Core sync agent loop
+│   ├── llm.py            # OpenAI-compat HTTP client (Ollama / Gemini)
+│   ├── tools.py          # 8 core tool definitions & implementations
+│   ├── gitlab_tools.py   # 11 GitLab tools (opt-in via GITLAB_TOKEN)
+│   └── permissions.py    # Permission management
+├── website/
+│   └── index.html        # Tab-based landing page (Chat / About / Install)
+├── tests/
+│   ├── test_tools.py
+│   ├── test_permissions.py
+│   ├── test_agent.py
+│   ├── test_llm.py
+│   └── test_gitlab_tools.py
+└── docs/
+    └── tips/             # Architecture & setup guides (Korean)
+```
+
+---
+
+## Documentation
+
+- [Agent Architecture](docs/tips/agent-architecture.md) — how the agentic loop works
+- [Local LLM Setup](docs/tips/local-llm-setup.md) — best practices for Ollama
+- [Permission System](docs/tips/permission-system.md) — configuring allow/ask/deny
+- [Tool System](docs/tips/tool-system.md) — tool definitions and sandboxing
+- [OSS Comparison](docs/tips/oss-comparison.md) — vs. Claude Code, Aider, Open Interpreter, Goose
+
+---
+
+## License
 
 MIT
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Ollama](https://ollama.ai) — Local LLM runtime
 - [FastAPI](https://fastapi.tiangolo.com) — Web framework
 - [Rich](https://github.com/Textualize/rich) — Terminal formatting
-- [highlight.js](https://highlightjs.org) — Code syntax highlighting (Web UI)
-- [marked.js](https://marked.js.org) — Markdown rendering (Web UI)
+- [highlight.js](https://highlightjs.org) — Code syntax highlighting
+- [marked.js](https://marked.js.org) — Markdown rendering
