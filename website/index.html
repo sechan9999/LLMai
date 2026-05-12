@@ -3,1010 +3,1022 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM ai — Local AI Coding Agent</title>
+    <title>LLM ai - Enterprise AI without leaks or overspending</title>
+    <meta name="description" content="LLM ai is a local-first enterprise AI workspace that keeps code on your machine, routes tasks to affordable models, and asks before risky actions.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LLM ai - Enterprise AI without leaks or overspending">
+    <meta property="og:description" content="A local-first AI coding workspace with privacy gates, cost-aware model routing, and explicit permission controls.">
+    <meta property="og:url" content="https://ll-mai.vercel.app/">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
         :root {
-            --bg-main: #09090b;
-            --bg-sidebar: #121214;
-            --surface: #18181b;
-            --surface-hover: #27272a;
-            --border: #27272a;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent-start: #3b82f6;
-            --accent-end: #8b5cf6;
-            --accent-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-            --radius: 12px;
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --bg: #07090c;
+            --panel: #101419;
+            --panel-2: #151b22;
+            --panel-3: #1d2630;
+            --line: #26313d;
+            --line-soft: rgba(255,255,255,.08);
+            --text: #f5f7fa;
+            --muted: #aab4c0;
+            --quiet: #758293;
+            --green: #46d39a;
+            --green-soft: rgba(70,211,154,.12);
+            --blue: #6aa9ff;
+            --blue-soft: rgba(106,169,255,.14);
+            --amber: #f6c56f;
+            --amber-soft: rgba(246,197,111,.12);
+            --red: #ff7b8a;
+            --red-soft: rgba(255,123,138,.12);
+            --purple: #b993ff;
+            --shadow: 0 24px 60px rgba(0,0,0,.42);
+            --radius: 8px;
+            --sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
+            margin: 0;
+            min-height: 100vh;
+            background:
+                linear-gradient(135deg, rgba(70,211,154,.06), transparent 30%),
+                linear-gradient(215deg, rgba(106,169,255,.08), transparent 36%),
+                var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
             -webkit-font-smoothing: antialiased;
         }
 
-        /* ── Sidebar ── */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 72%);
+            z-index: -1;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        button, textarea { font: inherit; }
+        code { font-family: var(--mono); }
+
+        .shell {
+            width: min(1440px, 100%);
+            margin: 0 auto;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+        }
+
         .sidebar {
-            width: 320px;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 24px;
+            border-right: 1px solid var(--line-soft);
+            background: rgba(9,12,16,.78);
+            backdrop-filter: blur(16px);
             display: flex;
             flex-direction: column;
-            padding: 32px 24px;
-            flex-shrink: 0;
+            gap: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            font-size: 20px;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--green), var(--blue));
+            color: #071014;
+            font: 800 18px var(--mono);
+        }
+
+        .nav {
+            display: grid;
+            gap: 8px;
+        }
+
+        .nav a {
+            color: var(--muted);
+            padding: 9px 10px;
+            border-radius: var(--radius);
+            font-size: 14px;
+        }
+
+        .nav a:hover {
+            color: var(--text);
+            background: var(--panel-2);
+        }
+
+        .side-card {
+            margin-top: auto;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .side-card p {
+            margin: 8px 0 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .side-stat {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 9px 0;
+            border-top: 1px solid var(--line-soft);
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .side-stat strong { color: var(--text); font-weight: 700; }
+
+        .main {
+            min-width: 0;
+            padding: 28px clamp(20px, 4vw, 56px) 56px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
-            overflow-y: auto;
-        }
-        
-        .sidebar::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-        .sidebar-header {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
+            gap: 18px;
+            margin-bottom: 34px;
         }
 
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        .sidebar-nav a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        
-        .sidebar-nav a:hover {
-            color: var(--text-primary);
-        }
-        
-        .nav-github {
-            margin-top: 16px;
+        .pill {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            padding: 8px 16px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        .nav-github:hover {
-            background: var(--surface-hover);
+            gap: 8px;
+            border: 1px solid var(--line);
+            background: rgba(21,27,34,.76);
+            color: var(--muted);
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 650;
         }
 
-        .sidebar-hero {
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--amber);
+            box-shadow: 0 0 16px currentColor;
+        }
+
+        .pill[data-state="ok"] .dot { background: var(--green); }
+        .pill[data-state="bad"] .dot { background: var(--red); }
+
+        .top-actions {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 48px;
-        }
-        
-        .sidebar-badge {
-            font-size: 11px;
-            color: var(--accent-end);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            background: rgba(139, 92, 246, 0.1);
-            padding: 4px 10px;
-            border-radius: 100px;
-            align-self: flex-start;
-            font-weight: 600;
-        }
-        
-        .sidebar-hero-title {
-            font-size: 24px;
-            font-weight: 700;
-            line-height: 1.2;
-            color: var(--text-primary);
-        }
-        
-        .text-gradient {
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .sidebar-hero-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-        
-        .sidebar-hero-actions {
-            display: flex;
-            flex-direction: column;
             gap: 10px;
-            margin-top: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
-        
+
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .btn-primary {
-            background: var(--text-primary);
-            color: var(--bg-main);
-            border: none;
-        }
-        
-        .btn-primary:hover {
-            background: var(--accent-start);
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        .btn-secondary {
-            background: var(--surface);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--surface-hover);
-            border-color: #52525b;
-        }
-        
-        .sidebar-footer {
-            margin-top: 48px;
-            font-size: 11px;
-            color: var(--text-muted);
-            text-align: left;
-        }
-
-        /* ── Main Content ── */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05), transparent 50%);
-        }
-
-        .top-nav {
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 18px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .logo span {
-            color: var(--text-secondary);
-            font-weight: 400;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
             gap: 8px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .status-indicator:hover {
-            background: var(--surface-hover);
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #facc15;
-            box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
-        }
-        .status-indicator[data-state="ok"] .status-dot {
-            background: #4ade80;
-            box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
-        }
-        .status-indicator[data-state="bad"] .status-dot {
-            background: #f87171;
-            box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
-        }
-
-        /* ── Center Area (Welcome & Feed) ── */
-        .center-area {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 24px;
-            scroll-behavior: smooth;
-        }
-        .center-area::-webkit-scrollbar {
-            width: 6px;
-        }
-        .center-area::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 10px;
-        }
-
-        .welcome-screen {
-            max-width: 800px;
-            width: 100%;
-            margin: auto 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .greeting {
-            font-size: 28px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .hero-question {
-            font-size: 40px;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            color: var(--text);
+            font-size: 14px;
             font-weight: 700;
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 48px;
+            cursor: pointer;
         }
 
-        .chips-grid {
+        .btn:hover { border-color: rgba(255,255,255,.2); background: var(--panel-3); }
+        .btn-primary { background: #f5f7fa; color: #071014; border-color: #f5f7fa; }
+        .btn-primary:hover { background: var(--green); border-color: var(--green); }
+
+        .hero {
+            display: grid;
+            grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr);
+            gap: clamp(24px, 4vw, 52px);
+            align-items: center;
+            min-height: calc(100vh - 130px);
+        }
+
+        .eyebrow {
+            color: var(--green);
+            font: 700 12px var(--mono);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0;
+            max-width: 760px;
+            font-size: clamp(42px, 6vw, 82px);
+            line-height: .96;
+            letter-spacing: -.065em;
+        }
+
+        .lead {
+            max-width: 660px;
+            color: var(--muted);
+            font-size: clamp(17px, 1.6vw, 21px);
+            line-height: 1.6;
+            margin: 24px 0 28px;
+        }
+
+        .hero-actions {
             display: flex;
-            flex-wrap: wrap;
             gap: 12px;
-            justify-content: center;
-            max-width: 700px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .proof-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            max-width: 690px;
+        }
+
+        .proof {
+            border: 1px solid var(--line);
+            background: rgba(16,20,25,.72);
+            border-radius: var(--radius);
+            padding: 13px;
+        }
+
+        .proof strong {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .proof span {
+            color: var(--quiet);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .workspace {
+            background: rgba(16,20,25,.9);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .workspace-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #0b0f13;
+        }
+
+        .window-dots {
+            display: flex;
+            gap: 7px;
+        }
+
+        .window-dots span {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--line);
+        }
+
+        .window-dots span:nth-child(1) { background: #ff7b8a; }
+        .window-dots span:nth-child(2) { background: #f6c56f; }
+        .window-dots span:nth-child(3) { background: #46d39a; }
+
+        .workspace-title {
+            color: var(--muted);
+            font: 600 12px var(--mono);
+        }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            min-height: 560px;
+        }
+
+        .chat {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .chat-feed {
+            min-height: 0;
+            height: 404px;
+            overflow-y: auto;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .empty-state {
+            border: 1px dashed var(--line);
+            background: rgba(21,27,34,.58);
+            border-radius: var(--radius);
+            padding: 18px;
+        }
+
+        .empty-state h2 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            letter-spacing: -.02em;
+        }
+
+        .empty-state p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.55;
+            font-size: 14px;
+        }
+
+        .quick-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 16px;
         }
 
         .chip {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 12px 18px;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 500;
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            color: var(--muted);
+            border-radius: var(--radius);
+            padding: 10px;
+            text-align: left;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-        .chip:hover {
-            background: var(--surface-hover);
-            color: var(--text-primary);
-            border-color: #52525b;
-            transform: translateY(-1px);
-        }
-
-        /* ── Chat Feed ── */
-        .chat-feed {
-            max-width: 800px;
-            width: 100%;
-            display: none;
-            flex-direction: column;
-            gap: 24px;
-            padding-bottom: 40px;
-        }
-
-        .chat-msg {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .chat-user {
-            align-items: flex-end;
-        }
-        .chat-user .chat-bubble {
-            background: var(--surface);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            padding: 12px 18px;
-            border-radius: 18px 18px 4px 18px;
-            max-width: 80%;
-            font-size: 15px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-        }
-
-        .chat-assistant {
-            align-items: flex-start;
-        }
-        .chat-assistant .chat-bubble {
-            background: transparent;
-            color: var(--text-primary);
-            padding: 4px 0;
-            border-radius: 0;
-            max-width: 100%;
-            font-size: 15px;
-            line-height: 1.6;
-            width: 100%;
-        }
-
-        .chat-assistant .chat-bubble p { margin-bottom: 12px; }
-        .chat-assistant .chat-bubble p:last-child { margin-bottom: 0; }
-        .chat-assistant .chat-bubble pre {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            overflow-x: auto;
-            margin: 12px 0;
-            font-family: var(--font-mono);
             font-size: 13px;
-        }
-        .chat-assistant .chat-bubble code {
-            font-family: var(--font-mono);
-            background: rgba(255,255,255,0.1);
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        .chat-assistant .chat-bubble pre code { background: none; padding: 0; }
-
-        /* ── Input Area ── */
-        .input-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 24px 24px;
+            line-height: 1.35;
         }
 
-        .input-box {
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 20px;
+        .chip:hover { border-color: rgba(255,255,255,.22); color: var(--text); }
+
+        .message {
+            display: flex;
+        }
+
+        .message.user { justify-content: flex-end; }
+        .bubble {
+            max-width: 86%;
+            border-radius: 12px;
+            padding: 11px 13px;
+            font-size: 14px;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+        }
+
+        .message.user .bubble {
+            background: var(--blue);
+            color: #06101d;
+            border-bottom-right-radius: 4px;
+            font-weight: 600;
+        }
+
+        .message.assistant .bubble {
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-bottom-left-radius: 4px;
+        }
+
+        .bubble p { margin: 0 0 10px; }
+        .bubble p:last-child { margin-bottom: 0; }
+        .bubble pre {
+            margin: 10px 0;
             padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            transition: border-color 0.2s, box-shadow 0.2s;
+            overflow: auto;
+            background: #080b0f;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
         }
-        .input-box:focus-within {
-            border-color: rgba(255,255,255,0.15);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(139, 92, 246, 0.3);
+
+        .composer {
+            border-top: 1px solid var(--line);
+            padding: 14px;
+            background: #0b0f13;
+        }
+
+        .composer-box {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+            padding: 10px;
         }
 
         #chat-text {
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            font-size: 15px;
+            width: 100%;
+            min-height: 54px;
+            max-height: 180px;
             resize: none;
-            padding: 4px 8px;
-            min-height: 44px;
-            max-height: 200px;
-            outline: none;
+            border: 0;
+            outline: 0;
+            color: var(--text);
+            background: transparent;
             line-height: 1.5;
         }
-        #chat-text::placeholder { color: var(--text-muted); }
 
-        .input-actions {
+        #chat-text::placeholder { color: var(--quiet); }
+
+        .composer-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0 4px;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 8px;
         }
 
-        .icon-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
+        .mode-label {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .icon-btn:hover {
-            background: var(--surface-hover);
-            color: var(--text-primary);
-        }
-        .text-btn {
-            width: auto;
-            padding: 0 12px;
-            font-size: 13px;
-            font-weight: 500;
-            gap: 6px;
-            border: 1px solid transparent;
-        }
-        .text-btn:hover {
-            border-color: var(--border);
+            gap: 7px;
+            color: var(--muted);
+            font-size: 12px;
         }
 
-        .spacer { flex: 1; }
-
-        .send-btn {
-            background: var(--text-primary);
-            color: var(--bg-main);
-            border: none;
-            width: 32px;
-            height: 32px;
+        .send {
+            width: 34px;
+            height: 34px;
+            border: 0;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--text);
+            color: #071014;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .send-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-            background: var(--accent-start);
-            color: white;
-        }
-        .send-btn:disabled {
-            background: var(--surface-hover);
-            color: var(--text-muted);
+
+        .send:disabled {
+            opacity: .45;
             cursor: not-allowed;
         }
 
-        .footer-links {
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 16px;
-        }
-        .cli-link {
-            display: inline-block;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 4px 8px;
-            border-radius: 6px;
-            margin-left: 6px;
-            transition: all 0.2s;
-        }
-        .cli-link:hover {
-            background: var(--surface-hover);
-            color: var(--text-primary);
-        }
-        
-        .brand-footer {
-            margin-top: 8px;
-            font-size: 11px;
-            opacity: 0.5;
-        }
-
-        .info-section {
-            max-width: 800px;
-            width: 100%;
-            margin: 64px auto 0;
-            text-align: left;
-        }
-        .info-section:last-child { margin-bottom: 64px; }
-        .info-section h2 {
-            font-size: 24px;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        .feature-grid {
+        .control-panel {
+            border-left: 1px solid var(--line);
+            background: #0c1116;
+            padding: 14px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-        }
-        .feature-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 12px;
-        }
-        .feature-icon { font-size: 24px; margin-bottom: 12px; }
-        .feature-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--text-primary); }
-        .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
-        
-        .steps { display: flex; flex-direction: column; gap: 24px; }
-        .step { display: flex; gap: 16px; }
-        .step-num { width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-        .step h3 { font-size: 16px; margin-bottom: 4px; color: var(--text-primary); }
-        .step p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
-
-        /* ── Preview Panel (IDE Sandbox) ── */
-        .preview-panel {
-            width: 0;
-            background: var(--bg-main);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            transition: width 0.3s ease;
-            overflow: hidden;
-            flex-shrink: 0;
-            z-index: 50;
-        }
-        .preview-panel.open {
-            width: 50%;
-        }
-        
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .preview-tabs {
-            display: flex;
-            gap: 8px;
-            background: var(--bg-sidebar);
-            padding: 4px;
-            border-radius: 8px;
-        }
-        
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--surface-hover);
-            color: var(--text-primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        
-        .preview-actions {
-            display: flex;
+            align-content: start;
             gap: 12px;
         }
-        
-        .preview-content {
-            flex: 1;
-            position: relative;
-            background: #fff;
-        }
-        
-        .sandbox-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: #fff;
-        }
-        
-        .sandbox-editor {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: var(--bg-main);
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 13px;
-            padding: 16px;
-            resize: none;
-            outline: none;
+
+        .panel-block {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 13px;
         }
 
-        /* ── Code Bar ── */
-        .chat-bubble pre {
-            background: var(--bg-sidebar);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin: 16px 0;
+        .panel-block h3 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            letter-spacing: .01em;
+        }
+
+        .meter-row {
+            display: grid;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .meter-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .meter {
+            height: 7px;
+            border-radius: 999px;
             overflow: hidden;
+            background: var(--panel-3);
         }
-        .chat-bubble pre code {
+
+        .meter span {
             display: block;
-            padding: 16px;
-            overflow-x: auto;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--green), var(--blue));
         }
-        .code-bar {
+
+        .route {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--surface);
-            padding: 6px 12px;
-            border-bottom: 1px solid var(--border);
-            font-family: var(--font-mono);
+            gap: 10px;
+            padding: 9px 0;
+            border-top: 1px solid var(--line-soft);
             font-size: 12px;
+            color: var(--muted);
         }
-        .code-lang { color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
-        .code-action-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            margin-left: 8px;
-            font-size: 12px;
-            transition: color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .code-action-btn:hover { color: var(--text-primary); }
 
+        .route:first-of-type { border-top: 0; }
+        .route strong { color: var(--text); font-size: 13px; }
+
+        .badge {
+            border-radius: 999px;
+            padding: 4px 8px;
+            font: 700 11px var(--mono);
+        }
+
+        .badge.local { color: var(--green); background: var(--green-soft); }
+        .badge.ask { color: var(--amber); background: var(--amber-soft); }
+        .badge.stop { color: var(--red); background: var(--red-soft); }
+        .badge.cloud { color: var(--blue); background: var(--blue-soft); }
+
+        .section {
+            padding: 76px 0 0;
+        }
+
+        .section-head {
+            max-width: 760px;
+            margin-bottom: 24px;
+        }
+
+        .section h2 {
+            margin: 0 0 10px;
+            font-size: clamp(28px, 3.2vw, 44px);
+            letter-spacing: -.04em;
+        }
+
+        .section p {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            background: rgba(16,20,25,.82);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .step {
+            position: relative;
+            background: rgba(16,20,25,.82);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 18px;
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: grid;
+            place-items: center;
+            background: var(--blue-soft);
+            color: var(--blue);
+            font: 800 13px var(--mono);
+            margin-bottom: 14px;
+        }
+
+        .code-box {
+            max-width: 780px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #070a0d;
+        }
+
+        .code-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--muted);
+            font: 600 12px var(--mono);
+        }
+
+        .code-box pre {
+            margin: 0;
+            padding: 18px;
+            overflow: auto;
+            color: #dbe7f3;
+            font: 13px/1.7 var(--mono);
+        }
+
+        footer {
+            padding: 72px 0 28px;
+            color: var(--quiet);
+            font-size: 13px;
+        }
+
+        @media (max-width: 1120px) {
+            .shell { grid-template-columns: 1fr; }
+            .sidebar {
+                position: static;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 16px 20px;
+            }
+            .nav, .side-card { display: none; }
+            .hero { grid-template-columns: 1fr; min-height: 0; }
+            .workspace-grid { grid-template-columns: 1fr; }
+            .control-panel { border-left: 0; border-top: 1px solid var(--line); grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 760px) {
+            .main { padding: 20px 14px 42px; }
+            .topbar { align-items: flex-start; flex-direction: column; }
+            .top-actions { justify-content: flex-start; }
+            .proof-strip, .cards, .flow, .control-panel, .quick-row { grid-template-columns: 1fr; }
+            .workspace { border-radius: var(--radius); }
+            .workspace-grid { min-height: 0; }
+            .chat-feed { height: 420px; }
+            .bubble { max-width: 94%; }
+        }
     </style>
 </head>
 <body>
-    <aside class="sidebar marketing-sidebar">
-        <div class="sidebar-header">
-            <div class="logo">LLM <span>ai</span></div>
-            <nav class="sidebar-nav">
-                <a href="#features" onclick="event.preventDefault(); document.getElementById('features').scrollIntoView({behavior: 'smooth'})">Features</a>
-                <a href="#how-it-works" onclick="event.preventDefault(); document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">How it works</a>
-                <a href="./promo.html" target="_blank">Demo</a>
-                <a href="#install" onclick="event.preventDefault(); document.getElementById('install').scrollIntoView({behavior: 'smooth'})">Install</a>
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" class="nav-github">GitHub</a>
+    <div class="shell">
+        <aside class="sidebar">
+            <a class="brand" href="#top" aria-label="LLM ai home">
+                <span class="brand-mark">L</span>
+                <span>LLM ai</span>
+            </a>
+            <nav class="nav" aria-label="Primary">
+                <a href="#controls">Controls</a>
+                <a href="#architecture">How it works</a>
+                <a href="./promo.html" target="_blank" rel="noopener">Demo video</a>
+                <a href="#install">Install</a>
+                <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
             </nav>
-        </div>
-
-        <div class="sidebar-hero">
-            <div class="sidebar-badge">Open Source · MIT · Powered by Ollama</div>
-            <h1 class="sidebar-hero-title">An AI coding agent <br/><span class="text-gradient">that never leaves your laptop</span></h1>
-            <p class="sidebar-hero-subtitle">
-                LLM ai plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
-                Your code stays on disk. No API keys, no logs sent anywhere.
-            </p>
-            <div class="sidebar-hero-actions">
-                <a href="https://github.com/sechan9999/LLMai" target="_blank" class="btn btn-primary">View on GitHub</a>
-                <a href="https://github.com/sechan9999/LLMai#quick-start" target="_blank" class="btn btn-secondary">Install Locally</a>
+            <div class="side-card">
+                <strong>Enterprise-ready direction</strong>
+                <p>Private by default, cost-aware when cloud models are useful, and gated before anything touches files or shells.</p>
+                <div class="side-stat"><span>Default data path</span><strong>Local</strong></div>
+                <div class="side-stat"><span>Mutating tools</span><strong>Ask</strong></div>
+                <div class="side-stat"><span>Cloud spend</span><strong>Opt-in</strong></div>
             </div>
-        </div>
-        
-        <div class="sidebar-footer">
-            &copy; 2026 sechan9999 &middot; MIT Licensed
-        </div>
-    </aside>
+        </aside>
 
-    <main class="main-content">
-        <header class="top-nav">
-            <div class="logo">LLM <span>ai</span></div>
-            <div class="status-indicator" id="chat-status" data-state="loading" onclick="showSetupHelp()">
-                <span class="status-dot"></span>
-                <span id="chat-model">Connecting to Ollama...</span>
+        <main class="main" id="top">
+            <div class="topbar">
+                <button class="pill" id="chat-status" type="button" onclick="showSetupHelp()" data-state="loading">
+                    <span class="dot"></span>
+                    <span id="chat-model">Checking local Ollama</span>
+                </button>
+                <div class="top-actions">
+                    <a class="btn" href="./promo.html" target="_blank" rel="noopener">Watch demo</a>
+                    <a class="btn btn-primary" href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">View GitHub</a>
+                </div>
             </div>
-        </header>
 
-        <div class="center-area" id="center-area">
-            <div class="welcome-screen" id="welcome-screen">
-                <h2 class="greeting">Hi sechan9999</h2>
-                <h1 class="hero-question">How can I help you today?</h1>
-                
-                <div class="chips-grid">
-                    <button class="chip" onclick="useChip(this)"><span style="color:#3b82f6">🌐</span> Build a landing page</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#10b981">💡</span> Find AI tools</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#a855f7">📄</span> Project proposal</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#06b6d4">🔍</span> Search latest news</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#f43f5e">📊</span> Sales analysis Excel</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#f59e0b">📈</span> Build a dashboard</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#8b5cf6">🎬</span> Create a slide deck</button>
-                    <button class="chip" onclick="useChip(this)"><span style="color:#eab308">⚡</span> Tech comparison report</button>
+            <section class="hero" aria-labelledby="hero-title">
+                <div>
+                    <div class="eyebrow">Enterprise AI without leaks or overspending</div>
+                    <h1 id="hero-title">AI work that stays private, routed, and under control.</h1>
+                    <p class="lead">
+                        LLM ai turns the local-first vixcode agent into an enterprise-friendly AI workspace:
+                        run sensitive work on your machine, route heavier tasks only when approved, and keep every write behind a clear permission gate.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#install">Install locally</a>
+                        <a class="btn" href="#controls">Explore controls</a>
+                    </div>
+                    <div class="proof-strip" aria-label="Product highlights">
+                        <div class="proof"><strong>0</strong><span>required API keys for local work</span></div>
+                        <div class="proof"><strong>17</strong><span>file, shell, and GitLab tools</span></div>
+                        <div class="proof"><strong>Ask</strong><span>before writes, shell commands, or cloud use</span></div>
+                    </div>
                 </div>
 
-                <section id="features" class="info-section">
-                    <h2>Built for power users who care about privacy</h2>
-                    <div class="feature-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">🔒</div>
-                            <h3>100% local</h3>
-                            <p>Runs against a local Ollama instance. No outbound API calls, no telemetry, no account required.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🤖</div>
-                            <h3>Real agentic loop</h3>
-                            <p>Up to 20 iterations of plan → tool → observe per turn. The model chains reads, edits, and tests on its own.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🛡️</div>
-                            <h3>Explicit-permission writes</h3>
-                            <p>Reads and searches auto-run. <code>write_file</code>, <code>edit_file</code>, and <code>run_command</code> require explicit approval.</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🔧</div>
-                            <h3>Six built-in tools</h3>
-                            <p><code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>list_files</code>, <code>search_code</code>, <code>run_command</code> — all path-sandboxed.</p>
-                        </div>
+                <div class="workspace" aria-label="LLM ai workspace">
+                    <div class="workspace-head">
+                        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                        <div class="workspace-title">privacy-and-spend-console.local</div>
                     </div>
-                </section>
+                    <div class="workspace-grid">
+                        <section class="chat" aria-label="Local model chat">
+                            <div class="chat-feed" id="chat-feed">
+                                <div class="empty-state" id="empty-state">
+                                    <h2>Try the local chat bridge</h2>
+                                    <p>
+                                        If Ollama is running on your machine, this page can talk to it directly at
+                                        <code>localhost:11434</code>. The hosted page never receives your prompt.
+                                    </p>
+                                    <div class="quick-row">
+                                        <button class="chip" type="button" onclick="useChip(this)">Review this repo for privacy risks</button>
+                                        <button class="chip" type="button" onclick="useChip(this)">Estimate token cost for a support workflow</button>
+                                        <button class="chip" type="button" onclick="useChip(this)">Draft a safe GitLab MR summary</button>
+                                        <button class="chip" type="button" onclick="useChip(this)">Explain how local tool permissions work</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="composer">
+                                <div class="composer-box">
+                                    <textarea id="chat-text" rows="2" placeholder="Ask a local model, or click a prompt above"></textarea>
+                                    <div class="composer-actions">
+                                        <span class="mode-label"><span class="dot"></span> Local-first mode</span>
+                                        <button id="chat-send" class="send" type="button" onclick="sendChat()" aria-label="Send">↑</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
-                <section id="how-it-works" class="info-section">
-                    <h2>How it works</h2>
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-num">1</div>
-                            <div>
-                                <h3>You ask in plain language</h3>
-                                <p>Type into the UI: <em>"add pagination to the products endpoint and update the tests."</em></p>
+                        <aside class="control-panel" id="controls" aria-label="Governance controls">
+                            <div class="panel-block">
+                                <h3>Data boundary</h3>
+                                <div class="route"><strong>Codebase context</strong><span class="badge local">local</span></div>
+                                <div class="route"><strong>Secrets detected</strong><span class="badge stop">block</span></div>
+                                <div class="route"><strong>Cloud escalation</strong><span class="badge ask">ask</span></div>
                             </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">2</div>
-                            <div>
-                                <h3>Ollama plans the next step</h3>
-                                <p>The agent calls your local model with the conversation and a list of tools.</p>
+                            <div class="panel-block">
+                                <h3>Spend router</h3>
+                                <div class="meter-row">
+                                    <div class="meter-top"><span>Local tasks</span><span>74%</span></div>
+                                    <div class="meter"><span style="width:74%"></span></div>
+                                </div>
+                                <div class="meter-row">
+                                    <div class="meter-top"><span>Cloud tasks</span><span>18%</span></div>
+                                    <div class="meter"><span style="width:18%"></span></div>
+                                </div>
+                                <div class="meter-row">
+                                    <div class="meter-top"><span>Blocked or needs approval</span><span>8%</span></div>
+                                    <div class="meter"><span style="width:8%;background:linear-gradient(90deg,var(--amber),var(--red))"></span></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-num">3</div>
-                            <div>
-                                <h3>Tools run, sandboxed to your workspace</h3>
-                                <p>Read-only tools execute immediately. Mutating tools pause for your approval.</p>
+                            <div class="panel-block">
+                                <h3>Tool policy</h3>
+                                <div class="route"><strong>read_file</strong><span class="badge local">allow</span></div>
+                                <div class="route"><strong>edit_file</strong><span class="badge ask">ask</span></div>
+                                <div class="route"><strong>run_command</strong><span class="badge ask">ask</span></div>
                             </div>
-                        </div>
+                        </aside>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section id="install" class="info-section">
-                    <h2>Run it locally in under a minute</h2>
-                    <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Make sure Ollama is running and a model is pulled.</p>
-                    <div class="code-box">git clone https://github.com/sechan9999/LLMai.git
+            <section class="section" aria-labelledby="controls-title">
+                <div class="section-head">
+                    <h2 id="controls-title">Controls that match enterprise reality</h2>
+                    <p>
+                        Most AI tools force a tradeoff between capability and governance. LLM ai starts local,
+                        preserves an audit-friendly tool loop, and makes cloud model use an explicit decision instead of a hidden default.
+                    </p>
+                </div>
+                <div class="cards">
+                    <div class="card">
+                        <h3>Private by default</h3>
+                        <p>Local Ollama models handle sensitive code and documents without sending prompts to an external API.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Cost-aware routing</h3>
+                        <p>Small routine work can stay on local models. Expensive cloud models become a deliberate escalation path.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Permissioned execution</h3>
+                        <p>Read-only actions can run quickly, while writes and shell commands stop for human approval.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="architecture" aria-labelledby="architecture-title">
+                <div class="section-head">
+                    <h2 id="architecture-title">How the agent loop works</h2>
+                    <p>A compact Python agent coordinates the model, tools, permissions, and workspace sandbox.</p>
+                </div>
+                <div class="flow">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <h3>Classify the task</h3>
+                        <p>Decide whether it can run locally, needs a tool, or requires a higher-cost model.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <h3>Use sandboxed tools</h3>
+                        <p>Read files, search code, inspect GitLab, or request a permissioned mutation.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <h3>Ask before risk</h3>
+                        <p>Writes, shell commands, issue creation, and cloud escalation are visible approval points.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <h3>Return the result</h3>
+                        <p>The final response includes what changed, what ran, and where the user still has control.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="install" aria-labelledby="install-title">
+                <div class="section-head">
+                    <h2 id="install-title">Run it locally</h2>
+                    <p>Clone the repo, install the package, start Ollama, and open the web UI.</p>
+                </div>
+                <div class="code-box">
+                    <div class="code-title"><span>quick-start</span><span>PowerShell, macOS, Linux</span></div>
+                    <pre><code>git clone https://github.com/sechan9999/LLMai.git
 cd LLMai
 pip install -e .
 
-# In another terminal:
 ollama serve
 ollama pull qwen2.5-coder
 
-# Launch the Web UI:
-vixcode-server</div>
-                </section>
-            </div>
-
-            <div class="chat-feed" id="chat-feed">
-                <!-- Chat messages will be injected here -->
-            </div>
-        </div>
-
-        <div class="input-container">
-            <div class="input-box">
-                <textarea id="chat-text" placeholder="Ask LLM ai anything" rows="1"></textarea>
-                <div class="input-actions">
-                    <button class="icon-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </button>
-                    <button class="icon-btn text-btn">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.121 2.121 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                        Tools
-                    </button>
-                    <div class="spacer"></div>
-                    <button id="chat-send" class="send-btn" onclick="sendChat()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                    </button>
+vixcode-server
+# open http://localhost:7777</code></pre>
                 </div>
-            </div>
-            <div class="footer-links">
-                Run it in the terminal <a href="https://github.com/sechan9999/LLMai" target="_blank" class="cli-link">LLM ai CLI ↗</a>
-                <div class="brand-footer">vibeindex.ai</div>
-            </div>
-        </div>
-    </main>
+            </section>
 
-    <div class="preview-panel" id="preview-panel">
-        <div class="preview-header">
-            <div class="preview-tabs">
-                <button class="tab-btn active" onclick="switchTab('preview')">Preview</button>
-                <button class="tab-btn" onclick="switchTab('code')">Code</button>
-            </div>
-            <div class="preview-actions">
-                <button class="icon-btn" style="font-size:12px;width:auto;padding:0 12px;" onclick="downloadArtifact()" title="Save File (Write)">💾 Save File</button>
-                <button class="icon-btn" onclick="closePreview()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-        </div>
-        <div class="preview-content">
-            <iframe id="sandbox-frame" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin" class="sandbox-iframe"></iframe>
-            <textarea id="sandbox-code" class="sandbox-editor" style="display:none;" oninput="updateSandbox()"></textarea>
-        </div>
+            <footer>
+                LLM ai by sechan9999. MIT licensed. Built on the LLMai / vixcode local agent.
+            </footer>
+        </main>
     </div>
 
     <script>
-    // ── In-page chat against the user's local Ollama ───────────────────────
     const OLLAMA = 'http://localhost:11434';
     const PREFERRED = ['qwen2.5-coder', 'qwen2.5', 'llama3.1', 'llama3.2', 'gemma3', 'phi3', 'mistral'];
+    const SYSTEM = "You are LLM ai, a privacy-first enterprise AI assistant. Be concise, practical, and explicit about privacy, tool risk, and cost tradeoffs. Use Markdown when helpful.";
 
     let activeModel = null;
     let chatBusy = false;
-    const SYSTEM = "You are a highly capable AI coding assistant and Web IDE. You write HTML, SVG, CSS, and Javascript. When you output code, provide complete, runnable blocks because the user can preview and execute them in a real-time web sandbox. You act as a 'Write' tool (saving code) and 'CreateDocument' tool (generating UI). Focus on workflow-centric results.";
     const history = [{ role: 'system', content: SYSTEM }];
 
     const $status = () => document.getElementById('chat-status');
-    const $model  = () => document.getElementById('chat-model');
-    const $feed   = () => document.getElementById('chat-feed');
-    const $welcome= () => document.getElementById('welcome-screen');
-    const $text   = () => document.getElementById('chat-text');
-    const $send   = () => document.getElementById('chat-send');
-    const $center = () => document.getElementById('center-area');
+    const $model = () => document.getElementById('chat-model');
+    const $feed = () => document.getElementById('chat-feed');
+    const $text = () => document.getElementById('chat-text');
+    const $send = () => document.getElementById('chat-send');
 
     function setStatus(state, text) {
-        const el = $status();
-        el.dataset.state = state;
+        $status().dataset.state = state;
         $model().textContent = text;
     }
 
     async function detectOllama() {
-        setStatus('loading', 'Looking for Ollama...');
+        setStatus('loading', 'Checking local Ollama');
         try {
-            const r = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            const data = await r.json();
-            const models = (data.models || []).map(m => m.name);
+            const response = await fetch(`${OLLAMA}/api/tags`, { method: 'GET' });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const data = await response.json();
+            const models = (data.models || []).map(model => model.name);
             if (!models.length) {
-                setStatus('bad', 'Ollama has no models (click)');
+                setStatus('bad', 'Ollama has no models');
                 return;
             }
-            activeModel = models.find(m => PREFERRED.some(p => m.startsWith(p))) || models[0];
-            setStatus('ok', activeModel);
-            $send().disabled = false;
-        } catch (e) {
-            setStatus('bad', "Can't reach Ollama (click)");
+            activeModel = models.find(model => PREFERRED.some(preferred => model.startsWith(preferred))) || models[0];
+            setStatus('ok', `Local model: ${activeModel}`);
+        } catch (error) {
+            setStatus('bad', 'Setup help: connect Ollama');
         }
     }
 
     function showSetupHelp() {
-        if (document.getElementById('chat-help-msg')) return;
-        $welcome().style.display = 'none';
-        $feed().style.display = 'flex';
-        
-        const helpText = `__No local Ollama detected.__\n\nTo enable browser chat from this page:\n\n1) **Install Ollama**\nmacOS: \`brew install ollama\`\nWindows/Linux: Download from [ollama.com](https://ollama.com)\n\n2) **Pull a model**\n\`\`\`bash\nollama pull qwen2.5-coder\n\`\`\`\n\n3) **Start the server with this origin allowed**\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\`\n\n*(Note: Quit the Ollama app from your system tray/taskbar first if it is already running)*\n\nThen reload this page.`;
-        
-        appendMsg('assistant', helpText, 'chat-help-msg');
+        const existing = document.getElementById('setup-help');
+        if (existing) {
+            existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        appendMsg('assistant', `__Local Ollama is not reachable from this browser.__
+
+To enable private in-browser chat:
+
+1. Install Ollama and pull a model:
+
+\`\`\`bash
+ollama pull qwen2.5-coder
+\`\`\`
+
+2. Start Ollama with this hosted origin allowed:
+
+\`\`\`powershell
+$env:OLLAMA_ORIGINS="${location.origin}"
+ollama serve
+\`\`\`
+
+On macOS or Linux:
+
+\`\`\`bash
+OLLAMA_ORIGINS=${location.origin} ollama serve
+\`\`\`
+
+Then reload this page.`, 'setup-help');
     }
 
-    function useChip(btn) {
-        // Extract text content ignoring the emoji span
-        const clone = btn.cloneNode(true);
-        const span = clone.querySelector('span');
-        if (span) span.remove();
-        const text = clone.textContent.trim();
-        
-        $text().value = text;
+    function useChip(button) {
+        $text().value = button.textContent.trim();
         $text().focus();
-        sendChat();
     }
 
     function appendMsg(role, content, id) {
-        $welcome().style.display = 'none';
-        $feed().style.display = 'flex';
+        const empty = document.getElementById('empty-state');
+        if (empty) empty.remove();
 
         const row = document.createElement('div');
-        row.className = `chat-msg chat-${role}`;
+        row.className = `message ${role}`;
         if (id) row.id = id;
-        
+
         const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble';
+        bubble.className = 'bubble';
         bubble.dataset.raw = content || '';
         renderInto(bubble, content || '');
-        
+
         row.appendChild(bubble);
         $feed().appendChild(row);
-        scrollToBottom();
+        $feed().scrollTop = $feed().scrollHeight;
         return bubble;
     }
 
-    function renderInto(el, raw) {
+    function renderInto(element, raw) {
         if (window.marked) {
-            el.innerHTML = marked.parse(raw);
-            
-            // Add IDE functionality to code blocks
-            el.querySelectorAll('pre').forEach(pre => {
-                if (pre.querySelector('.code-bar')) return; // already processed
-                const code = pre.querySelector('code');
-                if (!code) return;
-                
-                const lang = (code.className.match(/language-(\w+)/) || [])[1] || 'text';
-                
-                const bar = document.createElement('div');
-                bar.className = 'code-bar';
-                
-                const langLabel = document.createElement('span');
-                langLabel.className = 'code-lang';
-                langLabel.textContent = lang;
-                bar.appendChild(langLabel);
-                
-                const actions = document.createElement('div');
-                
-                if (['html', 'svg', 'javascript', 'js'].includes(lang)) {
-                    const runBtn = document.createElement('button');
-                    runBtn.className = 'code-action-btn';
-                    runBtn.innerHTML = '▶ Preview / Run';
-                    runBtn.onclick = () => openSandbox(code.textContent, lang);
-                    actions.appendChild(runBtn);
-                }
-                
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'code-action-btn';
-                copyBtn.innerHTML = '📋 Copy';
-                copyBtn.onclick = () => navigator.clipboard.writeText(code.textContent);
-                actions.appendChild(copyBtn);
-                
-                bar.appendChild(actions);
-                pre.insertBefore(bar, code);
-                
-                if (window.hljs) hljs.highlightElement(code);
-            });
+            element.innerHTML = marked.parse(raw || '');
+            if (window.hljs) {
+                element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+            }
         } else {
-            el.textContent = raw;
+            element.textContent = raw || '';
         }
     }
 
     function appendDelta(bubble, delta) {
         bubble.dataset.raw += delta;
         renderInto(bubble, bubble.dataset.raw);
-        scrollToBottom();
-    }
-    
-    function scrollToBottom() {
-        $center().scrollTop = $center().scrollHeight;
+        $feed().scrollTop = $feed().scrollHeight;
     }
 
     async function sendChat() {
-        const txt = $text().value.trim();
-        if (!txt || chatBusy) return;
+        const prompt = $text().value.trim();
+        if (!prompt || chatBusy) return;
 
         chatBusy = true;
         $send().disabled = true;
         $text().value = '';
         $text().style.height = 'auto';
 
-        appendMsg('user', txt);
-        history.push({ role: 'user', content: txt });
+        appendMsg('user', prompt);
+        history.push({ role: 'user', content: prompt });
 
         if (!activeModel) {
             await detectOllama();
             if (!activeModel) {
-                const existingHelp = document.getElementById('chat-help-msg');
-                if (existingHelp) existingHelp.remove();
                 showSetupHelp();
                 chatBusy = false;
                 $send().disabled = false;
@@ -1018,127 +1030,74 @@ vixcode-server</div>
         const reply = appendMsg('assistant', '');
 
         try {
-            const resp = await fetch(`${OLLAMA}/v1/chat/completions`, {
+            const response = await fetch(`${OLLAMA}/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: activeModel,
                     messages: history,
-                    stream: true,
-                }),
+                    stream: true
+                })
             });
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
 
-            const reader = resp.body.getReader();
+            const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let buf = '';
+            let buffer = '';
             let full = '';
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                buf += decoder.decode(value, { stream: true });
-                let idx;
-                while ((idx = buf.indexOf('\n')) >= 0) {
-                    const line = buf.slice(0, idx).trim();
-                    buf = buf.slice(idx + 1);
-                    if (!line || line === 'data: [DONE]') continue;
-                    if (!line.startsWith('data: ')) continue;
+                buffer += decoder.decode(value, { stream: true });
+                let index;
+                while ((index = buffer.indexOf('\n')) >= 0) {
+                    const line = buffer.slice(0, index).trim();
+                    buffer = buffer.slice(index + 1);
+                    if (!line || line === 'data: [DONE]' || !line.startsWith('data: ')) continue;
                     try {
-                        const obj = JSON.parse(line.slice(6));
-                        const piece = obj.choices?.[0]?.delta?.content || '';
-                        if (piece) { full += piece; appendDelta(reply, piece); }
-                    } catch { /* ignore partial */ }
+                        const payload = JSON.parse(line.slice(6));
+                        const piece = payload.choices?.[0]?.delta?.content || '';
+                        if (piece) {
+                            full += piece;
+                            appendDelta(reply, piece);
+                        }
+                    } catch {
+                        /* Ignore incomplete stream chunks. */
+                    }
                 }
             }
             history.push({ role: 'assistant', content: full });
-        } catch (e) {
-            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
+        } catch (error) {
+            reply.dataset.raw = `__Request failed:__ ${error.message}
+
+If this is a CORS error, restart Ollama with this site allowed:
+
+\`\`\`powershell
+$env:OLLAMA_ORIGINS="${location.origin}"
+ollama serve
+\`\`\``;
             renderInto(reply, reply.dataset.raw);
         } finally {
             chatBusy = false;
             $send().disabled = false;
             $text().focus();
-            scrollToBottom();
         }
     }
 
-    let currentArtifactCode = '';
-    let currentArtifactLang = '';
-
-    window.openSandbox = function(code, lang) {
-        currentArtifactCode = code;
-        currentArtifactLang = lang;
-        document.getElementById('preview-panel').classList.add('open');
-        document.getElementById('sandbox-code').value = code;
-        switchTab('preview');
-    };
-
-    window.closePreview = function() {
-        document.getElementById('preview-panel').classList.remove('open');
-    };
-
-    window.switchTab = function(tab) {
-        const frame = document.getElementById('sandbox-frame');
-        const editor = document.getElementById('sandbox-code');
-        const btns = document.querySelectorAll('.preview-tabs .tab-btn');
-        
-        btns[0].classList.toggle('active', tab === 'preview');
-        btns[1].classList.toggle('active', tab === 'code');
-        
-        if (tab === 'preview') {
-            frame.style.display = 'block';
-            editor.style.display = 'none';
-            updateSandbox();
-        } else {
-            frame.style.display = 'none';
-            editor.style.display = 'block';
-        }
-    };
-
-    window.updateSandbox = function() {
-        const code = document.getElementById('sandbox-code').value;
-        currentArtifactCode = code;
-        const frame = document.getElementById('sandbox-frame');
-        
-        if (currentArtifactLang === 'svg') {
-            frame.srcdoc = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">${code}</div>`;
-        } else if (currentArtifactLang === 'javascript' || currentArtifactLang === 'js') {
-            frame.srcdoc = `<html><body style="font-family:sans-serif;padding:20px;"><h3>JS Execution Sandbox</h3><p>Check the browser console, or see output below:</p><div id="out"></div><script>console.log = function(...args){ document.getElementById('out').innerHTML += args.join(' ') + '<br>'; }; ${code}<\/script></body></html>`;
-        } else {
-            frame.srcdoc = code;
-        }
-    };
-
-    window.downloadArtifact = function() {
-        const code = document.getElementById('sandbox-code').value;
-        const blob = new Blob([code], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const ext = currentArtifactLang === 'svg' ? 'svg' : (currentArtifactLang === 'html' ? 'html' : 'js');
-        a.download = `artifact.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    // Auto-grow textarea + Enter-to-send
     document.addEventListener('DOMContentLoaded', () => {
-        const ta = $text();
-        ta.addEventListener('input', () => {
-            ta.style.height = 'auto';
-            ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
+        const textarea = $text();
+        textarea.addEventListener('input', () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 180) + 'px';
         });
-        ta.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                sendChat(); 
+        textarea.addEventListener('keydown', event => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChat();
             }
         });
-        if (window.marked) {
-            marked.setOptions({ breaks: true, gfm: true });
-        }
+        if (window.marked) marked.setOptions({ breaks: true, gfm: true });
         detectOllama();
     });
     </script>
