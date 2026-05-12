@@ -176,6 +176,34 @@ TOOL_DEFINITIONS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_url",
+            "description": "Fetch the text content of a URL. Returns up to 8 000 characters of readable text.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "HTTP or HTTPS URL to fetch"},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_directory",
+            "description": "Create a directory (and any missing parents) inside the workspace.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Directory path to create"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
 ]
 
 
@@ -417,6 +445,45 @@ def _search_code(pattern: str, path: str, include: str = None) -> str:
     return "\n".join(results) if results else f"No matches for '{pattern}' in {path}"
 
 
+def _fetch_url(url: str) -> str:
+    """Fetch plain text from a URL (first 8 000 chars).
+
+    Args:
+        url: HTTP or HTTPS URL.
+
+    Returns:
+        Extracted plain text, or an error message.
+    """
+    import html as _html
+    import urllib.request as _req
+    try:
+        request = _req.Request(url, headers={"User-Agent": "vixcode/1.0"})
+        with _req.urlopen(request, timeout=15) as resp:
+            raw = resp.read(65536).decode("utf-8", errors="replace")
+        text = re.sub(r"<[^>]+>", " ", raw)
+        text = _html.unescape(text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text[:8000] or "(empty response)"
+    except Exception as e:
+        return f"Error fetching {url}: {e}"
+
+
+def _create_directory(path: str) -> str:
+    """Create a directory and missing parents inside the workspace.
+
+    Args:
+        path: Directory path to create.
+
+    Returns:
+        Confirmation string or note if it already exists.
+    """
+    p = _validate_path(path)
+    if p.exists():
+        return f"Already exists: {path}"
+    p.mkdir(parents=True, exist_ok=True)
+    return f"Created directory: {path}"
+
+
 # ── Registry (defined after helpers so symbols exist) ─────────────────────────
 
 _BASE_HANDLERS = {
@@ -427,6 +494,8 @@ _BASE_HANDLERS = {
     "run_command": _run_command,
     "list_files": _list_files,
     "search_code": _search_code,
+    "fetch_url": _fetch_url,
+    "create_directory": _create_directory,
 }
 
 # GitLab tools are appended only when GITLAB_TOKEN is set so the model

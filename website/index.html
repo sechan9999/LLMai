@@ -717,6 +717,19 @@
             font-size: 13px;
         }
 
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--muted);
+            padding: 3px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font: 11px var(--mono);
+            transition: all .15s;
+        }
+        .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+        .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
         @media (max-width: 1120px) {
             .shell { grid-template-columns: 1fr; }
             .sidebar {
@@ -726,8 +739,17 @@
                 align-items: center;
                 justify-content: space-between;
                 padding: 16px 20px;
+                flex-wrap: wrap;
+                gap: 8px;
             }
-            .nav, .side-card { display: none; }
+            .nav {
+                display: flex;
+                overflow-x: auto;
+                gap: 4px;
+                padding-bottom: 2px;
+            }
+            .nav a { white-space: nowrap; }
+            .side-card { display: none; }
             .hero { grid-template-columns: 1fr; min-height: 0; }
             .workspace-grid { grid-template-columns: 1fr; }
             .control-panel { border-left: 0; border-top: 1px solid var(--line); grid-template-columns: repeat(3, 1fr); }
@@ -786,8 +808,8 @@
                     <div class="eyebrow">Enterprise AI without leaks or overspending</div>
                     <h1 id="hero-title">AI work that stays private, routed, and under control.</h1>
                     <p class="lead">
-                        LLM ai turns the local-first vixcode agent into an enterprise-friendly AI workspace:
-                        run sensitive work on your machine, route heavier tasks only when approved, and keep every write behind a clear permission gate.
+                        LLM ai is a privacy-first AI coding workspace: run sensitive work on your machine,
+                        route heavier tasks only when approved, and keep every write behind a clear permission gate.
                     </p>
                     <div class="hero-actions">
                         <a class="btn btn-primary" href="#install">Install locally</a>
@@ -830,6 +852,7 @@
                                         <button id="chat-send" class="send" type="button" onclick="sendChat()" aria-label="Send">↑</button>
                                     </div>
                                 </div>
+                                <p style="margin:5px 0 0;font-size:11px;color:var(--quiet);font-family:var(--mono)">Enter to send &nbsp;·&nbsp; Shift+Enter for newline</p>
                             </div>
                         </section>
 
@@ -926,7 +949,7 @@
                     <p>Clone the repo, install the package, start Ollama, and open the web UI.</p>
                 </div>
                 <div class="code-box">
-                    <div class="code-title"><span>quick-start</span><span>PowerShell, macOS, Linux</span></div>
+                    <div class="code-title"><span>quick-start</span><span style="display:flex;align-items:center;gap:8px"><span>PowerShell, macOS, Linux</span><button class="copy-btn" id="copy-install" onclick="copyInstall()" type="button">copy</button></span></div>
                     <pre><code>git clone https://github.com/sechan9999/LLMai.git
 cd LLMai
 pip install -e .
@@ -983,9 +1006,17 @@ vixcode-server
             $modeText().textContent = 'Cloud demo · prompts leave your machine';
         } else {
             activeModel = null;
-            setStatus('bad', 'Setup help: connect Ollama');
+            setStatus('bad', 'Ollama not found');
             $modeLabel().dataset.mode = 'local';
-            $modeText().textContent = 'Local-first mode';
+            $modeText().textContent = 'No backend — see install guide ↓';
+            const empty = document.getElementById('empty-state');
+            if (empty && !document.getElementById('offline-note')) {
+                const note = document.createElement('p');
+                note.id = 'offline-note';
+                note.style.cssText = 'margin:12px 0 0;font-size:12px;color:var(--quiet);border-top:1px solid rgba(255,255,255,.08);padding-top:10px;';
+                note.innerHTML = 'Ollama not detected on <code>localhost:11434</code>. <a href="#install" style="color:var(--blue)">See install guide ↓</a>';
+                empty.appendChild(note);
+            }
         }
     }
 
@@ -1067,6 +1098,30 @@ Reload this page once Ollama is running.`, 'setup-help');
     function useChip(button) {
         $text().value = button.textContent.trim();
         $text().focus();
+        setTimeout(sendChat, 50);
+    }
+
+    function copyInstall() {
+        const code = document.querySelector('.code-box pre code');
+        if (!code) return;
+        const btn = document.getElementById('copy-install');
+        const done = () => {
+            if (!btn) return;
+            btn.textContent = 'copied!'; btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+        };
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code.textContent).then(done).catch(() => _fallbackCopy(code.textContent, done));
+        } else {
+            _fallbackCopy(code.textContent, done);
+        }
+    }
+    function _fallbackCopy(text, cb) {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); cb(); } catch {}
+        document.body.removeChild(ta);
     }
 
     function appendMsg(role, content, id) {
@@ -1247,6 +1302,7 @@ Reload this page once Ollama is running.`, 'setup-help');
         if (window.marked) marked.setOptions({ breaks: true, gfm: true });
         animateMeters();
         detectBackend();
+        textarea.focus();
     });
     </script>
 </body>

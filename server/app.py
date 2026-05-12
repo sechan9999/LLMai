@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from vixcode.llm import resolve_provider_config
+from vixcode import tools as _vt
 
 from .agent_ws import WebSocketAgent
 
@@ -103,6 +104,7 @@ async def ws_endpoint(websocket: WebSocket):
                     "model": provider_cfg["model"],
                     "ollama": provider_cfg["base_url"],
                     "provider": provider_cfg["provider"],
+                    "workspace": str(_vt.WORKSPACE_ROOT),
                 })
 
             elif t == "user_message":
