@@ -1007,7 +1007,9 @@ vixcode-server
             const response = await fetch(CLOUD_API, { method: 'GET' });
             if (!response.ok) return null;
             const info = await response.json();
-            return info && info.available ? (info.model || 'cloud') : null;
+            if (!info || !info.available) return null;
+            const provider = (info.provider || 'cloud').toString();
+            return provider.charAt(0).toUpperCase() + provider.slice(1);
         } catch {
             return null;
         }
@@ -1176,6 +1178,10 @@ Reload this page once Ollama is running.`, 'setup-help');
             }
 
             if (!response.ok) {
+                if (mode === 'cloud' && response.status === 429) {
+                    const retry = response.headers.get('Retry-After') || '60';
+                    throw new Error(`rate-limited (retry in ~${retry}s)`);
+                }
                 const detail = await response.text().catch(() => '');
                 throw new Error(`HTTP ${response.status}${detail ? ' — ' + detail.slice(0, 200) : ''}`);
             }
@@ -1185,7 +1191,7 @@ Reload this page once Ollama is running.`, 'setup-help');
         } catch (error) {
             reply.dataset.raw = mode === 'local'
                 ? `__Local request failed:__ ${error.message}\n\nIf this is a CORS error, restart Ollama with this site allowed:\n\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``
-                : `__Cloud demo request failed:__ ${error.message}\n\nThe hosted demo may be rate-limited or temporarily unavailable. You can still run LLM ai locally — see the install section below.`;
+                : `__Cloud demo unavailable:__ ${error.message}\n\nThe hosted demo enforces a small rate limit to keep it free. You can wait a moment and retry, or run LLM ai locally for unlimited use — see the install section below.`;
             renderInto(reply, reply.dataset.raw);
         } finally {
             chatBusy = false;
