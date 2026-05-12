@@ -1,0 +1,10 @@
+{
+  "name": "llmai-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vercel Edge functions for the LLMai hosted demo at ll-mai.vercel.app",
+  "dependencies": {
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.3"
+  }
+}

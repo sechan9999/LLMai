@@ -303,6 +303,26 @@ To enable the cloud fallback on your own fork:
 
 If `GROQ_API_KEY` is not set, the endpoint returns `available: false` and the UI prompts the visitor to install Ollama locally — there is no silent cloud egress.
 
+### Recommended: rate limiting (Upstash)
+
+The `/api/chat` endpoint is public and spends real money on your Groq account. Add Upstash Redis to enforce a per-IP and global rate limit (the function gracefully runs without it but **leaves your budget unguarded**):
+
+1. Create a free Redis at [console.upstash.com](https://console.upstash.com/).
+2. Add two more environment variables in Vercel:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+3. Redeploy. The function now caps each IP at **10 requests/minute** and the deployment as a whole at **1000 requests/day** (sliding window). Excess requests get `429` with a `Retry-After` header.
+
+### Built-in hardening
+
+The function applies these defaults regardless of Upstash:
+
+- **Server-pinned system prompt.** Client-supplied `role: 'system'` messages are stripped; only `user` and `assistant` roles are forwarded. Visitors cannot override the assistant persona.
+- **Input caps.** 40 messages max, 8 000 chars per message, 12 000 chars total. Exceeding any returns `413`.
+- **Fixed sampling.** `temperature`, `top_p`, and `max_tokens` are not pass-through — fixed server-side so a malicious caller cannot inflate cost.
+- **Client-disconnect cancellation.** `req.signal` is wired to the upstream `fetch`, so closing the browser stops Groq billing immediately.
+- **Opaque errors.** Upstream error bodies stay in Vercel logs; clients get a short `{ error, requestId }` envelope.
+
 ---
 
 ## 📜 License
