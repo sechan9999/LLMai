@@ -311,10 +311,10 @@
         <div class="e-title">LLM ai</div>
         <div class="e-sub">Privacy-first local AI coding agent · powered by Ollama</div>
         <div class="chips">
-          <button class="chip" onclick="useChip(this)">Review this repo for privacy risks</button>
-          <button class="chip" onclick="useChip(this)">Estimate token cost for a support workflow</button>
-          <button class="chip" onclick="useChip(this)">Draft a safe GitLab MR summary</button>
-          <button class="chip" onclick="useChip(this)">Explain how local tool permissions work</button>
+          <button class="chip" onclick="useChip(this)">Review github.com/sechan9999/LLMai for privacy risks — check for hardcoded secrets, shell sandboxing gaps, and data exfiltration vectors</button>
+          <button class="chip" onclick="useChip(this)">Estimate token cost for running LLMai locally: 50 coding tasks/day with qwen2.5-coder 7B</button>
+          <button class="chip" onclick="useChip(this)">Draft a GitLab MR summary template for LLMai that avoids leaking sensitive diff content</button>
+          <button class="chip" onclick="useChip(this)">Explain LLMai's permission system — what auto-approves vs. what requires explicit user confirmation</button>
         </div>
       </div>
     </div>
@@ -429,7 +429,7 @@ vixcode-server
   const OLLAMA   = 'http://localhost:11434';
   const CLOUD    = '/api/chat';
   const PREFS    = ['qwen2.5-coder','qwen2.5','llama3.1','llama3.2','gemma3','phi3','mistral'];
-  const SYSTEM   = 'You are LLM ai, a privacy-first AI coding assistant. Be concise and explicit about privacy, tool risk, and cost tradeoffs. Use Markdown when helpful.';
+  const SYSTEM   = "You are the LLMai assistant — an expert on LLMai, a 100% local open-source AI coding agent at https://github.com/sechan9999/LLMai that runs on Ollama with no external API keys. It has an agentic loop, explicit permission gates for writes and shell commands, GitLab integration, and context compression. When asked to review 'this repo', analyze https://github.com/sechan9999/LLMai. Answer directly and helpfully. Never refuse to discuss the project. Be concise and use Markdown when helpful.";
 
   let mode = 'unknown', activeModel = null, chatBusy = false;
   const history = [{ role: 'system', content: SYSTEM }];
