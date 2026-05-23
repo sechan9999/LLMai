@@ -1,0 +1,51 @@
+# Bindplane Agent / OTel Collector configuration for vixcode → Dynatrace.
+#
+# Receives OTLP from the vixcode agent (HTTP/4318 + gRPC/4317), batches,
+# adds a deployment.environment attribute, and exports to Dynatrace's
+# OTLP /api/v2/otlp/v1/{traces,metrics,logs} endpoint.
+#
+# Reference: https://docs.dynatrace.com/docs/shortlink/otel-getstarted-otlpexport
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 512
+
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 2s
+
+  attributes/deploy:
+    actions:
+      - key: deployment.environment
+        value: ${env:DEPLOYMENT_ENV}
+        action: upsert
+
+exporters:
+  otlphttp/dynatrace:
+    endpoint: ${env:DT_ENDPOINT}/api/v2/otlp
+    headers:
+      Authorization: "Api-Token ${env:DT_API_TOKEN}"
+
+  # Uncomment for local debugging:
+  # debug:
+  #   verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resourcedetection, attributes/deploy]
+      exporters: [otlphttp/dynatrace]
+    metrics:
+      receivers: [otlp]
+      processors: [batch, resourcedetection, attributes/deploy]
+      exporters: [otlphttp/dynatrace]

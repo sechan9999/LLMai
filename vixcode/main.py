@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
+from . import telemetry
 from .llm import OllamaClient, make_default_client, resolve_provider_config
 from .permissions import PermissionManager
 from .agent import AgentLoop
@@ -43,6 +44,7 @@ def load_config() -> dict:
 
 def main():
     config = load_config()
+    telemetry.init(config.get("telemetry"))
     # Config-file overrides; otherwise fall through to environment-driven
     # provider selection (Gemini if GEMINI_API_KEY is set, else Ollama).
     cfg_base_url = config.get("ollama_url")

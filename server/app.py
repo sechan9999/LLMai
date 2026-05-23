@@ -14,6 +14,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from vixcode import telemetry
 from vixcode.llm import resolve_provider_config
 from vixcode import tools as _vt
 
@@ -22,6 +23,14 @@ from .agent_ws import WebSocketAgent
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="vixcode", description="Local AI Coding Agent")
+
+
+@app.on_event("startup")
+async def _init_telemetry() -> None:
+    """Initialize OpenTelemetry once when the server boots."""
+    cfg = load_config()
+    telemetry.init(cfg.get("telemetry"))
+
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

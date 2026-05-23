@@ -7,8 +7,10 @@ An agent:  one input → loop until goal reached.
 """
 import json
 import logging
+import time
 from typing import Callable
 
+from . import telemetry
 from .llm import OllamaClient
 from .tools import TOOL_DEFINITIONS, execute_tool
 from .permissions import PermissionManager
@@ -68,54 +70,102 @@ class AgentLoop:
         """
         self.messages.append({"role": "user", "content": user_input})
         last_text = ""
+        model_name = getattr(self.llm, "model", "unknown")
+        provider = getattr(self.llm, "provider", "ollama")
 
-        for iteration in range(self.max_iterations):
-            # ── 1. Call LLM ─────────────────────────────────────────────────
-            try:
-                msg = self.llm.chat(self.messages, tools=TOOL_DEFINITIONS)
-            except Exception as e:
-                logger.exception("LLM call failed")
-                print_fn(f"\n[LLM error] {e}")
-                break
+        with telemetry.turn_span(
+            mode="cli",
+            provider=provider,
+            model=model_name,
+            input_chars=len(user_input),
+        ) as turn:
+            iterations_done = 0
+            for iteration in range(self.max_iterations):
+                iterations_done = iteration + 1
+                with telemetry.iteration_span(
+                    number=iteration + 1,
+                    tokens_estimate=self.token_estimate,
+                ):
+                    # ── 1. Call LLM ─────────────────────────────────────────
+                    try:
+                        with telemetry.llm_span(
+                            model=model_name,
+                            provider=provider,
+                            message_count=len(self.messages),
+                            streamed=False,
+                        ) as llm_s:
+                            tokens_in_before = telemetry.estimate_tokens(self.messages)
+                            msg = self.llm.chat(self.messages, tools=TOOL_DEFINITIONS)
+                            telemetry.record_tokens(
+                                direction="in", count=tokens_in_before, model=model_name,
+                            )
+                            out_chars = len((msg.get("content") or ""))
+                            telemetry.record_tokens(
+                                direction="out", count=out_chars // 4, model=model_name,
+                            )
+                            llm_s.set_attribute(
+                                "llm.tool_calls.requested",
+                                len(msg.get("tool_calls") or []),
+                            )
+                    except Exception as e:
+                        logger.exception("LLM call failed")
+                        print_fn(f"\n[LLM error] {e}")
+                        break
 
-            content = msg.get("content") or ""
-            tool_calls = msg.get("tool_calls") or []
+                    content = msg.get("content") or ""
+                    tool_calls = msg.get("tool_calls") or []
 
-            # ── 2. Print text response ───────────────────────────────────────
-            if content:
-                print_fn(f"\n{content}")
-                last_text = content
+                    # ── 2. Print text response ──────────────────────────────
+                    if content:
+                        print_fn(f"\n{content}")
+                        last_text = content
 
-            # ── 3. Add assistant message to history ──────────────────────────
-            assistant_msg: dict = {"role": "assistant"}
-            if content:
-                assistant_msg["content"] = content
-            if tool_calls:
-                assistant_msg["tool_calls"] = tool_calls
-            self.messages.append(assistant_msg)
+                    # ── 3. Add assistant message to history ─────────────────
+                    assistant_msg: dict = {"role": "assistant"}
+                    if content:
+                        assistant_msg["content"] = content
+                    if tool_calls:
+                        assistant_msg["tool_calls"] = tool_calls
+                    self.messages.append(assistant_msg)
 
-            # ── 4. No tool calls → done ──────────────────────────────────────
-            if not tool_calls:
-                break
+                    # ── 4. No tool calls → done ─────────────────────────────
+                    if not tool_calls:
+                        break
 
-            # ── 5. Execute each tool call (observe → act) ────────────────────
-            for tc in tool_calls:
-                fn_name, fn_args, tc_id = _parse_tool_call(tc)
-                print_fn(f"\n  ⚙  {fn_name}({_fmt_args(fn_args)})")
+                    # ── 5. Execute each tool call (observe → act) ───────────
+                    for tc in tool_calls:
+                        fn_name, fn_args, tc_id = _parse_tool_call(tc)
+                        print_fn(f"\n  ⚙  {fn_name}({_fmt_args(fn_args)})")
 
-                if self.permissions.check(fn_name, fn_args):
-                    result = execute_tool(fn_name, fn_args)
-                    _print_result(result, print_fn)
-                else:
-                    result = f"Permission denied for {fn_name}"
-                    print_fn(f"  ✗  {result}")
+                        with telemetry.tool_span(name=fn_name, args=fn_args) as (_, oc):
+                            perm_start = time.monotonic()
+                            allowed = self.permissions.check(fn_name, fn_args)
+                            oc.perm_latency_ms = (time.monotonic() - perm_start) * 1000
+                            if allowed:
+                                oc.permission = "allow"
+                                try:
+                                    result = execute_tool(fn_name, fn_args)
+                                    if result.startswith("Error"):
+                                        oc.error = True
+                                except Exception as e:
+                                    oc.error = True
+                                    result = f"Error in {fn_name}: {e}"
+                                _print_result(result, print_fn)
+                            else:
+                                oc.permission = "deny"
+                                oc.error = True
+                                result = f"Permission denied for {fn_name}"
+                                print_fn(f"  ✗  {result}")
+                            oc.result_chars = len(result)
 
-                # Feed result back into context (observe)
-                self.messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc_id,
-                    "content": result,
-                })
+                        # Feed result back into context (observe)
+                        self.messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc_id,
+                            "content": result,
+                        })
+
+            turn.set_attribute("agent.iterations.actual", iterations_done)
 
         return last_text
 

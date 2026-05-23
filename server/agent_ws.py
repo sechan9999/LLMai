@@ -10,10 +10,12 @@ import asyncio
 import json
 import logging
 import re
+import time
 
 import httpx
 from fastapi import WebSocket
 
+from vixcode import telemetry
 from vixcode.tools import TOOL_DEFINITIONS, execute_tool
 from vixcode.permissions import DEFAULT, _preview
 
@@ -122,30 +124,62 @@ class WebSocketAgent:
         """
         self.messages.append({"role": "user", "content": user_input})
 
-        for _ in range(self.MAX_ITERATIONS):
-            try:
-                if self.native:
-                    msg = await self._chat_stream_native()
-                else:
-                    msg = await self._chat()
-            except Exception as e:
-                logger.exception("LLM call failed")
-                await self._send("error", message=str(e))
-                return
+        with telemetry.turn_span(
+            mode="ws-native" if self.native else "ws-xml",
+            provider=self.provider,
+            model=self.model,
+            input_chars=len(user_input),
+        ) as turn:
+            iterations_done = 0
+            for i in range(self.MAX_ITERATIONS):
+                iterations_done = i + 1
+                with telemetry.iteration_span(
+                    number=i + 1,
+                    tokens_estimate=telemetry.estimate_tokens(self.messages),
+                ):
+                    try:
+                        with telemetry.llm_span(
+                            model=self.model,
+                            provider=self.provider,
+                            message_count=len(self.messages),
+                            streamed=self.native,
+                        ) as llm_s:
+                            tokens_in = telemetry.estimate_tokens(self.messages)
+                            if self.native:
+                                msg = await self._chat_stream_native()
+                            else:
+                                msg = await self._chat()
+                            telemetry.record_tokens(
+                                direction="in", count=tokens_in, model=self.model,
+                            )
+                            out_chars = len((msg.get("content") or ""))
+                            telemetry.record_tokens(
+                                direction="out", count=out_chars // 4, model=self.model,
+                            )
+                            llm_s.set_attribute(
+                                "llm.tool_calls.requested",
+                                len(msg.get("tool_calls") or []),
+                            )
+                    except Exception as e:
+                        logger.exception("LLM call failed")
+                        await self._send("error", message=str(e))
+                        return
 
-            if self.native:
-                done = await self._handle_native(msg, streamed=True)
-            else:
-                done = await self._handle_xml(msg)
+                    if self.native:
+                        done = await self._handle_native(msg, streamed=True)
+                    else:
+                        done = await self._handle_xml(msg)
 
-            if done:
-                return
+                    if done:
+                        turn.set_attribute("agent.iterations.actual", iterations_done)
+                        return
 
-        await self._send(
-            "error",
-            message=f"Reached max iterations ({self.MAX_ITERATIONS}) without a final answer.",
-        )
-        await self._send("done")
+            turn.set_attribute("agent.iterations.actual", iterations_done)
+            await self._send(
+                "error",
+                message=f"Reached max iterations ({self.MAX_ITERATIONS}) without a final answer.",
+            )
+            await self._send("done")
 
     async def handle_permission(self, approved: bool) -> None:
         """Receive the user's permission decision from the UI."""
@@ -234,22 +268,36 @@ class WebSocketAgent:
         """Execute a single tool call with permission checking."""
         await self._send("tool_start", name=fn_name, args=fn_args)
 
-        try:
-            approved = await self._check_perm(fn_name, fn_args)
-        except Exception as e:
-            logger.warning("Permission check error for %s: %s", fn_name, e)
-            approved = False
-
-        if approved:
-            loop = asyncio.get_event_loop()
+        with telemetry.tool_span(name=fn_name, args=fn_args) as (_, oc):
+            mode = self.rules.get(fn_name, "ask")
+            perm_start = time.monotonic()
             try:
-                result = await loop.run_in_executor(None, execute_tool, fn_name, fn_args)
+                approved = await self._check_perm(fn_name, fn_args)
             except Exception as e:
-                result = f"Error: Tool execution failed: {e}"
-            error = False
-        else:
-            result = f"Permission denied for {fn_name}"
-            error = True
+                logger.warning("Permission check error for %s: %s", fn_name, e)
+                approved = False
+            oc.perm_latency_ms = (time.monotonic() - perm_start) * 1000
+
+            if approved:
+                oc.permission = "allow" if mode == "allow" else "ask_allow"
+                loop = asyncio.get_event_loop()
+                try:
+                    result = await loop.run_in_executor(
+                        None, execute_tool, fn_name, fn_args,
+                    )
+                    if result.startswith("Error"):
+                        oc.error = True
+                except Exception as e:
+                    result = f"Error: Tool execution failed: {e}"
+                    oc.error = True
+                error = oc.error
+            else:
+                oc.permission = "deny" if mode == "deny" else "ask_deny"
+                oc.error = True
+                result = f"Permission denied for {fn_name}"
+                error = True
+
+            oc.result_chars = len(result)
 
         self._last_result = result
         await self._send("tool_result", name=fn_name, content=result[:4000], error=error)

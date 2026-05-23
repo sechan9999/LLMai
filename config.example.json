@@ -9,5 +9,12 @@
     "edit_file":   "ask",
     "run_bash":    "ask",
     "run_command": "ask"
+  },
+  "telemetry": {
+    "enabled": false,
+    "endpoint": "http://localhost:4318",
+    "service_name": "vixcode-agent",
+    "console": false,
+    "headers": {}
   }
 }
