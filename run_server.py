@@ -19,12 +19,12 @@ def main():
     config = {}
     if config_path.exists():
         config = json.loads(config_path.read_text())
-    model = config.get("model", os.environ.get("VIXCODE_MODEL", "qwen2.5-coder"))
+    model = config.get("model", os.environ.get("LLMAI_MODEL", "qwen2.5-coder"))
     ollama = config.get("ollama_url", "http://localhost:11434")
 
     print(f"""
   +--------------------------------------+
-  |  vixcode -- Local AI Coding Agent    |
+  |  llmai -- Local AI Coding Agent    |
   +--------------------------------------+
   |  URL   : {url:<28}|
   |  Model : {model:<28}|

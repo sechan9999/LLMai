@@ -1,6 +1,6 @@
 """
-vixcode — Local AI Coding Agent
-Usage: python -m vixcode  (or `vixcode` after pip install)
+llmai — Local AI Coding Agent
+Usage: python -m llmai  (or `llmai` after pip install)
 """
 import os
 import sys
@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
-from . import telemetry
+from . import memory, telemetry, tools as _vt
 from .llm import OllamaClient, make_default_client, resolve_provider_config
 from .permissions import PermissionManager
 from .agent import AgentLoop
@@ -28,8 +28,8 @@ console = Console()
 
 def load_config() -> dict:
     for p in [
-        Path.cwd() / "vixcode.json",
-        Path.home() / ".vixcode" / "config.json",
+        Path.cwd() / "llmai.json",
+        Path.home() / ".llmai" / "config.json",
         Path(__file__).parent.parent / "config.json",
     ]:
         if p.exists():
@@ -45,6 +45,8 @@ def load_config() -> dict:
 def main():
     config = load_config()
     telemetry.init(config.get("telemetry"))
+    memory.init(config.get("memory"))
+    _vt.register_memory_tool()
     # Config-file overrides; otherwise fall through to environment-driven
     # provider selection (Gemini if GEMINI_API_KEY is set, else Ollama).
     cfg_base_url = config.get("ollama_url")
@@ -62,7 +64,7 @@ def main():
 
     # ── Startup banner ────────────────────────────────────────────────────────
     console.print(Panel(
-        f"[bold cyan]vixcode[/bold cyan]  —  AI Coding Agent\n"
+        f"[bold cyan]llmai[/bold cyan]  —  AI Coding Agent\n"
         f"  Provider: [magenta]{provider_label}[/magenta]\n"
         f"  Model   : [yellow]{llm.model}[/yellow]\n"
         f"  URL     : [green]{llm.base_url}[/green]\n\n"
@@ -87,7 +89,7 @@ def main():
     # ── Main REPL loop ────────────────────────────────────────────────────────
     while True:
         try:
-            user_input = input("\n\033[96m[vixcode]\033[0m ").strip()
+            user_input = input("\n\033[96m[llmai]\033[0m ").strip()
         except (EOFError, KeyboardInterrupt):
             console.print("\n[dim]Bye.[/dim]")
             break

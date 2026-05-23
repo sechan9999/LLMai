@@ -1,5 +1,5 @@
 """
-GitLab tools for the vixcode agent.
+GitLab tools for the llmai agent.
 
 When ``GITLAB_TOKEN`` is set, this module exposes a set of OpenAI-compatible
 tools that let the agent triage issues, manage merge requests, and read CI

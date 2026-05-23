@@ -1,4 +1,4 @@
-# vixcode — 3-Minute Voiceover Script
+# llmai — 3-Minute Voiceover Script
 
 A longer-form explainer, suitable for a tutorial intro, conference lightning
 talk, or "explained" YouTube video. Pairs with [`website/promo.html`](../website/promo.html)
@@ -21,9 +21,9 @@ breath, **bold** = stress word.
 > server you don't control. [beat] That's the default for almost every
 > AI coding tool right now.
 >
-> **vixcode** is an alternative.
+> **llmai** is an alternative.
 
-*On-screen:* hero shot of the vixcode logo · tagline fades in.
+*On-screen:* hero shot of the llmai logo · tagline fades in.
 
 ---
 
@@ -31,13 +31,13 @@ breath, **bold** = stress word.
 
 [Warmer, a touch more energy.]
 
-> vixcode is an **open-source** AI coding agent that runs **entirely on
+> llmai is an **open-source** AI coding agent that runs **entirely on
 > your laptop**. It's powered by Ollama, so the model — whether that's
 > Qwen, Llama, Gemma, Phi, or Mistral — sits on your machine, not
 > someone else's. No API keys. No telemetry. No usage caps. You install
 > it with three commands, and it just works.
 
-*On-screen:* terminal — `pip install -e .` → `ollama serve` → `vixcode-server`.
+*On-screen:* terminal — `pip install -e .` → `ollama serve` → `llmai-server`.
 
 ---
 
@@ -65,7 +65,7 @@ permission card with Allow/Deny visible.
 
 [Pick up energy here — this is the demo.]
 
-> On top of that local foundation, vixcode integrates with **GitLab**.
+> On top of that local foundation, llmai integrates with **GitLab**.
 > Set one environment variable and the agent gets eleven extra tools —
 > for triaging issues, fetching merge requests, reading failing pipeline
 > logs, posting comments, opening fix MRs.
@@ -107,12 +107,12 @@ card auto-approving, "Fix MR !43 opened ✓" at the end.
 > just a small, honest loop.
 >
 > If you want an AI coding agent that respects your laptop, your
-> privacy, and your time — vixcode is on GitHub.
+> privacy, and your time — llmai is on GitHub.
 >
 > [smiling] Three commands, and it's running.
 
 *On-screen:* `github.com/sechan9999/LLMai` fills the frame · subtitle:
-"git clone · ollama serve · vixcode".
+"git clone · ollama serve · llmai".
 
 ---
 

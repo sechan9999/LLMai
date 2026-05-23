@@ -1,5 +1,5 @@
 """
-Permission management for vixcode tool execution.
+Permission management for llmai tool execution.
 
 Each tool can be in one of three modes:
   - allow : auto-approve (default for read-only tools)

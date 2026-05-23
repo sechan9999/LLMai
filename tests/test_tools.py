@@ -1,11 +1,11 @@
-"""Tests for vixcode.tools — file, directory, and search operations."""
+"""Tests for llmai.tools — file, directory, and search operations."""
 import os
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from vixcode.tools import (
+from llmai.tools import (
     WORKSPACE_ROOT,
     _is_dangerous_command,
     _validate_path,

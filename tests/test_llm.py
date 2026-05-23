@@ -1,9 +1,9 @@
-"""Tests for vixcode.llm — OllamaClient with mocked HTTP."""
+"""Tests for llmai.llm — OllamaClient with mocked HTTP."""
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from vixcode.llm import OllamaClient, make_default_client, resolve_provider_config
+from llmai.llm import OllamaClient, make_default_client, resolve_provider_config
 
 
 @pytest.fixture()
@@ -19,7 +19,7 @@ class TestOllamaClient:
         c = OllamaClient(base_url="http://localhost:11434/")
         assert c.base_url == "http://localhost:11434"
 
-    @patch("vixcode.llm.requests.post")
+    @patch("llmai.llm.requests.post")
     def test_chat_returns_message(self, mock_post, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -32,7 +32,7 @@ class TestOllamaClient:
         assert result["content"] == "Hello!"
         mock_post.assert_called_once()
 
-    @patch("vixcode.llm.requests.post")
+    @patch("llmai.llm.requests.post")
     def test_chat_includes_tools_when_provided(self, mock_post, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -48,7 +48,7 @@ class TestOllamaClient:
         payload = call_args[1]["json"] if "json" in call_args[1] else call_args[0][1]
         assert "tools" in payload
 
-    @patch("vixcode.llm.requests.post")
+    @patch("llmai.llm.requests.post")
     def test_chat_no_tools_by_default(self, mock_post, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -63,17 +63,17 @@ class TestOllamaClient:
         payload = call_args[1]["json"] if "json" in call_args[1] else call_args[0][1]
         assert "tools" not in payload
 
-    @patch("vixcode.llm.requests.get")
+    @patch("llmai.llm.requests.get")
     def test_is_available_true(self, mock_get, client):
         mock_get.return_value = MagicMock()
         assert client.is_available() is True
 
-    @patch("vixcode.llm.requests.get")
+    @patch("llmai.llm.requests.get")
     def test_is_available_false(self, mock_get, client):
         mock_get.side_effect = ConnectionError()
         assert client.is_available() is False
 
-    @patch("vixcode.llm.requests.get")
+    @patch("llmai.llm.requests.get")
     def test_list_models(self, mock_get, client):
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
@@ -89,7 +89,7 @@ class TestOllamaClient:
         assert "qwen2.5-coder:7b" in models
         assert "gemma3:4b" in models
 
-    @patch("vixcode.llm.requests.get")
+    @patch("llmai.llm.requests.get")
     def test_list_models_error(self, mock_get, client):
         mock_get.side_effect = ConnectionError()
         assert client.list_models() == []
@@ -105,7 +105,7 @@ class TestResolveProvider:
     def test_default_is_ollama(self, monkeypatch):
         monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("OLLAMA_URL", raising=False)
-        monkeypatch.delenv("VIXCODE_MODEL", raising=False)
+        monkeypatch.delenv("LLMAI_MODEL", raising=False)
         cfg = resolve_provider_config()
         assert cfg["provider"] == "ollama"
         assert cfg["base_url"] == "http://localhost:11434"
@@ -149,7 +149,7 @@ class TestMakeDefaultClient:
         assert c._url.endswith("/v1beta/openai/chat/completions")
         assert c.headers["Authorization"] == "Bearer secret"
 
-    @patch("vixcode.llm.requests.post")
+    @patch("llmai.llm.requests.post")
     def test_gemini_request_carries_auth_header(self, mock_post, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "abc")
         mock_resp = MagicMock()

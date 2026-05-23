@@ -1,7 +1,7 @@
 # AI 코딩 에이전트 오픈소스 비교 가이드
 
 > **확인 시점**: 2026-05  
-> **확인 방법**: 직접 사용(Claude Code, Vixcode), 공식 문서 기반(Aider, Open Interpreter, Goose)
+> **확인 방법**: 직접 사용(Claude Code, LLMai), 공식 문서 기반(Aider, Open Interpreter, Goose)
 
 ---
 
@@ -20,9 +20,9 @@ AI 코딩 에이전트는 종류가 많다. 도구마다 지향점이 다르고 
 | **Aider** | 무료(API 비용) | GPT-4o / Claude | 가능 | CLI | 제한적 | Git 통합, 자동 커밋 | Apache 2.0 |
 | **Open Interpreter** | 무료(API 비용) | GPT-4 / 로컬 | 가능 | CLI + Web | 시스템 실행 | 자연어로 코드 실행 | AGPL |
 | **Goose** | 무료(API 비용) | Claude / GPT | 가능 | CLI | MCP 기반 | MCP 생태계, 확장 도구 | Apache 2.0 |
-| **Vixcode (LLMai)** | 무료(완전 로컬) | Ollama 모델 | 필수 | CLI + Web | 6개 | 최소 구현, 학습용 | MIT |
+| **LLMai (LLMai)** | 무료(완전 로컬) | Ollama 모델 | 필수 | CLI + Web | 6개 | 최소 구현, 학습용 | MIT |
 
-**[확인됨]** Claude Code, Vixcode는 직접 사용·제작 검증.  
+**[확인됨]** Claude Code, LLMai는 직접 사용·제작 검증.  
 **[추측]** Aider, Open Interpreter, Goose의 세부 기능은 공식 문서(2026-05 기준) 기반이며 업데이트로 변경 가능.
 
 ---
@@ -45,13 +45,13 @@ claude
 ---
 
 ### 시나리오 2: API 비용 없이 로컬에서 — 개인정보가 중요하다
-**추천: Vixcode 또는 Aider + Ollama**
+**추천: LLMai 또는 Aider + Ollama**
 
 코드가 외부로 나가지 않고, 토큰 비용도 없다.
-Vixcode는 Web UI 제공으로 접근이 쉽고, Aider는 Git 통합이 강력하다.
+LLMai는 Web UI 제공으로 접근이 쉽고, Aider는 Git 통합이 강력하다.
 
 ```bash
-# Vixcode
+# LLMai
 git clone https://github.com/sechan9999/LLMai
 pip install -e .
 python run_server.py   # 브라우저 자동 오픈
@@ -87,11 +87,11 @@ Block이 개발해 MCP 생태계와 긴밀하게 통합된다.
 ---
 
 ### 시나리오 5: 에이전트 아키텍처 학습 — 직접 뜯어보고 싶다
-**추천: Vixcode**
+**추천: LLMai**
 
-vixcode 전체 코드는 6개 파일, ~800줄이다.
-`vixcode/agent.py`를 보면 while 루프가 그대로 보인다.
-`vixcode/tools.py`를 수정하면 도구를 바로 추가할 수 있다.
+llmai 전체 코드는 6개 파일, ~800줄이다.
+`llmai/agent.py`를 보면 while 루프가 그대로 보인다.
+`llmai/tools.py`를 수정하면 도구를 바로 추가할 수 있다.
 에이전트가 어떻게 동작하는지 이해하는 데 가장 적합한 최소 구현체.
 
 ---
@@ -157,7 +157,7 @@ vixcode 전체 코드는 6개 파일, ~800줄이다.
 
 ---
 
-### Vixcode (LLMai)
+### LLMai (LLMai)
 **장점**
 - 완전 로컬, API 비용 없음, 오프라인 동작
 - MIT 라이선스 — 완전 자유
@@ -173,28 +173,28 @@ vixcode 전체 코드는 6개 파일, ~800줄이다.
 
 ---
 
-## Vixcode의 위치 [FR-08-03]
+## LLMai의 위치 [FR-08-03]
 
-Vixcode는 성능 경쟁을 하지 않는다.
+LLMai는 성능 경쟁을 하지 않는다.
 
 ```
 Claude Code: 최고 품질의 상용 에이전트
 Aider:       Git 특화 오픈소스 에이전트
-Vixcode:     에이전트 아키텍처를 배우기 위한 최소 구현체
+LLMai:     에이전트 아키텍처를 배우기 위한 최소 구현체
 ```
 
-**[확인됨]** 전체 에이전트 루프가 `vixcode/agent.py` 약 80줄 안에 담겨 있다.
+**[확인됨]** 전체 에이전트 루프가 `llmai/agent.py` 약 80줄 안에 담겨 있다.
 이 코드를 읽으면 while 루프, 도구 호출, 컨텍스트 압축이 어떻게 작동하는지
 **직접 눈으로 확인**할 수 있다.
 
 "Claude Code가 어떻게 동작하는지 이해하고 싶다"는 목적이라면
-Vixcode 코드를 읽고 수정해보는 것이 가장 빠른 학습 경로다.
+LLMai 코드를 읽고 수정해보는 것이 가장 빠른 학습 경로다.
 
 ---
 
 ## 주의사항
 
 - 도구별 기능은 업데이트로 빠르게 변화한다. 최신 정보는 각 공식 문서 확인.
-- **[확인됨]**: Claude Code, Vixcode — 직접 사용·제작 검증
+- **[확인됨]**: Claude Code, LLMai — 직접 사용·제작 검증
 - **[추측]**: Aider, Open Interpreter, Goose — 공식 문서 기반, 직접 심층 테스트 미완료
 - 로컬 LLM 품질은 모델 선택에 크게 의존한다. `docs/tips/local-llm-setup.md` 참조.

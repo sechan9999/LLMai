@@ -23,8 +23,8 @@ It ships with **two interfaces**:
 
 | Interface | How to Run | Best For |
 |-----------|-----------|----------|
-| **CLI (REPL)** | `vixcode` or `python -m vixcode` | Terminal power-users |
-| **Web UI** | `vixcode-server` or `python run_server.py` | Visual, browser-based interaction |
+| **CLI (REPL)** | `llmai` or `python -m llmai` | Terminal power-users |
+| **Web UI** | `llmai-server` or `python run_server.py` | Visual, browser-based interaction |
 
 **Live demo:** [ll-mai.vercel.app](https://ll-mai.vercel.app) — connects directly to your local Ollama from the browser, no proxy.
 
@@ -52,13 +52,13 @@ It ships with **two interfaces**:
 │                    User Interface                     │
 │  ┌─────────────────┐    ┌──────────────────────────┐ │
 │  │   CLI (REPL)    │    │   Web UI (index.html)    │ │
-│  │   vixcode/      │    │   server/static/         │ │
+│  │   llmai/      │    │   server/static/         │ │
 │  │   main.py       │    │   ↕ WebSocket (/ws)      │ │
 │  └───────┬─────────┘    └────────┬─────────────────┘ │
 │          │                       │                    │
 │  ┌───────▼───────────────────────▼─────────────────┐ │
 │  │         Agent Loop (20 max iterations)           │ │
-│  │   vixcode/agent.py  |  server/agent_ws.py        │ │
+│  │   llmai/agent.py  |  server/agent_ws.py        │ │
 │  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
@@ -67,14 +67,14 @@ It ships with **two interfaces**:
 │  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
-│  │            Tools  (vixcode/tools.py)             │ │
+│  │            Tools  (llmai/tools.py)             │ │
 │  │  read_file · write_file · edit_file             │ │
 │  │  run_command · list_files · search_code         │ │
 │  │  fetch_url · create_directory                   │ │
 │  └───────────────────────┬─────────────────────────┘ │
 │                          │                            │
 │  ┌───────────────────────▼─────────────────────────┐ │
-│  │       Permissions  (vixcode/permissions.py)      │ │
+│  │       Permissions  (llmai/permissions.py)      │ │
 │  │  allow: read_file, list_files, search_code      │ │
 │  │  ask:   write_file, edit_file, run_command      │ │
 │  └─────────────────────────────────────────────────┘ │
@@ -136,20 +136,20 @@ cp config.example.json config.json
 
 **Web UI** (recommended):
 ```bash
-vixcode-server
+llmai-server
 # Opens at http://127.0.0.1:7777
 ```
 
 **CLI:**
 ```bash
-vixcode
+llmai
 ```
 
 ---
 
 ## Web UI Features
 
-The Web UI (`vixcode-server`) provides a full-featured chat interface:
+The Web UI (`llmai-server`) provides a full-featured chat interface:
 
 | Feature | Description |
 |---------|-------------|
@@ -303,7 +303,7 @@ LLMai/
 │   ├── agent_ws.py       # Async agent loop (native + XML modes)
 │   └── static/
 │       └── index.html    # Web UI — session history, export, streaming
-├── vixcode/
+├── llmai/
 │   ├── main.py           # CLI entry point (REPL)
 │   ├── agent.py          # Core sync agent loop
 │   ├── llm.py            # OpenAI-compat HTTP client (Ollama / Gemini)

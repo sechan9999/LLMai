@@ -15,9 +15,9 @@ import time
 import httpx
 from fastapi import WebSocket
 
-from vixcode import telemetry
-from vixcode.tools import TOOL_DEFINITIONS, execute_tool
-from vixcode.permissions import DEFAULT, _preview
+from llmai import memory, telemetry
+from llmai.tools import TOOL_DEFINITIONS, WORKSPACE_ROOT, execute_tool
+from llmai.permissions import DEFAULT, _preview
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,9 @@ class WebSocketAgent:
         self.rules: dict[str, str] = dict(DEFAULT)
         self._perm_queue: asyncio.Queue[bool] = asyncio.Queue()
         self._last_result: str = ""
+        self.session_id: str = _new_session_id()
+        self.turn_count: int = 0
+        self._memory_primed: bool = False
 
     # ── Public ───────────────────────────────────────────────────────────────
 
@@ -122,7 +125,9 @@ class WebSocketAgent:
         mode waits for the full response so ``<tool_call>`` tags can be
         parsed cleanly before display.
         """
+        await self._prime_memory()
         self.messages.append({"role": "user", "content": user_input})
+        self.turn_count += 1
 
         with telemetry.turn_span(
             mode="ws-native" if self.native else "ws-xml",
@@ -172,9 +177,11 @@ class WebSocketAgent:
 
                     if done:
                         turn.set_attribute("agent.iterations.actual", iterations_done)
+                        await self._persist_turn()
                         return
 
             turn.set_attribute("agent.iterations.actual", iterations_done)
+            await self._persist_turn()
             await self._send(
                 "error",
                 message=f"Reached max iterations ({self.MAX_ITERATIONS}) without a final answer.",
@@ -187,8 +194,16 @@ class WebSocketAgent:
 
     def reset(self) -> None:
         """Clear conversation context."""
+        # Fire-and-forget session finalize — extracts summary + facts.
+        try:
+            asyncio.create_task(self._finalize_session())
+        except RuntimeError:
+            pass  # no running loop (e.g. shutdown); skip
         system = NATIVE_SYSTEM_PROMPT if self.native else XML_SYSTEM_PROMPT
         self.messages = [{"role": "system", "content": system}]
+        self.session_id = _new_session_id()
+        self.turn_count = 0
+        self._memory_primed = False
 
     # ── Native tool-call mode ────────────────────────────────────────────────
 
@@ -424,6 +439,119 @@ class WebSocketAgent:
         """Send a typed JSON message over the WebSocket."""
         await self.ws.send_json({"type": msg_type, **kwargs})
 
+    # ── Memory hooks (best-effort; never raise into the loop) ────────────────
+
+    async def _prime_memory(self) -> None:
+        """Inject recent prior-session summaries as a system message (once)."""
+        if self._memory_primed:
+            return
+        self._memory_primed = True
+        store = memory.get_store()
+        if store is None:
+            return
+        loop = asyncio.get_event_loop()
+        try:
+            summaries = await loop.run_in_executor(
+                None, store.recent_summaries, str(WORKSPACE_ROOT),
+            )
+        except Exception:
+            logger.debug("recent_summaries failed", exc_info=True)
+            return
+        if not summaries:
+            return
+        lines = ["[Memory from prior sessions in this workspace]"]
+        for s in summaries:
+            when = s.get("created_at")
+            when_str = when.strftime("%Y-%m-%d") if when else "?"
+            text = (s.get("summary") or "").strip()
+            if text:
+                lines.append(f"• ({when_str}) {text}")
+        if len(lines) > 1:
+            self.messages.insert(1, {"role": "system", "content": "\n".join(lines)})
+
+    async def _persist_turn(self) -> None:
+        store = memory.get_store()
+        if store is None:
+            return
+        loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: store.save_session(
+                    session_id=self.session_id,
+                    workspace_path=str(WORKSPACE_ROOT),
+                    provider=self.provider,
+                    model=self.model,
+                    messages=self.messages,
+                    token_estimate=telemetry.estimate_tokens(self.messages),
+                    turn_count=self.turn_count,
+                ),
+            )
+        except Exception:
+            logger.debug("save_session failed", exc_info=True)
+
+    async def _finalize_session(self) -> None:
+        store = memory.get_store()
+        if store is None or self.turn_count == 0:
+            return
+        loop = asyncio.get_event_loop()
+        msgs_snapshot = list(self.messages)
+        sid = self.session_id
+        provider = self.provider
+        model = self.model
+        token_est = telemetry.estimate_tokens(msgs_snapshot)
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: store.save_session(
+                    session_id=sid,
+                    workspace_path=str(WORKSPACE_ROOT),
+                    provider=provider,
+                    model=model,
+                    messages=msgs_snapshot,
+                    token_estimate=token_est,
+                    turn_count=self.turn_count,
+                    ended=True,
+                ),
+            )
+        except Exception:
+            logger.debug("session finalize save failed", exc_info=True)
+
+        # Best-effort summary + knowledge extraction. Runs in executor so the
+        # synchronous LLM call doesn't block the event loop.
+        try:
+            summary = await loop.run_in_executor(
+                None, _summarize_via_llm, self, msgs_snapshot,
+            )
+            if summary:
+                await loop.run_in_executor(
+                    None,
+                    lambda: store.save_summary(
+                        session_id=sid,
+                        workspace_path=str(WORKSPACE_ROOT),
+                        summary=summary,
+                        source_token_count=token_est,
+                    ),
+                )
+        except Exception:
+            logger.debug("summary extraction failed", exc_info=True)
+
+        try:
+            facts = await loop.run_in_executor(
+                None, _extract_facts_via_llm, self, msgs_snapshot,
+            )
+            if facts:
+                await loop.run_in_executor(
+                    None,
+                    lambda: store.save_knowledge(
+                        workspace_path=str(WORKSPACE_ROOT),
+                        source_session_id=sid,
+                        items=facts,
+                    ),
+                )
+        except Exception:
+            logger.debug("fact extraction failed", exc_info=True)
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -455,3 +583,114 @@ def _extract_xml_calls(text: str) -> list[tuple[str, dict]]:
         except json.JSONDecodeError:
             continue
     return results
+
+
+def _new_session_id() -> str:
+    try:
+        from llmai.memory.store import new_session_id
+        return new_session_id()
+    except Exception:
+        import uuid
+        return uuid.uuid4().hex
+
+
+def _format_session_for_summary(messages: list[dict]) -> str:
+    """Render a message list as plain text for the summarizer LLM."""
+    lines: list[str] = []
+    for m in messages:
+        role = m.get("role", "?")
+        content = m.get("content") or ""
+        tool_calls = m.get("tool_calls") or []
+        if tool_calls:
+            names = ", ".join(
+                tc.get("function", {}).get("name", "?") for tc in tool_calls
+            )
+            lines.append(f"[{role} called: {names}] {content}".rstrip())
+        else:
+            lines.append(f"[{role}] {content}".rstrip())
+    return "\n".join(lines)
+
+
+def _llm_once(agent: "WebSocketAgent", prompt_messages: list[dict]) -> str:
+    """One-shot non-streaming LLM call over the agent's configured endpoint.
+
+    Used by the session-finalize path so we don't bring an OllamaClient
+    dependency into the async loop just for two end-of-session calls.
+    Synchronous httpx.Client — runs inside ``run_in_executor``.
+    """
+    import httpx
+    payload = {
+        "model": agent.model,
+        "messages": prompt_messages,
+        "stream": False,
+    }
+    try:
+        with httpx.Client(timeout=60, headers=agent.headers) as client:
+            resp = client.post(agent.llm_url, json=payload)
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"].get("content", "") or ""
+    except Exception:
+        return ""
+
+
+def _summarize_via_llm(agent: "WebSocketAgent", messages: list[dict]) -> str:
+    if len(messages) < 3:
+        return ""
+    transcript = _format_session_for_summary(messages[1:])
+    out = _llm_once(agent, [
+        {
+            "role": "system",
+            "content": (
+                "You summarize coding-agent sessions for persistent memory. "
+                "Capture the goal, key decisions, files touched, and any open "
+                "questions. Reply with plain prose only. Max 200 words."
+            ),
+        },
+        {
+            "role": "user",
+            "content": "Summarize this session for future recall.\n\n--- Session ---\n" + transcript,
+        },
+    ])
+    return out.strip()
+
+
+def _extract_facts_via_llm(agent: "WebSocketAgent", messages: list[dict]) -> list[dict]:
+    if len(messages) < 3:
+        return []
+    transcript = _format_session_for_summary(messages[1:])
+    raw = _llm_once(agent, [
+        {
+            "role": "system",
+            "content": (
+                "Extract 3-5 REUSABLE facts or decisions from this coding "
+                "session. Each item: 'kind' in {decision, fact, error_seen, "
+                "snippet}, and a short 'text' (max 200 chars) useful in a "
+                "FUTURE session in the same project. Do NOT copy verbatim "
+                "file contents. Reply as compact JSON: "
+                '{"items":[{"kind":"decision","text":"..."},...]}'
+            ),
+        },
+        {"role": "user", "content": "--- Session ---\n" + transcript},
+    ])
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start < 0 or end <= start:
+            return []
+        try:
+            data = json.loads(raw[start:end + 1])
+        except json.JSONDecodeError:
+            return []
+    items = data.get("items") or []
+    out: list[dict] = []
+    for it in items[:5]:
+        if isinstance(it, dict) and it.get("text"):
+            out.append({
+                "kind": str(it.get("kind") or "fact")[:32],
+                "text": str(it.get("text"))[:200],
+            })
+    return out

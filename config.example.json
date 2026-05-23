@@ -13,8 +13,16 @@
   "telemetry": {
     "enabled": false,
     "endpoint": "http://localhost:4318",
-    "service_name": "vixcode-agent",
+    "service_name": "llmai-agent",
     "console": false,
     "headers": {}
+  },
+  "memory": {
+    "enabled": false,
+    "uri": "mongodb+srv://USER:PASS@cluster.mongodb.net/?retryWrites=true",
+    "db_name": "llmai",
+    "embed_model": "nomic-embed-text",
+    "auto_recall_at_startup": true,
+    "recall_limit": 3
   }
 }

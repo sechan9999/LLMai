@@ -1,22 +1,22 @@
-# Bindplane Agent (OTel collector) → Dynatrace pipeline for vixcode.
+# Bindplane Agent (OTel collector) → Dynatrace pipeline for llmai.
 #
 # Usage:
 #   1. Copy .env.example → .env, fill in DT_ENDPOINT + DT_API_TOKEN
 #   2. docker compose -f docker-compose.bindplane.yml up -d
 #   3. In another terminal:
-#        export VIXCODE_OTEL_ENABLED=true
-#        export VIXCODE_OTEL_ENDPOINT=http://localhost:4318
-#        vixcode-server
+#        export LLMAI_OTEL_ENABLED=true
+#        export LLMAI_OTEL_ENDPOINT=http://localhost:4318
+#        llmai-server
 #   4. Make a few requests, then check Dynatrace → Traces / Metrics.
 #
-# The agent (vixcode) speaks plain OTLP/HTTP on :4318. Bindplane is the
+# The agent (llmai) speaks plain OTLP/HTTP on :4318. Bindplane is the
 # only thing that knows about Dynatrace. Swap the exporter later (e.g.
 # Honeycomb, New Relic) without touching agent code.
 
 services:
   bindplane-agent:
     image: ghcr.io/observiq/bindplane-agent:latest
-    container_name: vixcode-bindplane
+    container_name: llmai-bindplane
     restart: unless-stopped
     ports:
       - "4318:4318"   # OTLP HTTP

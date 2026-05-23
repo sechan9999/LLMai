@@ -1,5 +1,5 @@
 """
-Tool definitions and implementations for the vixcode agent.
+Tool definitions and implementations for the llmai agent.
 
 Each tool is defined as an OpenAI-compatible function spec and paired
 with a Python implementation.  The agent calls these via the LLM's
@@ -7,7 +7,7 @@ tool-calling mechanism.
 
 GitLab tools (gitlab_list_issues, gitlab_get_mr, gitlab_get_job_log, …)
 are registered automatically when the GITLAB_TOKEN environment variable
-is set. See ``vixcode/gitlab_tools.py`` for details.
+is set. See ``llmai/gitlab_tools.py`` for details.
 """
 import os
 import platform
@@ -20,10 +20,10 @@ from . import gitlab_tools as _gl
 
 # ── Workspace sandbox ─────────────────────────────────────────────────────────
 # All file operations are restricted to WORKSPACE_ROOT.
-# Defaults to $VIXCODE_WORKSPACE if set, else the current working directory.
+# Defaults to $LLMAI_WORKSPACE if set, else the current working directory.
 
 WORKSPACE_ROOT: Path = Path(
-    os.environ.get("VIXCODE_WORKSPACE") or os.getcwd()
+    os.environ.get("LLMAI_WORKSPACE") or os.getcwd()
 ).resolve()
 
 
@@ -457,7 +457,7 @@ def _fetch_url(url: str) -> str:
     import html as _html
     import urllib.request as _req
     try:
-        request = _req.Request(url, headers={"User-Agent": "vixcode/1.0"})
+        request = _req.Request(url, headers={"User-Agent": "llmai/1.0"})
         with _req.urlopen(request, timeout=15) as resp:
             raw = resp.read(65536).decode("utf-8", errors="replace")
         text = re.sub(r"<[^>]+>", " ", raw)
@@ -502,3 +502,19 @@ _BASE_HANDLERS = {
 # isn't tempted to call APIs that aren't actually configured.
 if _gl.is_gitlab_enabled():
     TOOL_DEFINITIONS.extend(_gl.GITLAB_TOOL_DEFINITIONS)
+
+
+def register_memory_tool() -> None:
+    """Append ``recall_memory`` to the tool registry once memory is enabled.
+
+    Called from the entry points after ``llmai.memory.init()`` succeeds,
+    so the LLM never sees a tool it can't actually invoke.
+    """
+    from . import memory
+    if not memory.is_enabled():
+        return
+    from .memory.recall_tool import TOOL_DEFINITION, recall_memory
+    if any(t["function"]["name"] == "recall_memory" for t in TOOL_DEFINITIONS):
+        return  # already registered (idempotent)
+    TOOL_DEFINITIONS.append(TOOL_DEFINITION)
+    _BASE_HANDLERS["recall_memory"] = recall_memory

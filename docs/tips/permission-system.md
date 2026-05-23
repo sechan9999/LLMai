@@ -1,7 +1,7 @@
 # Claude Code 권한 시스템 가이드
 
 > **확인 시점**: 2026-05  
-> **확인 방법**: vixcode 구현 및 permissions.py 직접 작성
+> **확인 방법**: llmai 구현 및 permissions.py 직접 작성
 
 ---
 
@@ -42,7 +42,7 @@
 }
 ```
 
-### vixcode 설정 (`config.json`)
+### llmai 설정 (`config.json`)
 
 ```json
 {

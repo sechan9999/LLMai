@@ -1,10 +1,10 @@
-"""Tests for vixcode.gitlab_tools — mocked GitLab REST client."""
+"""Tests for llmai.gitlab_tools — mocked GitLab REST client."""
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
-from vixcode import gitlab_tools as gl
+from llmai import gitlab_tools as gl
 
 
 @pytest.fixture(autouse=True)
@@ -61,11 +61,11 @@ class TestRemoteParsing:
     ])
     def test_parses_known_formats(self, url, expected):
         proc = MagicMock(returncode=0, stdout=url + "\n")
-        with patch("vixcode.gitlab_tools.subprocess.run", return_value=proc):
+        with patch("llmai.gitlab_tools.subprocess.run", return_value=proc):
             assert gl._detect_project_from_git() == expected
 
     def test_returns_none_when_no_remote(self):
-        with patch("vixcode.gitlab_tools.subprocess.run",
+        with patch("llmai.gitlab_tools.subprocess.run",
                    return_value=MagicMock(returncode=128, stdout="")):
             assert gl._detect_project_from_git() is None
 
@@ -81,7 +81,7 @@ class TestClientInit:
     def test_raises_without_project(self, monkeypatch):
         monkeypatch.setenv("GITLAB_TOKEN", "t")
         monkeypatch.delenv("GITLAB_PROJECT", raising=False)
-        with patch("vixcode.gitlab_tools._detect_project_from_git", return_value=None):
+        with patch("llmai.gitlab_tools._detect_project_from_git", return_value=None):
             with pytest.raises(gl.GitLabError, match="GITLAB_PROJECT"):
                 gl.GitLabClient()
 
@@ -94,13 +94,13 @@ class TestClientInit:
 # ── HTTP error handling -----------------------------------------------------
 
 class TestHTTPErrors:
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_400_raises_gitlab_error(self, req, env):
         req.return_value = _err(404, "not found")
         with pytest.raises(gl.GitLabError, match="404"):
             gl.GitLabClient().get("/projects/x/issues")
 
-    @patch("vixcode.gitlab_tools.requests.request",
+    @patch("llmai.gitlab_tools.requests.request",
            side_effect=requests.ConnectionError("dns"))
     def test_network_error_raises_gitlab_error(self, _req, env):
         with pytest.raises(gl.GitLabError, match="network error"):
@@ -110,7 +110,7 @@ class TestHTTPErrors:
 # ── Tool happy paths --------------------------------------------------------
 
 class TestIssueTools:
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_list_issues_summarizes(self, req, env):
         req.return_value = _ok([
             {"iid": 1, "state": "opened", "title": "Login broken",
@@ -124,7 +124,7 @@ class TestIssueTools:
         # Auth header propagated
         assert req.call_args.kwargs["headers"]["PRIVATE-TOKEN"] == "test-token"
 
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_get_issue_includes_comments(self, req, env):
         req.side_effect = [
             _ok({"iid": 7, "state": "opened", "title": "X",
@@ -136,12 +136,12 @@ class TestIssueTools:
         assert "#7" in out and "long desc" in out
         assert "looking into it" in out
 
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_create_issue_returns_url(self, req, env):
         req.return_value = _ok({"iid": 99, "web_url": "https://gl/x/-/issues/99"})
         assert gl.gitlab_create_issue("title").startswith("Created issue #99")
 
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_comment_issue(self, req, env):
         req.return_value = _ok({"id": 42})
         out = gl.gitlab_comment_issue(7, "thanks!")
@@ -149,7 +149,7 @@ class TestIssueTools:
 
 
 class TestMrAndPipelineTools:
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_get_mr_with_diff(self, req, env):
         req.side_effect = [
             _ok({"iid": 5, "state": "opened", "title": "T",
@@ -162,7 +162,7 @@ class TestMrAndPipelineTools:
         out = gl.gitlab_get_mr(5, include_diff=True)
         assert "!5" in out and "foo.py" in out
 
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_list_pipelines(self, req, env):
         req.return_value = _ok([
             {"id": 1, "status": "failed", "ref": "main",
@@ -171,8 +171,8 @@ class TestMrAndPipelineTools:
         out = gl.gitlab_list_pipelines(status="failed")
         assert "failed" in out and "abcdef01" in out
 
-    @patch("vixcode.gitlab_tools.requests.get")
-    @patch("vixcode.gitlab_tools.requests.request")
+    @patch("llmai.gitlab_tools.requests.get")
+    @patch("llmai.gitlab_tools.requests.request")
     def test_get_job_log_truncates(self, req, get, env):
         req.return_value = _ok({})  # unused; ensures client init succeeds
         # actual log fetch uses requests.get directly

@@ -5,9 +5,9 @@ dist/
 build/
 .env
 *.egg
-vixcode.egg-info/
-.vixcode/
-vixcode.json
+llmai.egg-info/
+.llmai/
+llmai.json
 _test_ws.py
 
 # User config (may contain custom settings)

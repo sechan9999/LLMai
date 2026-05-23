@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy essential files
 COPY pyproject.toml README.md ./
-COPY vixcode ./vixcode
+COPY llmai ./llmai
 COPY server ./server
 COPY run_server.py ./
 
@@ -25,6 +25,6 @@ EXPOSE 7777
 ENV HOST=0.0.0.0
 ENV PORT=7777
 ENV OLLAMA_URL=http://host.docker.internal:11434
-ENV VIXCODE_MODEL=qwen2.5-coder
+ENV LLMAI_MODEL=qwen2.5-coder
 
 CMD ["python", "/app/run_server.py"]

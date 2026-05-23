@@ -232,7 +232,7 @@ def resolve_provider_config(
         "provider": "ollama",
         "base_url": os.environ.get("OLLAMA_URL", "http://localhost:11434").rstrip("/"),
         "chat_path": "/v1/chat/completions",
-        "model": model or os.environ.get("VIXCODE_MODEL", "qwen2.5-coder"),
+        "model": model or os.environ.get("LLMAI_MODEL", "qwen2.5-coder"),
         "headers": {},
     }
 

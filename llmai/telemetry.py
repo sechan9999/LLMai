@@ -1,17 +1,17 @@
 """
-OpenTelemetry instrumentation for vixcode agent loops.
+OpenTelemetry instrumentation for llmai agent loops.
 
 Opt-in. Off by default (privacy-first). When disabled or unavailable, every
 helper here becomes a no-op via OTel's default NoOp providers — the agent
 runs identically with zero overhead and zero new dependencies at runtime.
 
 Env vars (override config.json["telemetry"]):
-  VIXCODE_OTEL_ENABLED      "true"/"false"  (default: false)
-  VIXCODE_OTEL_ENDPOINT     OTLP HTTP base, e.g. http://localhost:4318
-  VIXCODE_OTEL_SERVICE_NAME default: vixcode-agent
-  VIXCODE_OTEL_HEADERS      URL-encoded k=v&k=v, e.g.
+  LLMAI_OTEL_ENABLED      "true"/"false"  (default: false)
+  LLMAI_OTEL_ENDPOINT     OTLP HTTP base, e.g. http://localhost:4318
+  LLMAI_OTEL_SERVICE_NAME default: llmai-agent
+  LLMAI_OTEL_HEADERS      URL-encoded k=v&k=v, e.g.
                              Authorization=Api-Token%20dt0c01.xxx
-  VIXCODE_OTEL_CONSOLE      "true" to also dump spans to stdout (dev)
+  LLMAI_OTEL_CONSOLE      "true" to also dump spans to stdout (dev)
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def init(config: Optional[dict] = None) -> bool:
     _INITIALIZED = True
 
     cfg = (config or {}) if isinstance(config, dict) else {}
-    enabled = _truthy(os.environ.get("VIXCODE_OTEL_ENABLED")) or bool(cfg.get("enabled"))
+    enabled = _truthy(os.environ.get("LLMAI_OTEL_ENABLED")) or bool(cfg.get("enabled"))
     if not enabled:
         return False
 
@@ -80,32 +80,32 @@ def init(config: Optional[dict] = None) -> bool:
         return False
 
     endpoint = (
-        os.environ.get("VIXCODE_OTEL_ENDPOINT")
+        os.environ.get("LLMAI_OTEL_ENDPOINT")
         or cfg.get("endpoint")
         or ""
     ).rstrip("/")
     service = (
-        os.environ.get("VIXCODE_OTEL_SERVICE_NAME")
+        os.environ.get("LLMAI_OTEL_SERVICE_NAME")
         or cfg.get("service_name")
-        or "vixcode-agent"
+        or "llmai-agent"
     )
-    headers = _parse_headers(os.environ.get("VIXCODE_OTEL_HEADERS")) or dict(
+    headers = _parse_headers(os.environ.get("LLMAI_OTEL_HEADERS")) or dict(
         cfg.get("headers") or {}
     )
-    console = _truthy(os.environ.get("VIXCODE_OTEL_CONSOLE")) or bool(
+    console = _truthy(os.environ.get("LLMAI_OTEL_CONSOLE")) or bool(
         cfg.get("console")
     )
 
     if not endpoint and not console:
         logger.warning(
             "Telemetry enabled but no endpoint or console exporter configured; "
-            "set VIXCODE_OTEL_ENDPOINT or VIXCODE_OTEL_CONSOLE=true."
+            "set LLMAI_OTEL_ENDPOINT or LLMAI_OTEL_CONSOLE=true."
         )
         return False
 
     resource = Resource.create({
         "service.name": service,
-        "service.namespace": "vixcode",
+        "service.namespace": "llmai",
         "service.version": _detect_version(),
     })
 
@@ -147,8 +147,8 @@ def init(config: Optional[dict] = None) -> bool:
         mp = MeterProvider(resource=resource, metric_readers=readers)
         metrics.set_meter_provider(mp)
 
-    _TRACER = trace.get_tracer("vixcode.agent")
-    _METER = metrics.get_meter("vixcode.agent")
+    _TRACER = trace.get_tracer("llmai.agent")
+    _METER = metrics.get_meter("llmai.agent")
     _build_metrics()
     _ACTIVE = True
     logger.info(
@@ -169,7 +169,7 @@ def tracer():
         return _TRACER
     # OTel returns a NoOpTracer when no provider has been set.
     from opentelemetry import trace
-    return trace.get_tracer("vixcode.agent")
+    return trace.get_tracer("llmai.agent")
 
 
 # ── Span context managers ────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ def _parse_headers(raw: Optional[str]) -> dict[str, str]:
 def _detect_version() -> str:
     try:
         from importlib.metadata import version
-        return version("vixcode")
+        return version("llmai")
     except Exception:
         return "unknown"
 
@@ -313,25 +313,25 @@ def _build_metrics() -> None:
         return
     _METRICS.update({
         "turns": _METER.create_counter(
-            "vixcode.agent.turns",
+            "llmai.agent.turns",
             description="Agent turns started",
         ),
         "llm_latency": _METER.create_histogram(
-            "vixcode.llm.latency",
+            "llmai.llm.latency",
             unit="ms",
             description="LLM chat completion latency",
         ),
         "llm_tokens": _METER.create_histogram(
-            "vixcode.llm.tokens",
+            "llmai.llm.tokens",
             unit="token",
             description="Estimated tokens per LLM call",
         ),
         "tool_count": _METER.create_counter(
-            "vixcode.tool.invocations",
+            "llmai.tool.invocations",
             description="Tool invocations attempted",
         ),
         "tool_latency": _METER.create_histogram(
-            "vixcode.tool.latency",
+            "llmai.tool.latency",
             unit="ms",
             description="Tool execution latency (excludes permission wait)",
         ),

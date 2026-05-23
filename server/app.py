@@ -1,5 +1,5 @@
 """
-FastAPI application for the vixcode Web UI.
+FastAPI application for the llmai Web UI.
 
 Serves the single-page frontend and manages WebSocket connections
 for the agentic chat loop.
@@ -14,22 +14,24 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from vixcode import telemetry
-from vixcode.llm import resolve_provider_config
-from vixcode import tools as _vt
+from llmai import memory, telemetry
+from llmai.llm import resolve_provider_config
+from llmai import tools as _vt
 
 from .agent_ws import WebSocketAgent
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="vixcode", description="Local AI Coding Agent")
+app = FastAPI(title="llmai", description="Local AI Coding Agent")
 
 
 @app.on_event("startup")
-async def _init_telemetry() -> None:
-    """Initialize OpenTelemetry once when the server boots."""
+async def _init_observability() -> None:
+    """Initialize OpenTelemetry + memory store once when the server boots."""
     cfg = load_config()
     telemetry.init(cfg.get("telemetry"))
+    memory.init(cfg.get("memory"))
+    _vt.register_memory_tool()
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -42,7 +44,7 @@ _VALID_TYPES = {"get_info", "user_message", "permission_response", "reset", "can
 def load_config() -> dict:
     """Load configuration from the first available config file."""
     for p in [
-        Path.cwd() / "vixcode.json",
+        Path.cwd() / "llmai.json",
         Path(__file__).parent.parent / "config.json",
     ]:
         if p.exists():
@@ -70,7 +72,7 @@ async def ws_endpoint(websocket: WebSocket):
 
     config = load_config()
     cfg_url   = os.environ.get("OLLAMA_URL")    or config.get("ollama_url")
-    cfg_model = os.environ.get("VIXCODE_MODEL") or config.get("model")
+    cfg_model = os.environ.get("LLMAI_MODEL") or config.get("model")
     # Auto-detect provider — Gemini if GEMINI_API_KEY is set, else Ollama.
     provider_cfg = resolve_provider_config(base_url=cfg_url, model=cfg_model)
 

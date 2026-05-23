@@ -1,4 +1,4 @@
-# vixcode — Promo Video Script
+# llmai — Promo Video Script
 
 A 60-second pitch suitable for a hackathon submission, GitHub README hero, or
 social share. Two cuts: a full **60s** version and a **15s** social teaser.
@@ -31,7 +31,7 @@ that one decent take usually works.
 
 ### ▌ 0:00 – 0:05 · Hook
 
-**On screen:** vixcode logo glows in. Tagline appears underneath:
+**On screen:** llmai logo glows in. Tagline appears underneath:
 *"An AI coding agent that never leaves your laptop."*
 
 **Voiceover:**
@@ -52,13 +52,13 @@ blurred-out source file being uploaded, a "$0.42" cost meter ticking.
 **On screen:** terminal types:
 ```
 $ pip install -e .
-$ vixcode-server
+$ llmai-server
 INFO: Uvicorn running on http://localhost:7777
 ```
 Banner reads: `Provider: Ollama (local) · Model: qwen2.5-coder`.
 
 **Voiceover:**
-> "vixcode is an open-source coding agent that runs entirely on your
+> "llmai is an open-source coding agent that runs entirely on your
 > hardware via Ollama. No API keys. No telemetry. Same agentic loop you
 > expect — read files, edit code, run commands — but every byte stays
 > local."
@@ -111,7 +111,7 @@ Tool cards animate in, top to bottom:
 github.com/sechan9999/LLMai
 ```
 
-Subtitle: *"git clone. ollama serve. vixcode."*
+Subtitle: *"git clone. ollama serve. llmai."*
 
 **Voiceover:**
 > "It's three commands to start. Link in the description."
@@ -125,7 +125,7 @@ Subtitle: *"git clone. ollama serve. vixcode."*
 
 ### ▌ 0:00 – 0:03
 
-**On screen:** vixcode logo → tagline.
+**On screen:** llmai logo → tagline.
 **VO:** "An AI coding agent that runs entirely on your laptop."
 
 ### ▌ 0:03 – 0:12

@@ -68,7 +68,7 @@ curl http://localhost:11434/v1/models
 # {"object":"list","data":[{"id":"qwen2.5-coder:7b",...}]}
 ```
 
-### 5단계: vixcode 연결
+### 5단계: llmai 연결
 
 `config.json` 설정:
 
@@ -103,13 +103,13 @@ python run_server.py
 ```yaml
 # docker-compose.yml
 services:
-  vixcode:
+  llmai:
     build: .
     ports:
       - "7777:7777"
     environment:
       - OLLAMA_URL=http://host.docker.internal:11434
-      - VIXCODE_MODEL=qwen2.5-coder:7b
+      - LLMAI_MODEL=qwen2.5-coder:7b
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Linux 필수
 ```
@@ -126,7 +126,7 @@ docker-compose up -d
 
 | 증상 | 원인 | 해결 |
 |------|------|------|
-| 400 Bad Request | 모델이 tool use API 미지원 | XML 폴백 모드 자동 전환 (vixcode) |
+| 400 Bad Request | 모델이 tool use API 미지원 | XML 폴백 모드 자동 전환 (llmai) |
 | 응답이 너무 느림 | 모델이 RAM 초과 | 더 작은 모델 선택 (3b/4b) |
 | 도구 호출 오류 | XML 폴백 파싱 실패 | 네이티브 지원 모델로 교체 |
 | 연결 거부 | Ollama 서버 미실행 | `ollama serve` 실행 |
@@ -136,7 +136,7 @@ docker-compose up -d
 ## 주의사항
 
 - **[확인됨]** gemma3:4b는 `/v1/chat/completions` tool 파라미터로 400 오류 반환
-  → vixcode에서 XML 폴백(`<tool_call>{...}</tool_call>`)으로 자동 처리
+  → llmai에서 XML 폴백(`<tool_call>{...}</tool_call>`)으로 자동 처리
 - **[확인됨]** qwen2.5-coder는 네이티브 function calling 안정 동작
 - **[추측]** 모델별 tool use 지원 여부는 버전 업데이트로 변경될 수 있음
 - 상용 Claude Code 수준의 정확도를 기대하기는 어렵다. 학습 및 로컬 실험 목적에 적합.

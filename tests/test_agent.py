@@ -1,12 +1,12 @@
-"""Tests for vixcode.agent — AgentLoop behavior with mocked LLM."""
+"""Tests for llmai.agent — AgentLoop behavior with mocked LLM."""
 import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from vixcode.agent import AgentLoop, _fmt_args, _parse_tool_call
-from vixcode.llm import OllamaClient
-from vixcode.permissions import PermissionManager
+from llmai.agent import AgentLoop, _fmt_args, _parse_tool_call
+from llmai.llm import OllamaClient
+from llmai.permissions import PermissionManager
 
 
 @pytest.fixture()
@@ -71,7 +71,7 @@ class TestAgentLoop:
                 },
             }],
         }
-        with patch("vixcode.agent.execute_tool", return_value="file content"):
+        with patch("llmai.agent.execute_tool", return_value="file content"):
             agent.run("loop test", print_fn=lambda *a: None)
         # Should have called chat exactly max_iterations times
         assert mock_llm.chat.call_count == 3

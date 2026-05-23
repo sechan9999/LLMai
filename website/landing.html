@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLMai (vixcode) — A 100% local AI coding agent</title>
+    <title>LLMai (llmai) — A 100% local AI coding agent</title>
     <meta name="description" content="An open-source AI coding agent that runs entirely on your machine via Ollama. Reads, writes, and edits files; runs shell commands. No API keys, no telemetry.">
 
     <!-- Open Graph / social -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta property="og:title" content="LLMai (llmai) — Local AI Coding Agent">
     <meta property="og:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
     <meta property="og:url" content="https://ll-mai.vercel.app/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="LLMai (vixcode) — Local AI Coding Agent">
+    <meta name="twitter:title" content="LLMai (llmai) — Local AI Coding Agent">
     <meta name="twitter:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,7 +51,7 @@
                 <div class="badge">Open Source · MIT · Powered by Ollama</div>
                 <h1 class="hero-title">An AI coding agent <br/><span class="text-gradient">that never leaves your laptop</span></h1>
                 <p class="hero-subtitle">
-                    vixcode plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
+                    llmai plans, reads files, writes code, and runs commands &mdash; driven by a model on your own machine.
                     Your code stays on disk. No API keys, no logs sent anywhere.
                 </p>
                 <div class="hero-actions">
@@ -74,14 +74,14 @@
                     <div class="chat-feed" id="chat-feed">
                         <div class="chat-empty">
                             <div class="chat-empty-icon">⚡</div>
-                            <div class="chat-empty-title">Try vixcode in your browser</div>
+                            <div class="chat-empty-title">Try llmai in your browser</div>
                             <div class="chat-empty-sub">Connects to <code>localhost:11434</code> &mdash; nothing leaves your machine.</div>
                         </div>
                     </div>
 
                     <form class="chat-input" onsubmit="event.preventDefault(); sendChat();">
                         <textarea id="chat-text"
-                                  placeholder="Ask vixcode anything…"
+                                  placeholder="Ask llmai anything…"
                                   rows="1"
                                   autocomplete="off"></textarea>
                         <button type="submit" id="chat-send" aria-label="Send">
@@ -99,7 +99,7 @@
 
                 <p class="hero-fineprint">
                     Want full agentic power &mdash; file edits, shell commands, the whole loop?
-                    <a href="#quick-start">Install vixcode locally</a>.
+                    <a href="#quick-start">Install llmai locally</a>.
                 </p>
             </div>
         </section>
@@ -212,8 +212,8 @@ pip install -e .
 ollama serve
 ollama pull qwen2.5-coder
 
-# Launch the Web UI (or run `vixcode` for CLI):
-vixcode-server
+# Launch the Web UI (or run `llmai` for CLI):
+llmai-server
 # → open http://localhost:7777</code></pre>
                     <pre class="qs-panel qs-panel-docker"><code>git clone https://github.com/sechan9999/LLMai.git
 cd LLMai
@@ -225,7 +225,7 @@ docker compose up -d
                 </div>
 
                 <p class="cta-fineprint">
-                    Need a smaller model? Try <code>ollama pull gemma3:4b</code> &mdash; vixcode auto-detects that Gemma needs the XML tool-calling fallback and switches.
+                    Need a smaller model? Try <code>ollama pull gemma3:4b</code> &mdash; llmai auto-detects that Gemma needs the XML tool-calling fallback and switches.
                 </p>
             </div>
         </section>

@@ -1,11 +1,11 @@
-# Dynatrace observability for vixcode
+# Dynatrace observability for llmai
 
-vixcode instruments both agent loops (CLI + WebSocket server) with OpenTelemetry.
+llmai instruments both agent loops (CLI + WebSocket server) with OpenTelemetry.
 Spans and metrics are exported via OTLP/HTTP. A bundled Bindplane collector
 terminates OTLP locally and forwards everything to Dynatrace.
 
 ```
-vixcode agent ──OTLP/HTTP:4318──► Bindplane (OTel collector) ──► Dynatrace OTLP API
+llmai agent ──OTLP/HTTP:4318──► Bindplane (OTel collector) ──► Dynatrace OTLP API
 ```
 
 ## What gets instrumented
@@ -19,11 +19,11 @@ vixcode agent ──OTLP/HTTP:4318──► Bindplane (OTel collector) ──►
 
 Metrics (alongside spans):
 
-- `vixcode.agent.turns` — counter, attrs: mode, provider
-- `vixcode.llm.latency` — histogram (ms), attrs: model, provider
-- `vixcode.llm.tokens` — histogram, attrs: direction (in/out), model
-- `vixcode.tool.invocations` — counter, attrs: tool.name, permission.outcome, error
-- `vixcode.tool.latency` — histogram (ms), attrs: tool.name
+- `llmai.agent.turns` — counter, attrs: mode, provider
+- `llmai.llm.latency` — histogram (ms), attrs: model, provider
+- `llmai.llm.tokens` — histogram, attrs: direction (in/out), model
+- `llmai.tool.invocations` — counter, attrs: tool.name, permission.outcome, error
+- `llmai.tool.latency` — histogram (ms), attrs: tool.name
 
 ## Setup (≈5 minutes)
 
@@ -63,10 +63,10 @@ curl -s http://localhost:4318
 Either set env vars …
 
 ```powershell
-$env:VIXCODE_OTEL_ENABLED   = "true"
-$env:VIXCODE_OTEL_ENDPOINT  = "http://localhost:4318"
-$env:VIXCODE_OTEL_SERVICE_NAME = "vixcode-agent"
-vixcode-server
+$env:LLMAI_OTEL_ENABLED   = "true"
+$env:LLMAI_OTEL_ENDPOINT  = "http://localhost:4318"
+$env:LLMAI_OTEL_SERVICE_NAME = "llmai-agent"
+llmai-server
 ```
 
 … or flip the `telemetry.enabled` block in `config.json`:
@@ -76,7 +76,7 @@ vixcode-server
   "telemetry": {
     "enabled": true,
     "endpoint": "http://localhost:4318",
-    "service_name": "vixcode-agent",
+    "service_name": "llmai-agent",
     "console": false,
     "headers": {}
   }
@@ -88,20 +88,20 @@ Env vars always win over config.json.
 ### 5. Verify in Dynatrace
 
 1. Run a few tasks — e.g. ask the agent to list workspace files
-2. Open Dynatrace → **Distributed Traces** → filter by `service.name = vixcode-agent`
+2. Open Dynatrace → **Distributed Traces** → filter by `service.name = llmai-agent`
 3. Open one trace — you should see `agent.turn` with `agent.iteration` → `llm.chat` and `tool.invocation` children
 
-For metrics: **Data Explorer** → search `vixcode.tool.invocations`.
+For metrics: **Data Explorer** → search `llmai.tool.invocations`.
 
 ## Going direct (skip Bindplane)
 
 If you want to ship straight to Dynatrace without a collector:
 
 ```powershell
-$env:VIXCODE_OTEL_ENABLED  = "true"
-$env:VIXCODE_OTEL_ENDPOINT = "https://abc12345.live.dynatrace.com/api/v2/otlp"
-$env:VIXCODE_OTEL_HEADERS  = "Authorization=Api-Token%20dt0c01.YOUR_TOKEN"
-vixcode-server
+$env:LLMAI_OTEL_ENABLED  = "true"
+$env:LLMAI_OTEL_ENDPOINT = "https://abc12345.live.dynatrace.com/api/v2/otlp"
+$env:LLMAI_OTEL_HEADERS  = "Authorization=Api-Token%20dt0c01.YOUR_TOKEN"
+llmai-server
 ```
 
 Headers are URL-encoded `k=v&k=v`. The literal space in `Api-Token <token>` must be `%20`.
@@ -114,14 +114,14 @@ Bindplane is recommended because it (a) buffers when Dynatrace is unreachable, (
   metadata only: name, length, latency, outcome.
 - `tool.args.preview` truncates each argument value to 50 chars and the
   whole preview to 200 chars.
-- `VIXCODE_OTEL_ENABLED` defaults to `false`. Telemetry is opt-in.
+- `LLMAI_OTEL_ENABLED` defaults to `false`. Telemetry is opt-in.
 
 ## Local debugging without Dynatrace
 
 ```powershell
-$env:VIXCODE_OTEL_ENABLED = "true"
-$env:VIXCODE_OTEL_CONSOLE = "true"
-vixcode-server
+$env:LLMAI_OTEL_ENABLED = "true"
+$env:LLMAI_OTEL_CONSOLE = "true"
+llmai-server
 ```
 
 Spans print to stdout as JSON-ish blobs. Useful for confirming
@@ -131,9 +131,9 @@ instrumentation works before you wire up the cloud side.
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| `Telemetry enabled but no endpoint or console exporter configured` | Forgot to set the endpoint | Set `VIXCODE_OTEL_ENDPOINT` or `VIXCODE_OTEL_CONSOLE=true` |
+| `Telemetry enabled but no endpoint or console exporter configured` | Forgot to set the endpoint | Set `LLMAI_OTEL_ENDPOINT` or `LLMAI_OTEL_CONSOLE=true` |
 | `OpenTelemetry packages not installed` | Skipped the optional install | `pip install -e ".[telemetry]"` |
-| No spans appear in Dynatrace, no errors in agent | Bindplane can't reach Dynatrace | `docker logs vixcode-bindplane` — look for 401 (bad token) or 404 (wrong endpoint path) |
+| No spans appear in Dynatrace, no errors in agent | Bindplane can't reach Dynatrace | `docker logs llmai-bindplane` — look for 401 (bad token) or 404 (wrong endpoint path) |
 | Spans show up but no metrics | Metric export interval is 15 s | Wait, or restart agent to force flush |
 | `401 Unauthorized` in Bindplane logs | Token missing ingest scopes | Regenerate the token with `openTelemetryTrace.ingest` + `metrics.ingest` |
 
@@ -141,8 +141,8 @@ instrumentation works before you wire up the cloud side.
 
 | Path | Purpose |
 |------|---------|
-| `vixcode/telemetry.py` | OTel init + span/metric context managers |
-| `vixcode/agent.py` | Sync CLI loop instrumentation |
+| `llmai/telemetry.py` | OTel init + span/metric context managers |
+| `llmai/agent.py` | Sync CLI loop instrumentation |
 | `server/agent_ws.py` | Async WebSocket loop instrumentation |
 | `bindplane/config.yaml` | OTel collector config (receivers/processors/exporters) |
 | `docker-compose.bindplane.yml` | Local Bindplane container |

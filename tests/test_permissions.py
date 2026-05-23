@@ -1,11 +1,11 @@
-"""Tests for vixcode.permissions — permission modes and config loading."""
+"""Tests for llmai.permissions — permission modes and config loading."""
 import json
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from vixcode.permissions import DEFAULT, PermissionManager, _preview
+from llmai.permissions import DEFAULT, PermissionManager, _preview
 
 
 class TestPermissionManager:

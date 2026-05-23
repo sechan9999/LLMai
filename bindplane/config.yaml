@@ -1,6 +1,6 @@
-# Bindplane Agent / OTel Collector configuration for vixcode → Dynatrace.
+# Bindplane Agent / OTel Collector configuration for llmai → Dynatrace.
 #
-# Receives OTLP from the vixcode agent (HTTP/4318 + gRPC/4317), batches,
+# Receives OTLP from the llmai agent (HTTP/4318 + gRPC/4317), batches,
 # adds a deployment.environment attribute, and exports to Dynatrace's
 # OTLP /api/v2/otlp/v1/{traces,metrics,logs} endpoint.
 #
