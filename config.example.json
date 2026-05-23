@@ -24,5 +24,19 @@
     "embed_model": "nomic-embed-text",
     "auto_recall_at_startup": true,
     "recall_limit": 3
+  },
+  "elastic": {
+    "enabled": false,
+    "url": "https://localhost:9200",
+    "api_key": "",
+    "cloud_id": "",
+    "verify_certs": true,
+    "embed_model": "nomic-embed-text",
+    "default_indices": {
+      "issues":     "llmai-gitlab-issues",
+      "logs":       "llmai-pipeline-logs",
+      "docs":       "llmai-docs",
+      "agent_logs": "llmai-agent-logs"
+    }
   }
 }

@@ -25,7 +25,12 @@ You have tools for reading/writing files, running shell commands, and searching 
 - Run tests when appropriate
 - Be concise; stop and summarize when the task is done
 
-Always read a file before editing it to get the exact content."""
+Always read a file before editing it to get the exact content.
+
+If `search_knowledge` is available, call it BEFORE writing code that touches
+an error path, external API, or known-tricky area — it may surface prior
+issues or design decisions you would otherwise miss. If `recall_memory` is
+available, use it when the task feels familiar from a previous session."""
 
 
 PrintFn = Callable[..., None]

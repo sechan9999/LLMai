@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
-from . import memory, telemetry, tools as _vt
+from . import elastic, memory, telemetry, tools as _vt
 from .llm import OllamaClient, make_default_client, resolve_provider_config
 from .permissions import PermissionManager
 from .agent import AgentLoop
@@ -46,7 +46,9 @@ def main():
     config = load_config()
     telemetry.init(config.get("telemetry"))
     memory.init(config.get("memory"))
+    elastic.init(config.get("elastic"))
     _vt.register_memory_tool()
+    _vt.register_elastic_tools()
     # Config-file overrides; otherwise fall through to environment-driven
     # provider selection (Gemini if GEMINI_API_KEY is set, else Ollama).
     cfg_base_url = config.get("ollama_url")

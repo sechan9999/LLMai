@@ -14,7 +14,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from llmai import memory, telemetry
+from llmai import elastic, memory, telemetry
 from llmai.llm import resolve_provider_config
 from llmai import tools as _vt
 
@@ -27,11 +27,13 @@ app = FastAPI(title="llmai", description="Local AI Coding Agent")
 
 @app.on_event("startup")
 async def _init_observability() -> None:
-    """Initialize OpenTelemetry + memory store once when the server boots."""
+    """Initialize OTel + memory + Elastic once when the server boots."""
     cfg = load_config()
     telemetry.init(cfg.get("telemetry"))
     memory.init(cfg.get("memory"))
+    elastic.init(cfg.get("elastic"))
     _vt.register_memory_tool()
+    _vt.register_elastic_tools()
 
 
 STATIC_DIR = Path(__file__).parent / "static"

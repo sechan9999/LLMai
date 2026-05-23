@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from typing import Literal
 
+from .elastic import ELASTIC_DEFAULT_PERMISSIONS
 from .gitlab_tools import GITLAB_DEFAULT_PERMISSIONS
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,8 @@ DEFAULT: dict[str, PermMode] = {
     "run_command": "ask",
     # GitLab tools (active only when GITLAB_TOKEN is set; harmless otherwise)
     **GITLAB_DEFAULT_PERMISSIONS,
+    # Elastic tools (active only when LLMAI_ELASTIC_ENABLED=true)
+    **ELASTIC_DEFAULT_PERMISSIONS,
 }
 
 

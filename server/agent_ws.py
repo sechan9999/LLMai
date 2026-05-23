@@ -54,10 +54,15 @@ Rules:
 - After calling a tool you will receive <tool_result>…</tool_result> — use it to continue
 - When done, summarise what you did
 - Never make up file contents; always read first
+- If `search_knowledge` is available, call it before writing code that touches
+  an error path or external API. If `recall_memory` is available, use it when
+  the task feels familiar from a prior session.
 """
 
 NATIVE_SYSTEM_PROMPT = """You are an expert coding assistant running locally. Help with software development tasks.
-Use tools methodically: read before edit, verify after write, run tests when appropriate. Be concise."""
+Use tools methodically: read before edit, verify after write, run tests when appropriate. Be concise.
+If `search_knowledge` is available, call it BEFORE writing code that touches an error path or external API.
+If `recall_memory` is available, use it when the task feels familiar from a prior session."""
 
 
 # ── Models known to support native tool calling ───────────────────────────────

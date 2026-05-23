@@ -518,3 +518,29 @@ def register_memory_tool() -> None:
         return  # already registered (idempotent)
     TOOL_DEFINITIONS.append(TOOL_DEFINITION)
     _BASE_HANDLERS["recall_memory"] = recall_memory
+
+
+def register_elastic_tools() -> None:
+    """Append ``search_knowledge`` + ``query_logs`` once Elastic is connected.
+
+    Same gate pattern as ``register_memory_tool`` — never expose a tool
+    the agent can't actually use.
+    """
+    from . import elastic
+    if not elastic.is_enabled():
+        return
+    from .elastic.search_tool import (
+        TOOL_DEFINITION as SEARCH_DEF,
+        search_knowledge,
+    )
+    from .elastic.query_tool import (
+        TOOL_DEFINITION as QUERY_DEF,
+        query_logs,
+    )
+    existing = {t["function"]["name"] for t in TOOL_DEFINITIONS}
+    if "search_knowledge" not in existing:
+        TOOL_DEFINITIONS.append(SEARCH_DEF)
+        _BASE_HANDLERS["search_knowledge"] = search_knowledge
+    if "query_logs" not in existing:
+        TOOL_DEFINITIONS.append(QUERY_DEF)
+        _BASE_HANDLERS["query_logs"] = query_logs

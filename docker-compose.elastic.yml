@@ -1,0 +1,54 @@
+# Local Elasticsearch + Kibana for llmai dev / hackathon demo.
+#
+# Usage:
+#   docker compose -f docker-compose.elastic.yml up -d
+#   # Elastic on http://localhost:9200 (no auth, single-node)
+#   # Kibana  on http://localhost:5601
+#
+# Then in another terminal:
+#   export LLMAI_ELASTIC_ENABLED=true
+#   export LLMAI_ELASTIC_URL=http://localhost:9200
+#   python scripts/elastic_setup_indexes.py
+#   python scripts/elastic_ingest_gitlab.py   # optional, needs GITLAB_TOKEN
+#   llmai-server
+#
+# This setup runs Elasticsearch in **dev mode** with security disabled —
+# fine for local development and hackathon judges. For anything else,
+# enable xpack.security and use API keys.
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: llmai-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ingest.geoip.downloader.enabled=false
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+    ports:
+      - "9200:9200"
+    volumes:
+      - llmai-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: llmai-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+volumes:
+  llmai-es-data:

@@ -35,6 +35,18 @@ exporters:
     headers:
       Authorization: "Api-Token ${env:DT_API_TOKEN}"
 
+  # llmai's own OTel logs are tee'd to Elastic so the agent can query
+  # its own behavior via `query_logs`. Optional — comment out the
+  # exporter and the logs pipeline below if you're not running Elastic.
+  elasticsearch/agent-logs:
+    endpoints:
+      - ${env:ES_URL}
+    logs_index: llmai-agent-logs
+    user: ${env:ES_USER}
+    password: ${env:ES_PASSWORD}
+    tls:
+      insecure_skip_verify: ${env:ES_INSECURE}
+
   # Uncomment for local debugging:
   # debug:
   #   verbosity: detailed
@@ -49,3 +61,7 @@ service:
       receivers: [otlp]
       processors: [batch, resourcedetection, attributes/deploy]
       exporters: [otlphttp/dynatrace]
+    logs:
+      receivers: [otlp]
+      processors: [batch, resourcedetection, attributes/deploy]
+      exporters: [elasticsearch/agent-logs]
