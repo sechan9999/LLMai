@@ -32,7 +32,7 @@ memory = [
     "pymongo[srv]>=4.8",
 ]
 elastic = [
-    "elasticsearch>=8.13",
+    "elasticsearch>=8.13,<9",
 ]
 
 [project.scripts]

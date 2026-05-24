@@ -173,66 +173,42 @@ class ElasticClient:
             return []
 
         embedding = self.embedder.embed(query) if self.embedder else None
+        index_list = ",".join(indices)
 
-        try:
-            if embedding is not None:
-                body = {
-                    "size": limit,
-                    "retriever": {
-                        "rrf": {
-                            "retrievers": [
-                                {
-                                    "standard": {
-                                        "query": {
-                                            "multi_match": {
-                                                "query": query,
-                                                "fields": [
-                                                    "title^3",
-                                                    "description",
-                                                    "content",
-                                                    "labels",
-                                                ],
-                                            }
-                                        }
-                                    }
-                                },
-                                {
-                                    "knn": {
-                                        "field": "embedding",
-                                        "query_vector": embedding,
-                                        "k": max(limit * 2, 10),
-                                        "num_candidates": max(50, limit * 10),
-                                    }
-                                },
-                            ],
-                            "rank_window_size": max(50, limit * 10),
-                            "rank_constant": 60,
-                        }
-                    },
-                    "_source": {
-                        "excludes": ["embedding"],
-                    },
-                }
-            else:
-                body = {
-                    "size": limit,
-                    "query": {
-                        "multi_match": {
-                            "query": query,
-                            "fields": [
-                                "title^3",
-                                "description",
-                                "content",
-                                "labels",
-                            ],
-                        }
-                    },
-                    "_source": {"excludes": ["embedding"]},
-                }
-            resp = self._es.search(index=",".join(indices), body=body)
-        except Exception as exc:
-            logger.warning("hybrid_search failed: %s", exc)
-            return []
+        resp = None
+        # 1. Best path: RRF hybrid (requires Platinum on self-hosted ES,
+        #    free on Atlas Vector Search and Elastic Cloud).
+        if embedding is not None:
+            try:
+                resp = self._es.search(
+                    index=index_list,
+                    body=self._rrf_body(query, embedding, limit),
+                )
+            except Exception as exc:
+                # AuthorizationException on basic license, or any other error.
+                # Fall through to kNN-only.
+                logger.debug("RRF unavailable (%s); falling back to kNN-only", exc)
+
+        # 2. Vector-only kNN (works on basic license).
+        if resp is None and embedding is not None:
+            try:
+                resp = self._es.search(
+                    index=index_list,
+                    body=self._knn_body(embedding, limit),
+                )
+            except Exception as exc:
+                logger.debug("kNN failed (%s); falling back to BM25", exc)
+
+        # 3. Last resort: BM25 keyword only.
+        if resp is None:
+            try:
+                resp = self._es.search(
+                    index=index_list,
+                    body=self._bm25_body(query, limit),
+                )
+            except Exception as exc:
+                logger.warning("hybrid_search BM25 fallback failed: %s", exc)
+                return []
 
         hits = (resp.get("hits") or {}).get("hits") or []
         out: list[dict] = []
@@ -249,6 +225,70 @@ class ElasticClient:
                 "updated_at": src.get("updated_at"),
             })
         return out
+
+    # ── Query body builders ──────────────────────────────────────────────────
+
+    @staticmethod
+    def _rrf_body(query: str, embedding: list[float], limit: int) -> dict:
+        """Hybrid BM25 + kNN via Reciprocal Rank Fusion (Platinum / Cloud)."""
+        return {
+            "size": limit,
+            "retriever": {
+                "rrf": {
+                    "retrievers": [
+                        {
+                            "standard": {
+                                "query": {
+                                    "multi_match": {
+                                        "query": query,
+                                        "fields": ["title^3", "description", "content", "labels"],
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "knn": {
+                                "field": "embedding",
+                                "query_vector": embedding,
+                                "k": max(limit * 2, 10),
+                                "num_candidates": max(50, limit * 10),
+                            }
+                        },
+                    ],
+                    "rank_window_size": max(50, limit * 10),
+                    "rank_constant": 60,
+                }
+            },
+            "_source": {"excludes": ["embedding"]},
+        }
+
+    @staticmethod
+    def _knn_body(embedding: list[float], limit: int) -> dict:
+        """Vector-only kNN — works on basic ES license."""
+        return {
+            "size": limit,
+            "knn": {
+                "field": "embedding",
+                "query_vector": embedding,
+                "k": max(limit * 2, 10),
+                "num_candidates": max(50, limit * 10),
+            },
+            "_source": {"excludes": ["embedding"]},
+        }
+
+    @staticmethod
+    def _bm25_body(query: str, limit: int) -> dict:
+        """Keyword-only BM25 fallback when no embedding is available."""
+        return {
+            "size": limit,
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ["title^3", "description", "content", "labels"],
+                }
+            },
+            "_source": {"excludes": ["embedding"]},
+        }
 
     # ── ES|QL ────────────────────────────────────────────────────────────────
 
