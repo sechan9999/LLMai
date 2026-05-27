@@ -68,6 +68,18 @@ LLM backend: Ollama localhost:11434 — Gemini / Groq optional
 
 ## Quick start (core only, no partner integrations)
 
+Install from PyPI (the distribution is named `llmai-agent` because bare
+`llmai` was already taken; the import path is still `import llmai`):
+
+```bash
+pip install llmai-agent
+ollama serve
+ollama pull qwen2.5-coder
+llmai-server   # opens http://localhost:7777
+```
+
+Or install from source for development:
+
 ```bash
 git clone https://github.com/sechan9999/LLMai.git
 cd LLMai

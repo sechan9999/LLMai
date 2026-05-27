@@ -10,6 +10,24 @@ _Nothing yet._
 
 ---
 
+## [0.2.2] — 2026-05-27
+
+### Changed
+- **PyPI distribution name:** `llmai` → `llmai-agent`. The bare `llmai`
+  was already taken on PyPI by an unrelated unified-LLM-client project
+  uploaded on 2026-05-19. Install with `pip install llmai-agent`. The
+  Python import path stays `import llmai`, and all CLI entry points
+  (`llmai`, `llmai-server`, `llmai-doctor`) are unchanged.
+- Server `/healthz` and OTel `service.version` resource now resolve the
+  distribution version under the new package name.
+
+### Fixed
+- `release.yml` awk extractor for changelog sections — uses `index()`
+  instead of regex brackets so it works portably across awk variants
+  (gawk / mawk / busybox).
+
+---
+
 ## [0.2.1] — 2026-05-27
 
 First **tagged** release. The 0.2.0 entry below describes the codebase at
@@ -95,6 +113,7 @@ First public release. Tagged after the hackathon partner integrations landed.
 - `hybrid_search` gracefully cascades RRF → kNN → BM25 so basic-license
   Elasticsearch clusters (no Platinum / no Atlas) still work.
 
-[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.2
 [0.2.1]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.1
 [0.2.0]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.0

@@ -303,7 +303,7 @@ def _parse_headers(raw: Optional[str]) -> dict[str, str]:
 def _detect_version() -> str:
     try:
         from importlib.metadata import version
-        return version("llmai")
+        return version("llmai-agent")
     except Exception:
         return "unknown"
 
