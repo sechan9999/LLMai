@@ -6,32 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+---
+
+## [0.2.1] — 2026-05-27
+
+First **tagged** release. The 0.2.0 entry below describes the codebase at
+the time the partner-integrations work landed (pre-tagging); 0.2.1 is the
+production-readiness pass on top.
+
 ### Added
 - Production-readiness pass: `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`,
   `CODE_OF_CONDUCT.md`, Dependabot config, `py.typed` marker, `examples/`
   directory with 5 concrete walkthroughs.
-- `llmai doctor` diagnostic command — checks Ollama reachability, model
+- `llmai-doctor` diagnostic command — checks Ollama reachability, model
   presence, optional layer connections (telemetry / memory / elastic),
-  workspace permissions, and disk space.
-- Tag-triggered PyPI release workflow (`.github/workflows/release.yml`).
-- Tag-triggered multi-arch Docker publish to GHCR (`.github/workflows/docker.yml`).
-- Coverage reporting in CI (`pytest-cov`, regression floor at 30% — to
-  be ratcheted up as integration tests land).
+  workspace permissions, and disk space. Also accessible via `/doctor`
+  in the CLI REPL.
+- Tag-triggered PyPI release workflow (`.github/workflows/release.yml`)
+  using Trusted Publishing — no API token in the repo.
+- Tag-triggered multi-arch Docker publish to GHCR
+  (`.github/workflows/docker.yml`) — linux/amd64 + linux/arm64.
+- Coverage reporting in CI (`pytest-cov`, regression floor at 30% — to be
+  ratcheted up as integration tests land).
 - Optional structured JSON logging via `LLMAI_LOG_FORMAT=json`.
 - `/healthz` endpoint on the Web UI server for container health checks.
-- Optional `tiktoken` upgrade for token estimation (graceful fallback to `chars/4`).
+- Optional `tiktoken` upgrade for token estimation (graceful fallback to
+  `chars/4`).
 - Unified retry/backoff decorator in `llmai/_retry.py` — applied to the
   Ollama embedding call (transient HTTP failures now retry 3× with
   exponential backoff). Memory store and Elastic client paths reuse
   pymongo/elasticsearch built-in retry; rollout to additional call sites
   is incremental.
-- Integration test scaffold (`tests/integration/`) gated by `@pytest.mark.integration`.
+- Integration test scaffold (`tests/integration/`) gated by
+  `@pytest.mark.integration`.
+- Hackathon submission deliverables: `docs/DEVPOST_WRITEUP.md`,
+  `docs/YOUTUBE_DESCRIPTION.md`, `docs/LLMai-hackathon-deck.pptx`
+  (11-slide, 16:9), `scripts/build_hackathon_deck.py` to regenerate it.
 
 ### Changed
-- README quickstart now mentions `pip install llmai` as the preferred path.
-
-### Fixed
-- (none yet)
+- pytest defaults exclude integration tests via `addopts = "-m 'not
+  integration' --ignore=tests/integration"` so the suite stays offline-friendly.
 
 ---
 
@@ -79,5 +95,6 @@ First public release. Tagged after the hackathon partner integrations landed.
 - `hybrid_search` gracefully cascades RRF → kNN → BM25 so basic-license
   Elasticsearch clusters (no Platinum / no Atlas) still work.
 
-[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.1
 [0.2.0]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.0

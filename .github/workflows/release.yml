@@ -85,12 +85,17 @@ jobs:
         id: notes
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          # Pull lines between `## [<TAG>]` and the next `## [` heading
-          awk -v tag="$TAG" '
-            $0 ~ "^## \\["tag"\\]" { p=1; next }
-            p && /^## \[/         { exit }
+          # Pull lines between `## [<TAG>] — ...` and the next `## [`
+          # heading. Use index() to avoid regex-class ambiguity with `[`.
+          awk -v marker="## [$TAG]" '
+            index($0, marker) == 1 { p=1; next }
+            p && index($0, "## [") == 1 { exit }
             p                     { print }
           ' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "No changelog section found for $TAG — using fallback notes."
+            echo "Release $GITHUB_REF_NAME" > release_notes.md
+          fi
           echo "Generated release notes:"
           cat release_notes.md
 
