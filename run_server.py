@@ -1,9 +1,9 @@
 """
 Entry point: python run_server.py
 """
+import json
 import os
 import sys
-import json
 import webbrowser
 from pathlib import Path
 
@@ -41,7 +41,8 @@ def main():
 
     # Open browser only when running locally (not in container)
     if host == "127.0.0.1":
-        import threading, time
+        import threading
+        import time
         def _open():
             time.sleep(1.2)
             webbrowser.open(url)

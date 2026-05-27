@@ -83,5 +83,5 @@ def query_logs(esql: str) -> str:
                 rendered.append(s[:60] + "…" if len(s) > 60 else s)
         lines.append(" | ".join(rendered))
     if truncated:
-        lines.append(f"... (truncated at 200 rows; query returned more)")
+        lines.append("... (truncated at 200 rows; query returned more)")
     return "\n".join(lines)

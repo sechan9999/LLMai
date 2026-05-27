@@ -408,12 +408,18 @@ GITLAB_TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "gitlab_get_mr",
-            "description": "Fetch a merge request — title, description, comments, and optionally the file list of its diff.",
+            "description": (
+                "Fetch a merge request — title, description, comments, and "
+                "optionally the file list of its diff."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "iid": {"type": "integer", "description": "MR iid"},
-                    "include_diff": {"type": "boolean", "description": "Include the list of changed files"},
+                    "include_diff": {
+                        "type": "boolean",
+                        "description": "Include the list of changed files",
+                    },
                 },
                 "required": ["iid"],
             },
@@ -459,7 +465,10 @@ GITLAB_TOOL_DEFINITIONS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "status": {"type": "string", "description": "running | success | failed | canceled | …"},
+                    "status": {
+                        "type": "string",
+                        "description": "running | success | failed | canceled | …",
+                    },
                     "ref": {"type": "string", "description": "Branch or tag"},
                     "limit": {"type": "integer"},
                 },
@@ -482,12 +491,18 @@ GITLAB_TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "gitlab_get_job_log",
-            "description": "Return the last *tail* lines of a CI job's log/trace. Use after gitlab_get_pipeline to read why a job failed.",
+            "description": (
+                "Return the last *tail* lines of a CI job's log/trace. "
+                "Use after gitlab_get_pipeline to read why a job failed."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "job_id": {"type": "integer"},
-                    "tail": {"type": "integer", "description": "Number of trailing lines (default 200)"},
+                    "tail": {
+                        "type": "integer",
+                        "description": "Number of trailing lines (default 200)",
+                    },
                 },
                 "required": ["job_id"],
             },

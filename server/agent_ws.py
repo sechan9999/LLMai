@@ -16,8 +16,8 @@ import httpx
 from fastapi import WebSocket
 
 from llmai import memory, telemetry
-from llmai.tools import TOOL_DEFINITIONS, WORKSPACE_ROOT, execute_tool
 from llmai.permissions import DEFAULT, _preview
+from llmai.tools import TOOL_DEFINITIONS, WORKSPACE_ROOT, execute_tool
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +59,16 @@ Rules:
   the task feels familiar from a prior session.
 """
 
-NATIVE_SYSTEM_PROMPT = """You are an expert coding assistant running locally. Help with software development tasks.
-Use tools methodically: read before edit, verify after write, run tests when appropriate. Be concise.
-If `search_knowledge` is available, call it BEFORE writing code that touches an error path or external API.
-If `recall_memory` is available, use it when the task feels familiar from a prior session."""
+NATIVE_SYSTEM_PROMPT = (
+    "You are an expert coding assistant running locally. "
+    "Help with software development tasks.\n"
+    "Use tools methodically: read before edit, verify after write, "
+    "run tests when appropriate. Be concise.\n"
+    "If `search_knowledge` is available, call it BEFORE writing code "
+    "that touches an error path or external API.\n"
+    "If `recall_memory` is available, use it when the task feels "
+    "familiar from a prior session."
+)
 
 
 # ── Models known to support native tool calling ───────────────────────────────
@@ -683,7 +689,10 @@ def _summarize_via_llm(agent: "WebSocketAgent", messages: list[dict]) -> str:
         },
         {
             "role": "user",
-            "content": "Summarize this session for future recall.\n\n--- Session ---\n" + transcript,
+            "content": (
+                "Summarize this session for future recall.\n\n"
+                "--- Session ---\n" + transcript
+            ),
         },
     ])
     return out.strip()

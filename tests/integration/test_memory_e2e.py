@@ -14,13 +14,12 @@ import uuid
 
 import pytest
 
-
 pytestmark = pytest.mark.integration
 
 
 def test_connect_and_session_round_trip(mongo_uri):
     """Connect, save a session, read it back."""
-    pymongo = pytest.importorskip("pymongo")
+    pytest.importorskip("pymongo")
     from llmai.memory.store import MemoryStore
 
     db_name = f"llmai_itest_{uuid.uuid4().hex[:8]}"

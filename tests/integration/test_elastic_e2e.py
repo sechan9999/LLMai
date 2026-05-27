@@ -17,7 +17,6 @@ import uuid
 
 import pytest
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -54,7 +53,8 @@ def test_hybrid_search_kNN_fallback(elastic_url, ollama_has_embed_model):
     assert client is not None and client.connected
 
     issues_idx = client.indices["issues"]
-    docs_idx = client.indices["docs"]
+    # `docs` index also seeded by scripts/elastic_setup_indexes.py but
+    # this test only writes/reads the issues index.
     # Indices must already exist from scripts/elastic_setup_indexes.py
     raw = client._es
     assert raw.indices.exists(index=issues_idx), \

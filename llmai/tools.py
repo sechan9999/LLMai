@@ -123,7 +123,10 @@ TOOL_DEFINITIONS = [
                 "type": "object",
                 "properties": {
                     "path": {"type": "string", "description": "File to edit"},
-                    "old_string": {"type": "string", "description": "Exact text to find (must be unique in file)"},
+                    "old_string": {
+                        "type": "string",
+                        "description": "Exact text to find (must be unique in file)",
+                    },
                     "new_string": {"type": "string", "description": "Text to replace it with"},
                 },
                 "required": ["path", "old_string", "new_string"],
@@ -139,7 +142,10 @@ TOOL_DEFINITIONS = [
                 "type": "object",
                 "properties": {
                     "command": {"type": "string", "description": "Shell command to execute"},
-                    "timeout": {"type": "integer", "description": "Seconds before timeout (default: 30)"},
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Seconds before timeout (default: 30)",
+                    },
                 },
                 "required": ["command"],
             },
@@ -180,7 +186,10 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "fetch_url",
-            "description": "Fetch the text content of a URL. Returns up to 8 000 characters of readable text.",
+            "description": (
+                "Fetch the text content of a URL. "
+                "Returns up to 8 000 characters of readable text."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -529,13 +538,17 @@ def register_elastic_tools() -> None:
     from . import elastic
     if not elastic.is_enabled():
         return
-    from .elastic.search_tool import (
-        TOOL_DEFINITION as SEARCH_DEF,
-        search_knowledge,
-    )
     from .elastic.query_tool import (
         TOOL_DEFINITION as QUERY_DEF,
+    )
+    from .elastic.query_tool import (
         query_logs,
+    )
+    from .elastic.search_tool import (
+        TOOL_DEFINITION as SEARCH_DEF,
+    )
+    from .elastic.search_tool import (
+        search_knowledge,
     )
     existing = {t["function"]["name"] for t in TOOL_DEFINITIONS}
     if "search_knowledge" not in existing:

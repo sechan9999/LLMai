@@ -18,13 +18,12 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
-import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from .embeddings import EMBED_DIM, Embedder
+from .embeddings import Embedder
 
 logger = logging.getLogger(__name__)
 

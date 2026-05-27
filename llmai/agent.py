@@ -12,14 +12,17 @@ from typing import Callable
 
 from . import memory, telemetry
 from .llm import OllamaClient
-from .tools import TOOL_DEFINITIONS, execute_tool, WORKSPACE_ROOT
 from .permissions import PermissionManager
+from .tools import TOOL_DEFINITIONS, WORKSPACE_ROOT, execute_tool
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are an expert coding assistant running locally. Help the user with software development tasks.
+SYSTEM_PROMPT = """\
+You are an expert coding assistant running locally. Help the user with
+software development tasks.
 
-You have tools for reading/writing files, running shell commands, and searching code. Work methodically:
+You have tools for reading/writing files, running shell commands, and
+searching code. Work methodically:
 - Read files before modifying them
 - Verify your changes are correct
 - Run tests when appropriate

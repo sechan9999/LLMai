@@ -11,8 +11,8 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.util import Inches, Pt, Emu
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.util import Inches, Pt
 
 # ── Palette ──────────────────────────────────────────────────────────────────
 BG       = RGBColor(0x07, 0x09, 0x0C)

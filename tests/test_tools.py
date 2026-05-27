@@ -1,7 +1,5 @@
 """Tests for llmai.tools — file, directory, and search operations."""
 import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -12,7 +10,6 @@ from llmai.tools import (
     execute_tool,
     set_workspace,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -208,7 +205,10 @@ class TestSearchCode:
 
     def test_search_no_matches(self, workspace):
         (workspace / "test.py").write_text("x = 1\n")
-        result = execute_tool("search_code", {"pattern": "nonexistent_pattern", "path": str(workspace)})
+        result = execute_tool(
+            "search_code",
+            {"pattern": "nonexistent_pattern", "path": str(workspace)},
+        )
         assert "No matches" in result
 
 

@@ -2,9 +2,8 @@
 llmai — Local AI Coding Agent
 Usage: python -m llmai  (or `llmai` after pip install)
 """
-import os
-import sys
 import json
+import sys
 from pathlib import Path
 
 try:
@@ -16,11 +15,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
-from . import elastic, memory, telemetry, tools as _vt
+from . import elastic, memory, telemetry
+from . import tools as _vt
 from ._logging import configure_logging
-from .llm import OllamaClient, make_default_client, resolve_provider_config
-from .permissions import PermissionManager
 from .agent import AgentLoop
+from .llm import make_default_client
+from .permissions import PermissionManager
 
 console = Console()
 
@@ -161,7 +161,8 @@ def _handle_skills_command(line: str, console: Console) -> None:
     """REPL handler for /skills [view <name>|disable <name>|delete <name>]."""
     store = memory.get_store()
     if store is None or not store.connected:
-        console.print("[yellow]Memory not configured. Skills require LLMAI_MEMORY_ENABLED=true.[/yellow]")
+        console.print("[yellow]Memory not configured. Skills require "
+                      "LLMAI_MEMORY_ENABLED=true.[/yellow]")
         return
 
     from . import tools as _t

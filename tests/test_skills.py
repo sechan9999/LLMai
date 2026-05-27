@@ -8,10 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pytest
-
 from llmai.memory.skills import format_skills_message, slugify_skill_name
-
 
 # ── Pure helpers ─────────────────────────────────────────────────────────────
 

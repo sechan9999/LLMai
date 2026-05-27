@@ -332,7 +332,8 @@ class ElasticClient:
             return 0
         actions = []
         for d in docs:
-            action: dict[str, Any] = {"_index": index, "_source": {k: v for k, v in d.items() if k != "_id"}}
+            source = {k: v for k, v in d.items() if k != "_id"}
+            action: dict[str, Any] = {"_index": index, "_source": source}
             if d.get("_id") is not None:
                 action["_id"] = d["_id"]
             actions.append(action)

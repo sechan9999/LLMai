@@ -22,7 +22,6 @@ from urllib.parse import urlparse
 
 import requests
 
-
 # ── ANSI colors with safe fallback ───────────────────────────────────────────
 
 class _Color:
@@ -146,7 +145,6 @@ def _check_optional_deps() -> None:
 
 
 def _check_telemetry(cfg: dict) -> None:
-    from . import telemetry
     enabled = (os.environ.get("LLMAI_OTEL_ENABLED", "").lower() in ("1", "true")
                or bool(cfg.get("telemetry", {}).get("enabled")))
     if not enabled:
@@ -178,7 +176,7 @@ def _check_memory(cfg: dict) -> None:
     # Don't actually connect (would need pymongo + auth). Just verify shape.
     if "mongodb" not in uri.lower():
         _check("memory (atlas)", "warn",
-               f"URI doesn't look like a mongodb connection string")
+               "URI doesn't look like a mongodb connection string")
         return
     _check("memory (atlas)", "ok", "configured")
 

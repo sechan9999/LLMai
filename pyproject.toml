@@ -55,9 +55,23 @@ llmai = ["py.typed"]
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+extend-exclude = [
+    ".bkit",
+    ".claude",
+    "workspace",
+    "docs/archive",
+    "build",
+    "dist",
+    "*.egg-info",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Slide-layout script: long string literals are intentional (ASCII art,
+# pre-formatted code blocks). Breaking them would change the rendered output.
+"scripts/build_hackathon_deck.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

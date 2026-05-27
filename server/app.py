@@ -15,9 +15,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from llmai import elastic, memory, telemetry
+from llmai import tools as _vt
 from llmai._logging import configure_logging
 from llmai.llm import resolve_provider_config
-from llmai import tools as _vt
 
 from .agent_ws import WebSocketAgent
 

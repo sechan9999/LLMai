@@ -22,7 +22,7 @@ import sys
 
 try:
     from elasticsearch import Elasticsearch
-    from elasticsearch.exceptions import RequestError, BadRequestError
+    from elasticsearch.exceptions import BadRequestError, RequestError
 except ImportError:
     sys.stderr.write("elasticsearch package not installed. Run: pip install -e '.[elastic]'\n")
     sys.exit(1)
