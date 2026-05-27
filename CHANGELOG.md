@@ -10,6 +10,31 @@ _Nothing yet._
 
 ---
 
+## [0.2.3] — 2026-05-27
+
+### Fixed
+- **`llmai.telemetry.tracer()` now degrades gracefully when the
+  `opentelemetry` extra is not installed.** Previously the fallback
+  path did an unconditional `from opentelemetry import trace`, which
+  crashed any caller that ran `agent.run()` on an install without
+  the `[telemetry]` extra. The fix introduces an in-module
+  `_NoopTracer` / `_NoopSpan` pair implementing the small surface
+  our instrumentation actually uses, so the no-op path has zero
+  dependency on opentelemetry. The "opt-in, zero-overhead-when-off"
+  property of the telemetry layer is now actually true. Caught by
+  the CI matrix on a clean (no-extras) install.
+
+### Changed
+- Lint hygiene pass — cleared 55 pre-existing ruff errors (mostly
+  unused imports, import ordering, line length) across the test
+  suite, tool definitions, and a few system prompts. No behavior
+  changes. `pyproject.toml` gains `extend-exclude` for local-only
+  paths (`.bkit`, `.claude`, `workspace`, `docs/archive`) and a
+  per-file `E501` ignore for `scripts/build_hackathon_deck.py`
+  (slide-layout strings that would lose visual fidelity if reflowed).
+
+---
+
 ## [0.2.2] — 2026-05-27
 
 ### Changed
@@ -113,7 +138,8 @@ First public release. Tagged after the hackathon partner integrations landed.
 - `hybrid_search` gracefully cascades RRF → kNN → BM25 so basic-license
   Elasticsearch clusters (no Platinum / no Atlas) still work.
 
-[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.3
 [0.2.2]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.2
 [0.2.1]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.1
 [0.2.0]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.0
