@@ -1,0 +1,103 @@
+name: Release to PyPI
+
+# Triggered when a SemVer tag is pushed (e.g. v0.2.1, v1.0.0).
+# Builds the wheel + sdist and uploads to PyPI via Trusted Publishing
+# (https://docs.pypi.org/trusted-publishers/) — no API token in the repo.
+#
+# One-time setup (repo owner):
+#   1. Reserve the package name at https://pypi.org/account/register
+#   2. Configure a "pending" Trusted Publisher on PyPI:
+#      Owner: sechan9999  /  Repository: LLMai
+#      Workflow: release.yml  /  Environment: pypi
+#   3. Create a GitHub Environment named "pypi" with no extra protection
+#      rules (or add a manual approval if you want a gate).
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Build
+        run: python -m build
+
+      - name: Show artifacts
+        run: ls -l dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/llmai/
+    permissions:
+      id-token: write   # required for Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+  github-release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Extract changelog section for this tag
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          # Pull lines between `## [<TAG>]` and the next `## [` heading
+          awk -v tag="$TAG" '
+            $0 ~ "^## \\["tag"\\]" { p=1; next }
+            p && /^## \[/         { exit }
+            p                     { print }
+          ' CHANGELOG.md > release_notes.md
+          echo "Generated release notes:"
+          cat release_notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: dist/*
+          draft: false
+          prerelease: false

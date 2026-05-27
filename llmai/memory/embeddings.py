@@ -13,7 +13,19 @@ from typing import Optional
 
 import requests
 
+from .._retry import with_retry
+
 logger = logging.getLogger(__name__)
+
+
+# Transient errors worth retrying — connection refused / timeout / temporary
+# DNS failure. We do NOT retry on 4xx (model not found etc) — that's
+# permanent and resp.raise_for_status() raises HTTPError, which we exclude.
+_TRANSIENT = (
+    requests.ConnectionError,
+    requests.Timeout,
+    requests.exceptions.ChunkedEncodingError,
+)
 
 EMBED_DIM = 768  # nomic-embed-text default
 
@@ -36,19 +48,14 @@ class Embedder:
     def embed(self, text: str) -> Optional[list[float]]:
         """Return a vector embedding for *text*, or None on failure.
 
-        Failures are logged once (per process) and then silently swallowed
-        so a degraded embed service doesn't spam logs every turn.
+        Transient HTTP failures retry up to 3 times with exponential backoff.
+        Permanent failures (4xx, malformed response) are logged once per
+        process and swallowed so a degraded embed service doesn't spam.
         """
         if not text or not text.strip():
             return None
         try:
-            resp = requests.post(
-                self._url,
-                json={"model": self.model, "prompt": text[:8000]},
-                timeout=self.timeout,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            data = self._post_with_retry(text[:8000])
         except Exception as exc:
             if not self._warned_unavailable:
                 logger.warning(
@@ -64,3 +71,14 @@ class Embedder:
         if not isinstance(emb, list) or not emb:
             return None
         return [float(x) for x in emb]
+
+    @with_retry(attempts=3, initial_delay=0.5, max_delay=3.0,
+                retry_on=_TRANSIENT, label="ollama-embed")
+    def _post_with_retry(self, text: str) -> dict:
+        resp = requests.post(
+            self._url,
+            json={"model": self.model, "prompt": text},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()

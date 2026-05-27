@@ -17,6 +17,7 @@ from rich.panel import Panel
 from rich.rule import Rule
 
 from . import elastic, memory, telemetry, tools as _vt
+from ._logging import configure_logging
 from .llm import OllamaClient, make_default_client, resolve_provider_config
 from .permissions import PermissionManager
 from .agent import AgentLoop
@@ -43,6 +44,7 @@ def load_config() -> dict:
 # ── REPL ──────────────────────────────────────────────────────────────────────
 
 def main():
+    configure_logging()
     config = load_config()
     telemetry.init(config.get("telemetry"))
     memory.init(config.get("memory"))
@@ -137,6 +139,11 @@ def main():
 
         if user_input == "/skills" or user_input.startswith("/skills "):
             _handle_skills_command(user_input, console)
+            continue
+
+        if user_input == "/doctor":
+            from . import doctor
+            doctor.run([])
             continue
 
         # Agent turn

@@ -15,10 +15,13 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from llmai import elastic, memory, telemetry
+from llmai._logging import configure_logging
 from llmai.llm import resolve_provider_config
 from llmai import tools as _vt
 
 from .agent_ws import WebSocketAgent
+
+configure_logging()
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,35 @@ def load_config() -> dict:
 async def index():
     """Serve the main Web UI page."""
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+@app.get("/healthz")
+async def healthz():
+    """Liveness probe — returns 200 with optional-layer status.
+
+    Suitable for container orchestrators (Docker healthcheck, k8s liveness)
+    and uptime monitors. Never raises: degraded backends are reported but
+    do not flip overall status to non-200.
+    """
+    return {
+        "status": "ok",
+        "service": "llmai",
+        "version": _detect_version(),
+        "workspace": str(_vt.WORKSPACE_ROOT),
+        "layers": {
+            "telemetry": telemetry.is_active(),
+            "memory":    memory.is_enabled(),
+            "elastic":   elastic.is_enabled(),
+        },
+    }
+
+
+def _detect_version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("llmai")
+    except Exception:
+        return "unknown"
 
 
 @app.websocket("/ws")
