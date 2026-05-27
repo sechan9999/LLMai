@@ -163,13 +163,41 @@ def is_active() -> bool:
     return _ACTIVE
 
 
+class _NoopSpan:
+    """Stand-in span used when OTel isn't installed at all.
+
+    Implements the methods our instrumentation actually calls
+    (``set_attribute``, context-manager protocol). Real OTel NoOp spans
+    have a richer API but we only need this surface.
+    """
+    def set_attribute(self, *args, **kwargs): return None
+    def __enter__(self): return self
+    def __exit__(self, *exc_info): return False
+
+
+class _NoopTracer:
+    """Drop-in tracer that emits no-op spans without importing opentelemetry."""
+    def start_as_current_span(self, _name, *args, **kwargs):
+        return _NoopSpan()
+
+
+_NOOP_TRACER = _NoopTracer()
+
+
 def tracer():
-    """Return the active tracer (or a NoOp tracer if telemetry is off)."""
+    """Return the active tracer, or a true no-op if OTel is unavailable.
+
+    We DON'T try to import ``opentelemetry`` here on the fallback path —
+    the telemetry layer is opt-in, and the package is an extra. Importing
+    it from the fallback would crash users who never enabled telemetry.
+    """
     if _TRACER is not None:
         return _TRACER
-    # OTel returns a NoOpTracer when no provider has been set.
-    from opentelemetry import trace
-    return trace.get_tracer("llmai.agent")
+    try:
+        from opentelemetry import trace
+        return trace.get_tracer("llmai.agent")
+    except ImportError:
+        return _NOOP_TRACER
 
 
 # ── Span context managers ────────────────────────────────────────────────────
