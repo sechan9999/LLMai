@@ -261,30 +261,53 @@ class AgentLoop:
     # ── Memory hooks (best-effort; never raise into the loop) ────────────────
 
     def _prime_memory(self, first_user_input: str) -> None:
-        """Inject recent prior-session summaries as a system message (once)."""
+        """Inject prior-session summaries + active skills as system messages."""
         if self._memory_primed:
             return
         self._memory_primed = True
         store = memory.get_store()
         if store is None:
             return
+
+        # Summaries (existing behavior)
         try:
             summaries = store.recent_summaries(str(WORKSPACE_ROOT))
         except Exception:
             logger.debug("recent_summaries lookup failed", exc_info=True)
+            summaries = []
+        if summaries:
+            lines = ["[Memory from prior sessions in this workspace]"]
+            for s in summaries:
+                when = s.get("created_at")
+                when_str = when.strftime("%Y-%m-%d") if when else "?"
+                text = (s.get("summary") or "").strip()
+                if text:
+                    lines.append(f"• ({when_str}) {text}")
+            if len(lines) > 1:
+                self.messages.insert(1, {"role": "system", "content": "\n".join(lines)})
+
+        # Skills (promoted knowledge — auto-injected, capped at inject_limit)
+        try:
+            skills = store.list_skills(
+                str(WORKSPACE_ROOT), limit=store.skill_inject_limit,
+            )
+        except Exception:
+            logger.debug("list_skills lookup failed", exc_info=True)
             return
-        if not summaries:
+        if not skills:
             return
-        lines = ["[Memory from prior sessions in this workspace]"]
-        for s in summaries:
-            when = s.get("created_at")
-            when_str = when.strftime("%Y-%m-%d") if when else "?"
-            text = (s.get("summary") or "").strip()
-            if text:
-                lines.append(f"• ({when_str}) {text}")
-        if len(lines) > 1:
-            # Insert AFTER the system prompt so the model treats it as context.
-            self.messages.insert(1, {"role": "system", "content": "\n".join(lines)})
+        from .memory.skills import format_skills_message
+        block = format_skills_message(skills)
+        if not block:
+            return
+        # Insert after summaries (or after the base system prompt if no summaries)
+        insert_at = 2 if summaries else 1
+        self.messages.insert(insert_at, {"role": "system", "content": block})
+        try:
+            store.bump_skill_usage(str(WORKSPACE_ROOT),
+                                   [s.get("name") for s in skills if s.get("name")])
+        except Exception:
+            logger.debug("bump_skill_usage failed", exc_info=True)
 
     def _persist_turn(self, model_name: str, provider: str) -> None:
         store = memory.get_store()

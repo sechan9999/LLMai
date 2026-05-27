@@ -447,7 +447,7 @@ class WebSocketAgent:
     # ── Memory hooks (best-effort; never raise into the loop) ────────────────
 
     async def _prime_memory(self) -> None:
-        """Inject recent prior-session summaries as a system message (once)."""
+        """Inject prior-session summaries + active skills as system messages."""
         if self._memory_primed:
             return
         self._memory_primed = True
@@ -455,24 +455,54 @@ class WebSocketAgent:
         if store is None:
             return
         loop = asyncio.get_event_loop()
+
+        # Summaries
         try:
             summaries = await loop.run_in_executor(
                 None, store.recent_summaries, str(WORKSPACE_ROOT),
             )
         except Exception:
             logger.debug("recent_summaries failed", exc_info=True)
+            summaries = []
+        if summaries:
+            lines = ["[Memory from prior sessions in this workspace]"]
+            for s in summaries:
+                when = s.get("created_at")
+                when_str = when.strftime("%Y-%m-%d") if when else "?"
+                text = (s.get("summary") or "").strip()
+                if text:
+                    lines.append(f"• ({when_str}) {text}")
+            if len(lines) > 1:
+                self.messages.insert(1, {"role": "system", "content": "\n".join(lines)})
+
+        # Skills
+        try:
+            skills = await loop.run_in_executor(
+                None,
+                lambda: store.list_skills(str(WORKSPACE_ROOT),
+                                          limit=store.skill_inject_limit),
+            )
+        except Exception:
+            logger.debug("list_skills failed", exc_info=True)
             return
-        if not summaries:
+        if not skills:
             return
-        lines = ["[Memory from prior sessions in this workspace]"]
-        for s in summaries:
-            when = s.get("created_at")
-            when_str = when.strftime("%Y-%m-%d") if when else "?"
-            text = (s.get("summary") or "").strip()
-            if text:
-                lines.append(f"• ({when_str}) {text}")
-        if len(lines) > 1:
-            self.messages.insert(1, {"role": "system", "content": "\n".join(lines)})
+        from llmai.memory.skills import format_skills_message
+        block = format_skills_message(skills)
+        if not block:
+            return
+        insert_at = 2 if summaries else 1
+        self.messages.insert(insert_at, {"role": "system", "content": block})
+        try:
+            await loop.run_in_executor(
+                None,
+                lambda: store.bump_skill_usage(
+                    str(WORKSPACE_ROOT),
+                    [s.get("name") for s in skills if s.get("name")],
+                ),
+            )
+        except Exception:
+            logger.debug("bump_skill_usage failed", exc_info=True)
 
     async def _persist_turn(self) -> None:
         store = memory.get_store()

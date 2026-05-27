@@ -184,13 +184,64 @@ latency.
 | `recall_memory` returns "No prior memory matches" but you know there's data | Vector index still building, or fallback to lexical found nothing | Wait ~2 min for index; or check `db.summaries.countDocuments()` |
 | `command createSearchIndex not found` | Self-hosted MongoDB (not Atlas) | Memory still works in lexical-fallback mode; for full semantic recall, use Atlas |
 
+## Skill promotion from knowledge
+
+llmai automatically promotes frequently-recalled knowledge into stable
+**skills** — pieces of reusable context auto-injected into every new
+session in the same workspace. The mechanism:
+
+1. Each call to `recall_memory` increments `recall_count` on every
+   knowledge document it returns.
+2. When a knowledge doc crosses the threshold (default 3) and hasn't
+   been promoted yet, an entry is created in a fourth collection
+   `skills`:
+   ```
+   skills/
+     _id, workspace_id, name (auto-slug), content (≤200 chars),
+     source_knowledge_id, created_at, last_used_at,
+     usage_count, active (bool)
+   ```
+3. At the start of every new session, up to 5 active skills (most-
+   recently-used first) are loaded and appended as a second system
+   message:
+   ```
+   [Active skills for this workspace]
+   • auth-bcrypt-password: Authentication uses bcrypt for hashing
+   • api-client-location: REST API client lives in client/ ...
+   ```
+
+Tune via `config.json`:
+```json
+{
+  "memory": {
+    "skill_promote_threshold": 3,
+    "skill_inject_limit": 5
+  }
+}
+```
+
+Env overrides: `LLMAI_SKILL_PROMOTE_THRESHOLD`, `LLMAI_SKILL_INJECT_LIMIT`.
+
+### Managing skills (CLI)
+
+| Command | What |
+|---------|------|
+| `/skills` | List active skills with usage counts |
+| `/skills view <name>` | Show full content + provenance |
+| `/skills disable <name>` | Stop injection (soft delete) |
+| `/skills delete <name>` | Hard delete |
+
+A skill is automatically named via slug of the first ~5 meaningful words
+of its source knowledge fact. Name collisions append `-2`, `-3`, etc.
+
 ## Where the code lives
 
 | Path | Purpose |
 |------|---------|
-| `llmai/memory/store.py` | MongoDB client, schema, vector search |
+| `llmai/memory/store.py` | MongoDB client, schema, vector search, skill CRUD |
 | `llmai/memory/embeddings.py` | Ollama embedding wrapper |
 | `llmai/memory/recall_tool.py` | The `recall_memory` tool the agent calls |
-| `llmai/agent.py` | Memory lifecycle hooks in the sync CLI loop |
+| `llmai/memory/skills.py` | Slug helper + system-message builder |
+| `llmai/agent.py` | Memory + skill lifecycle hooks in the sync CLI loop |
 | `server/agent_ws.py` | Same hooks in the async WS loop |
 | `scripts/setup_atlas_indexes.py` | One-time index creation |

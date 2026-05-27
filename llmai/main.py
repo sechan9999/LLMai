@@ -135,6 +135,10 @@ def main():
             console.print("[green]✓ Context compressed.[/green]")
             continue
 
+        if user_input == "/skills" or user_input.startswith("/skills "):
+            _handle_skills_command(user_input, console)
+            continue
+
         # Agent turn
         console.print(Rule(style="dim"))
         try:
@@ -144,6 +148,69 @@ def main():
             console.print("\n[yellow]Interrupted.[/yellow]")
         except Exception as e:
             console.print(f"[red]Error: {e}[/red]")
+
+
+def _handle_skills_command(line: str, console: Console) -> None:
+    """REPL handler for /skills [view <name>|disable <name>|delete <name>]."""
+    store = memory.get_store()
+    if store is None or not store.connected:
+        console.print("[yellow]Memory not configured. Skills require LLMAI_MEMORY_ENABLED=true.[/yellow]")
+        return
+
+    from . import tools as _t
+    workspace = str(_t.WORKSPACE_ROOT)
+    parts = line.split(maxsplit=2)
+    sub = parts[1] if len(parts) > 1 else ""
+
+    if not sub:
+        skills = store.list_skills(workspace)
+        if not skills:
+            console.print("[dim]No active skills yet. Skills get promoted automatically "
+                          f"after recall_count ≥ {store.skill_promote_threshold}.[/dim]")
+            return
+        for s in skills:
+            when = s.get("last_used_at")
+            when_str = when.strftime("%Y-%m-%d") if when else "?"
+            usage = s.get("usage_count", 0)
+            console.print(
+                f"  [green]{s.get('name'):<28}[/green] "
+                f"[dim]used {usage}× · {when_str}[/dim]\n"
+                f"    {(s.get('content') or '')[:120]}"
+            )
+        return
+
+    if sub == "view" and len(parts) >= 3:
+        target = parts[2].strip()
+        skills = [s for s in store.list_skills(workspace, include_inactive=True)
+                  if s.get("name") == target]
+        if not skills:
+            console.print(f"[red]No skill named '{target}'.[/red]")
+            return
+        s = skills[0]
+        console.print(f"[green]{s.get('name')}[/green]")
+        console.print(f"  active:       {s.get('active', True)}")
+        console.print(f"  usage_count:  {s.get('usage_count', 0)}")
+        console.print(f"  created_at:   {s.get('created_at')}")
+        console.print(f"  last_used_at: {s.get('last_used_at')}")
+        console.print(f"  content:      {s.get('content', '')}")
+        return
+
+    if sub == "disable" and len(parts) >= 3:
+        target = parts[2].strip()
+        ok = store.disable_skill(workspace, target)
+        console.print(f"[green]✓ Disabled[/green] {target}" if ok
+                      else f"[red]Not found: {target}[/red]")
+        return
+
+    if sub == "delete" and len(parts) >= 3:
+        target = parts[2].strip()
+        ok = store.delete_skill(workspace, target)
+        console.print(f"[green]✓ Deleted[/green] {target}" if ok
+                      else f"[red]Not found: {target}[/red]")
+        return
+
+    console.print("[yellow]Usage:[/yellow] /skills  |  /skills view <name>  |  "
+                  "/skills disable <name>  |  /skills delete <name>")
 
 
 if __name__ == "__main__":

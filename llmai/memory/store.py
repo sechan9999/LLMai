@@ -58,12 +58,16 @@ class MemoryStore:
         *,
         recall_limit: int = 3,
         connect_timeout_ms: int = 5_000,
+        skill_promote_threshold: int = 3,
+        skill_inject_limit: int = 5,
     ):
         self.uri = uri
         self.db_name = db_name
         self.embedder = embedder
         self.recall_limit = recall_limit
         self.connect_timeout_ms = connect_timeout_ms
+        self.skill_promote_threshold = max(1, int(skill_promote_threshold))
+        self.skill_inject_limit = max(0, int(skill_inject_limit))
         self._client = None
         self._db = None
         self.connected = False
@@ -93,11 +97,23 @@ class MemoryStore:
         )
         embed_base = os.environ.get("OLLAMA_URL") or cfg.get("embed_url") or "http://localhost:11434"
         embedder = Embedder(base_url=embed_base, model=embed_model)
+        promote_threshold = int(
+            os.environ.get("LLMAI_SKILL_PROMOTE_THRESHOLD")
+            or cfg.get("skill_promote_threshold")
+            or 3
+        )
+        inject_limit = int(
+            os.environ.get("LLMAI_SKILL_INJECT_LIMIT")
+            or cfg.get("skill_inject_limit")
+            or 5
+        )
         return cls(
             uri=uri,
             db_name=db_name,
             embedder=embedder,
             recall_limit=int(cfg.get("recall_limit") or 3),
+            skill_promote_threshold=promote_threshold,
+            skill_inject_limit=inject_limit,
         )
 
     def connect(self) -> bool:
@@ -150,6 +166,15 @@ class MemoryStore:
             )
             self._db.knowledge.create_index(
                 [("workspace_id", 1), ("created_at", -1)], background=True,
+            )
+            self._db.skills.create_index(
+                [("workspace_id", 1), ("active", 1), ("last_used_at", -1)],
+                background=True,
+            )
+            # Prevent name collisions per workspace
+            self._db.skills.create_index(
+                [("workspace_id", 1), ("name", 1)],
+                unique=True, background=True,
             )
         except Exception as exc:
             logger.warning("Index creation skipped: %s", exc)
@@ -302,12 +327,17 @@ class MemoryStore:
 
         Tries Atlas Vector Search first; falls back to a lexical recent-docs
         scan when vector indices aren't configured or embeddings unavailable.
+
+        Side-effect: each knowledge hit's ``recall_count`` is incremented,
+        and any hit that crosses ``skill_promote_threshold`` is promoted
+        into the ``skills`` collection.
         """
         if not self.connected:
             return []
         embedding = self.embedder.embed(query) if self.embedder else None
         scopes = {"summaries", "knowledge"} if scope == "both" else {scope}
         results: list[dict] = []
+        knowledge_hit_ids: list[Any] = []
         for coll_name in scopes:
             coll = self._db[coll_name]
             text_field = "summary" if coll_name == "summaries" else "text"
@@ -324,8 +354,15 @@ class MemoryStore:
                     "kind": h.get("kind"),
                     "metadata": h.get("metadata"),
                 })
+                if coll_name == "knowledge" and h.get("_id") is not None:
+                    knowledge_hit_ids.append(h["_id"])
         # Highest score first
         results.sort(key=lambda r: r.get("score", 0.0), reverse=True)
+
+        # Side-effects (best-effort) — bump counts, maybe promote
+        if knowledge_hit_ids:
+            self._bump_knowledge_recall(knowledge_hit_ids, workspace_path)
+
         return results[:limit]
 
     def _vector_or_lexical(
@@ -379,6 +416,142 @@ class MemoryStore:
         except Exception as exc:
             logger.warning("Lexical fallback on %s failed: %s", coll_name, exc)
             return []
+
+    # ── Skills (promoted knowledge facts) ────────────────────────────────────
+
+    def _bump_knowledge_recall(self, ids: list, workspace_path: str) -> None:
+        """Increment recall_count on each id, then promote any that crossed
+        the threshold and haven't been promoted yet. Best-effort."""
+        if not ids:
+            return
+        now = _utcnow()
+        try:
+            self._db.knowledge.update_many(
+                {"_id": {"$in": ids}},
+                {"$inc": {"recall_count": 1}, "$set": {"last_recalled_at": now}},
+            )
+        except Exception as exc:
+            logger.debug("knowledge recall_count bump failed: %s", exc)
+            return
+        try:
+            self._promote_eligible(ids, workspace_path)
+        except Exception as exc:
+            logger.debug("skill promotion check failed: %s", exc)
+
+    def _promote_eligible(self, ids: list, workspace_path: str) -> None:
+        """Find knowledge docs that just crossed the threshold and promote
+        them to skills. Idempotent — already-promoted docs are skipped."""
+        # Lazy import to avoid a hard dep at module load
+        from .skills import slugify_skill_name
+
+        candidates = list(self._db.knowledge.find({
+            "_id": {"$in": ids},
+            "recall_count": {"$gte": self.skill_promote_threshold},
+            "$or": [
+                {"promoted": {"$exists": False}},
+                {"promoted": False},
+            ],
+        }))
+        if not candidates:
+            return
+        now = _utcnow()
+        wid = workspace_id(workspace_path)
+        for doc in candidates:
+            text = (doc.get("text") or "").strip()
+            if not text:
+                continue
+            base_name = slugify_skill_name(text)
+            name = self._unique_skill_name(wid, base_name)
+            try:
+                self._db.skills.insert_one({
+                    "workspace_id": wid,
+                    "workspace_path": str(workspace_path),
+                    "name": name,
+                    "content": text[:200],
+                    "source_knowledge_id": doc["_id"],
+                    "created_at": now,
+                    "last_used_at": now,
+                    "usage_count": 0,
+                    "active": True,
+                })
+                self._db.knowledge.update_one(
+                    {"_id": doc["_id"]},
+                    {"$set": {"promoted": True, "promoted_at": now,
+                              "promoted_skill_name": name}},
+                )
+                logger.info("Promoted knowledge to skill: %s", name)
+            except Exception as exc:
+                # Likely a duplicate-key race; move on
+                logger.debug("promote_skill failed for %s: %s", base_name, exc)
+
+    def _unique_skill_name(self, wid: str, base: str) -> str:
+        """Append -2, -3, ... if the base slug already exists in this workspace."""
+        name = base
+        suffix = 2
+        while self._db.skills.count_documents({"workspace_id": wid, "name": name}) > 0:
+            name = f"{base}-{suffix}"
+            suffix += 1
+            if suffix > 99:
+                return f"{base}-{int(_utcnow().timestamp())}"
+        return name
+
+    def list_skills(
+        self, workspace_path: str, *, include_inactive: bool = False, limit: int = 0,
+    ) -> list[dict]:
+        """List skills for a workspace, most-recently-used first."""
+        if not self.connected:
+            return []
+        try:
+            q: dict[str, Any] = {"workspace_id": workspace_id(workspace_path)}
+            if not include_inactive:
+                q["active"] = True
+            cursor = self._db.skills.find(q).sort("last_used_at", -1)
+            if limit and limit > 0:
+                cursor = cursor.limit(limit)
+            return list(cursor)
+        except Exception as exc:
+            logger.warning("list_skills failed: %s", exc)
+            return []
+
+    def bump_skill_usage(self, workspace_path: str, names: list[str]) -> None:
+        """Mark a batch of skills as just-used (called when injected)."""
+        if not self.connected or not names:
+            return
+        try:
+            self._db.skills.update_many(
+                {"workspace_id": workspace_id(workspace_path),
+                 "name": {"$in": names}},
+                {"$inc": {"usage_count": 1}, "$set": {"last_used_at": _utcnow()}},
+            )
+        except Exception as exc:
+            logger.debug("bump_skill_usage failed: %s", exc)
+
+    def disable_skill(self, workspace_path: str, name: str) -> bool:
+        """Soft-delete: stops injection but keeps the record."""
+        if not self.connected:
+            return False
+        try:
+            result = self._db.skills.update_one(
+                {"workspace_id": workspace_id(workspace_path), "name": name},
+                {"$set": {"active": False}},
+            )
+            return result.modified_count > 0
+        except Exception as exc:
+            logger.warning("disable_skill failed: %s", exc)
+            return False
+
+    def delete_skill(self, workspace_path: str, name: str) -> bool:
+        """Hard-delete a skill by name."""
+        if not self.connected:
+            return False
+        try:
+            result = self._db.skills.delete_one(
+                {"workspace_id": workspace_id(workspace_path), "name": name},
+            )
+            return result.deleted_count > 0
+        except Exception as exc:
+            logger.warning("delete_skill failed: %s", exc)
+            return False
 
 
 def _safe_regex(s: str) -> str:
