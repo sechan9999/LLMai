@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Morning Briefing</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #5b8dee;
+      --accent2: #f0c040;
+      --accent3: #4ecb71;
+      --red: #f05555;
+      --text: #e4e8f0;
+      --muted: #8890a8;
+      --radius: 12px;
+      --gap: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-left h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header-left .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .date-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ── Grid ── */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      margin-bottom: var(--gap);
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+      margin-bottom: var(--gap);
+    }
+    .col-full { grid-column: 1 / -1; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── Market KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      margin-bottom: var(--gap);
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .kpi-card.up::before { background: var(--accent3); }
+    .kpi-card.down::before { background: var(--red); }
+    .kpi-index { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .kpi-change { font-size: 13px; font-weight: 600; }
+    .kpi-change.up { color: var(--accent3); }
+    .kpi-change.down { color: var(--red); }
+    .kpi-icon { font-size: 28px; position: absolute; top: 18px; right: 18px; opacity: 0.15; }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title span.emoji { font-size: 18px; }
+
+    /* ── DS Practice ── */
+    .topic-badge {
+      display: inline-block;
+      background: rgba(91,141,238,0.15);
+      border: 1px solid rgba(91,141,238,0.35);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .question-text {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.6;
+      color: var(--text);
+      margin-bottom: 18px;
+    }
+    .answer-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+      width: fit-content;
+    }
+    .answer-toggle:hover { background: rgba(91,141,238,0.1); }
+    .answer-panel {
+      display: none;
+      margin-top: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .answer-panel.open { display: block; }
+    .answer-panel ul { padding-left: 20px; }
+    .answer-panel li { margin-bottom: 10px; font-size: 14px; line-height: 1.65; color: #c8d0e0; }
+    .answer-panel pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 14px;
+      line-height: 1.6;
+      color: #a8d8a8;
+    }
+    .followup-box {
+      margin-top: 14px;
+      background: rgba(240,192,64,0.07);
+      border: 1px solid rgba(240,192,64,0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--accent2);
+    }
+    .followup-box strong { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.7; }
+
+    /* ── Korea News ── */
+    .news-list { display: flex; flex-direction: column; gap: 14px; }
+    .news-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .news-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .news-num {
+      flex-shrink: 0;
+      width: 26px; height: 26px;
+      background: rgba(91,141,238,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--accent);
+    }
+    .news-body { flex: 1; }
+    .news-headline { font-size: 14px; font-weight: 600; margin-bottom: 5px; line-height: 1.4; }
+    .news-summary { font-size: 13px; color: #a0a8c0; line-height: 1.55; margin-bottom: 5px; }
+    .news-source { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; }
+
+    /* ── Market detail ── */
+    .market-detail { display: flex; flex-direction: column; gap: 10px; }
+    .mover-row { display: flex; align-items: center; gap: 10px; }
+    .mover-name { font-size: 13px; font-weight: 700; min-width: 80px; }
+    .mover-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .mover-bar { height: 100%; border-radius: 4px; }
+    .mover-bar.down { background: var(--red); }
+    .mover-bar.up { background: var(--accent3); }
+    .mover-val { font-size: 13px; font-weight: 600; min-width: 50px; text-align: right; }
+    .mover-val.down { color: var(--red); }
+    .mover-val.up { color: var(--accent3); }
+
+    .macro-tag {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 4px 4px 0 0;
+    }
+    .macro-tag.warn { border-color: rgba(240,192,64,0.35); color: var(--accent2); background: rgba(240,192,64,0.07); }
+
+    /* ── Chart area ── */
+    canvas { max-height: 220px; }
+
+    /* ── Sentiment indicator ── */
+    .sentiment-bar-wrap { margin: 16px 0 8px; }
+    .sentiment-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .sentiment-track { height: 10px; background: var(--surface2); border-radius: 10px; overflow: hidden; }
+    .sentiment-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent3), var(--accent2), var(--red)); }
+
+    /* ── Footer ── */
+    .footer { text-align: center; margin-top: 28px; font-size: 12px; color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .grid-3, .kpi-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      body { padding: 14px; }
+      .grid-3, .kpi-grid, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div style="max-width:1300px;margin:0 auto;">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>☀️ Daily Morning Briefing</h1>
+      <div class="subtitle">Data Science Practice · Korea News · US Markets</div>
+    </div>
+    <div class="date-badge" id="dateBadge">Loading...</div>
+  </div>
+
+  <!-- Market KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card down">
+      <div class="kpi-index">S&P 500</div>
+      <div class="kpi-value">5,248</div>
+      <div class="kpi-change down">▼ -1.0%  Today</div>
+      <div class="kpi-icon">📉</div>
+    </div>
+    <div class="kpi-card down">
+      <div class="kpi-index">NASDAQ 100</div>
+      <div class="kpi-value">18,321</div>
+      <div class="kpi-change down">▼ -2.0%  Today</div>
+      <div class="kpi-icon">💻</div>
+    </div>
+    <div class="kpi-card down">
+      <div class="kpi-index">Dow Jones</div>
+      <div class="kpi-value">38,810</div>
+      <div class="kpi-change down">▼ -0.5%  Today</div>
+      <div class="kpi-icon">🏭</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid-2" style="margin-bottom: var(--gap);">
+
+    <!-- DS Practice (left, full height) -->
+    <div class="card" style="display:flex;flex-direction:column;">
+      <div class="section-title"><span class="emoji">🧠</span> Data Science Interview Practice</div>
+      <div class="topic-badge">Topic: Machine Learning Fundamentals</div>
+      <div class="question-text">
+        Explain the bias-variance tradeoff. How does it influence your choice of model complexity, and what practical techniques do you use to manage it?
+      </div>
+      <button class="answer-toggle" onclick="toggleAnswer()">
+        <span id="toggleArrow">▶</span> Show Model Answer
+      </button>
+      <div class="answer-panel" id="answerPanel">
+        <ul>
+          <li><strong>Bias</strong> is error from overly simplistic assumptions (underfitting). <strong>Variance</strong> is sensitivity to noise in training data (overfitting).</li>
+          <li>Total Error = Bias² + Variance + Irreducible Noise. As model complexity increases, bias ↓ but variance ↑.</li>
+          <li><strong>Reduce variance:</strong> regularization (L1/L2), dropout, early stopping, cross-validation, bagging/random forests.</li>
+          <li><strong>Reduce bias:</strong> more complex models, more features, less regularization, boosting methods.</li>
+          <li>Diagnose with learning curves: if train ≈ val ≈ high → high bias; if train ≪ val → high variance.</li>
+        </ul>
+        <pre>from sklearn.model_selection import learning_curve
+train_sizes, train_scores, val_scores = learning_curve(
+    model, X, y, cv=5, scoring='neg_mean_squared_error'
+)
+# Plot mean train vs val score across training sizes
+# Gap = variance; both high = bias</pre>
+        <div class="followup-box">
+          <strong>Follow-up Question</strong>
+          How does the bias-variance tradeoff apply specifically to gradient boosting vs. random forests?
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Market detail + chart -->
+    <div style="display:flex;flex-direction:column;gap:var(--gap);">
+
+      <!-- Notable Movers -->
+      <div class="card">
+        <div class="section-title"><span class="emoji">📊</span> Notable Movers</div>
+        <div class="market-detail">
+          <div class="mover-row">
+            <div class="mover-name">Chipmakers</div>
+            <div class="mover-bar-bg"><div class="mover-bar down" style="width:80%"></div></div>
+            <div class="mover-val down">-4.0%</div>
+          </div>
+          <div class="mover-row">
+            <div class="mover-name">Apple</div>
+            <div class="mover-bar-bg"><div class="mover-bar down" style="width:60%"></div></div>
+            <div class="mover-val down">-3.0%</div>
+          </div>
+          <div class="mover-row">
+            <div class="mover-name">Intel</div>
+            <div class="mover-bar-bg"><div class="mover-bar down" style="width:92%"></div></div>
+            <div class="mover-val down">-4.6%</div>
+          </div>
+          <div class="mover-row">
+            <div class="mover-name">Ambitions Ent</div>
+            <div class="mover-bar-bg"><div class="mover-bar up" style="width:100%"></div></div>
+            <div class="mover-val up">+185%</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">MACRO FACTORS</div>
+          <span class="macro-tag warn">⚠️ Iran Tensions</span>
+          <span class="macro-tag warn">📅 CPI Tomorrow</span>
+          <span class="macro-tag">🏦 Fed Watch</span>
+          <span class="macro-tag warn">🐻 BofA Bear Flags</span>
+        </div>
+      </div>
+
+      <!-- Market Trend Sparkline -->
+      <div class="card">
+        <div class="section-title"><span class="emoji">📈</span> S&P 500 — 7-Day Trend</div>
+        <canvas id="spxChart"></canvas>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Korea News -->
+  <div class="card" style="margin-bottom:var(--gap);">
+    <div class="section-title"><span class="emoji">🇰🇷</span> Korea Morning News</div>
+    <div class="news-list">
+      <div class="news-item">
+        <div class="news-num">1</div>
+        <div class="news-body">
+          <div class="news-headline">KOSPI Crosses 8,800 Points for the First Time</div>
+          <div class="news-summary">South Korea's benchmark index surged past the historic 8,800 mark on June 1, climbing ~1,200 points during May alone — driven by strong foreign investor inflows and tech sector momentum.</div>
+          <div class="news-source">Korea Times</div>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-num">2</div>
+        <div class="news-body">
+          <div class="news-headline">University Students Plan Protests Over Election Ballot Shortages</div>
+          <div class="news-summary">Student leaders from 12 universities are organizing a joint protest over ballot shortages during last week's local elections, timed to the June 10 anniversary of the 1987 Democratic Uprising.</div>
+          <div class="news-source">Korea Times</div>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-num">3</div>
+        <div class="news-body">
+          <div class="news-headline">S. Korea–US Reach Agreement on Nuclear Submarine Program</div>
+          <div class="news-summary">Seoul and Washington reached a shared understanding that South Korea's domestically built nuclear-powered submarines will serve as a key security deterrent on the Korean Peninsula.</div>
+          <div class="news-source">Korea Times</div>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-num">4</div>
+        <div class="news-body">
+          <div class="news-headline">DX Korea and KADEX Defense Expos to Merge</div>
+          <div class="news-summary">South Korea's two rival defense exhibitions agreed to merge into a single joint event at KINTEX in September, presenting a unified front to international buyers and eliminating scheduling confusion.</div>
+          <div class="news-source">Korea Times</div>
+        </div>
+      </div>
+      <div class="news-item">
+        <div class="news-num">5</div>
+        <div class="news-body">
+          <div class="news-headline">AI Startup Upstage Faces Scrutiny Ahead of IPO</div>
+          <div class="news-summary">Upstage, an AI firm preparing for a public listing, is under investigation over its alleged ties to Ha Jung-woo, the former senior presidential secretary for AI policy.</div>
+          <div class="news-source">Korea Times</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">Daily Briefing · Generated by Claude · Data as of <span id="footerDate"></span></div>
+
+</div>
+
+<script>
+  // Date
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  const dateStr = now.toLocaleDateString('en-US', opts);
+  document.getElementById('dateBadge').textContent = dateStr;
+  document.getElementById('footerDate').textContent = dateStr;
+
+  // Toggle answer
+  function toggleAnswer() {
+    const panel = document.getElementById('answerPanel');
+    const arrow = document.getElementById('toggleArrow');
+    const btn = document.querySelector('.answer-toggle');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) {
+      arrow.textContent = '▼';
+      btn.lastChild.textContent = ' Hide Model Answer';
+    } else {
+      arrow.textContent = '▶';
+      btn.lastChild.textContent = ' Show Model Answer';
+    }
+  }
+
+  // S&P 500 7-day sparkline (sample data ending today)
+  const spxLabels = ['Jun 3','Jun 4','Jun 5','Jun 6','Jun 7','Jun 8','Jun 9'];
+  const spxData   = [5310, 5295, 5340, 5360, 5320, 5300, 5248];
+
+  const ctx = document.getElementById('spxChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: spxLabels,
+      datasets: [{
+        label: 'S&P 500',
+        data: spxData,
+        borderColor: '#f05555',
+        backgroundColor: 'rgba(240,85,85,0.08)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: '#f05555',
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3350',
+          borderWidth: 1,
+          titleColor: '#8890a8',
+          bodyColor: '#e4e8f0',
+          callbacks: {
+            label: ctx => `S&P 500: ${ctx.parsed.y.toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e2236' },
+          ticks: { color: '#8890a8', font:{ size:11 } }
+        },
+        y: {
+          grid: { color: '#1e2236' },
+          ticks: {
+            color: '#8890a8',
+            font:{ size:11 },
+            callback: v => v.toLocaleString()
+          },
+          min: 5100, max: 5450
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>

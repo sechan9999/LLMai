@@ -266,6 +266,49 @@
     .info-box p { color: var(--muted); font-size: 13px; line-height: 1.6; }
     .info-box code { font-family: var(--mono); font-size: 12px; }
 
+    /* ── Briefing panel ── */
+    #panel-briefing { position: relative; }
+
+    #briefing-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #0f1117;
+      display: block;
+    }
+
+    /* Offline state shown when local server isn't running */
+    #briefing-offline {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #briefing-offline .o-icon { font-size: 40px; }
+    #briefing-offline h3 { font-size: 18px; font-weight: 700; }
+    #briefing-offline p  { color: var(--muted); font-size: 13px; line-height: 1.65; max-width: 420px; }
+    #briefing-offline code { font-family: var(--mono); font-size: 12px; background: var(--p2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+    .briefing-start-btn {
+      background: var(--p2); border: 1px solid var(--line); color: var(--text);
+      border-radius: var(--r); padding: 10px 22px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+    }
+    .briefing-start-btn:hover { border-color: rgba(255,255,255,.2); background: var(--p3); }
+
+    /* Refresh button floating over the iframe */
+    #briefing-refresh-btn {
+      position: absolute; top: 12px; right: 16px; z-index: 5;
+      background: rgba(21,27,34,.9); border: 1px solid var(--line);
+      color: var(--muted); border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px);
+      transition: all .15s; display: none;
+    }
+    #briefing-refresh-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+
     /* ── Responsive ── */
     @media (max-width: 700px) {
       .tab { padding: 5px 9px; font-size: 12px; }
@@ -286,9 +329,10 @@
     <span>LLM ai</span>
   </a>
   <nav class="tabs">
-    <button class="tab active" data-tab="chat"    onclick="switchTab('chat')">Chat</button>
-    <button class="tab"        data-tab="about"   onclick="switchTab('about')">About</button>
-    <button class="tab"        data-tab="install" onclick="switchTab('install')">Install</button>
+    <button class="tab active" data-tab="chat"      onclick="switchTab('chat')">Chat</button>
+    <button class="tab"        data-tab="briefing"  onclick="switchTab('briefing')">☀️ Briefing</button>
+    <button class="tab"        data-tab="about"     onclick="switchTab('about')">About</button>
+    <button class="tab"        data-tab="install"   onclick="switchTab('install')">Install</button>
   </nav>
   <div class="spacer"></div>
   <button class="status-pill" id="chat-status" data-state="loading" onclick="showSetupHelp()" type="button">
@@ -331,6 +375,30 @@
       </div>
       <p class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for newline</p>
     </div>
+  </div>
+
+  <!-- ── Briefing tab ── -->
+  <div class="panel" id="panel-briefing">
+    <!-- Offline fallback (shown when local server at :7777 isn't reachable) -->
+    <div id="briefing-offline">
+      <div class="o-icon">☀️</div>
+      <h3>Daily Briefing</h3>
+      <p>
+        The briefing is served by the local LLMai server at
+        <code>localhost:7777</code>. Start it to see today's
+        DS interview practice, Korea news, and US market summary.
+      </p>
+      <div style="background:var(--p1);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;font:13px/1.8 var(--mono);color:#dbe7f3;text-align:left;width:100%;max-width:440px;">
+        llmai-server<br>
+        <span style="color:var(--quiet)"># opens at http://localhost:7777</span>
+      </div>
+      <button class="briefing-start-btn" onclick="retryBriefing()">↺ Retry connection</button>
+    </div>
+    <!-- iframe — shown when server is up -->
+    <iframe id="briefing-frame" src="" title="Daily Briefing Dashboard"
+            allow="same-origin" loading="lazy"></iframe>
+    <!-- Floating refresh button (visible when iframe is loaded) -->
+    <button id="briefing-refresh-btn" onclick="triggerBriefingRefresh()">↻ Refresh briefing</button>
   </div>
 
   <!-- ── About tab ── -->
@@ -427,6 +495,7 @@ llmai-server
 
 <script>
   const OLLAMA   = 'http://localhost:11434';
+  const LLMAI    = 'http://localhost:7777';
   const CLOUD    = '/api/chat';
   const PREFS    = ['qwen2.5-coder','qwen2.5','llama3.1','llama3.2','gemma3','phi3','mistral'];
   const SYSTEM   = "You are the LLMai assistant — an expert on LLMai, a 100% local open-source AI coding agent at https://github.com/sechan9999/LLMai that runs on Ollama with no external API keys. It has an agentic loop, explicit permission gates for writes and shell commands, GitLab integration, and context compression. When asked to review 'this repo', analyze https://github.com/sechan9999/LLMai. Answer directly and helpfully. Never refuse to discuss the project. Be concise and use Markdown when helpful.";
@@ -440,6 +509,68 @@ llmai-server
       .forEach(t => t.classList.toggle('active', t.dataset.tab === name));
     document.querySelectorAll('.panel')
       .forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+    if (name === 'briefing') initBriefingPanel();
+  }
+
+  // ── Briefing panel ─────────────────────────────────────────────────────────
+  let briefingLoaded = false;
+
+  async function initBriefingPanel() {
+    if (briefingLoaded) return;
+    const offline = document.getElementById('briefing-offline');
+    const frame   = document.getElementById('briefing-frame');
+    const refBtn  = document.getElementById('briefing-refresh-btn');
+
+    // Check if local server is reachable
+    try {
+      const r = await fetch(`${LLMAI}/healthz`, { signal: AbortSignal.timeout(2000) });
+      if (!r.ok) throw new Error('not ok');
+
+      // Server is up — load the briefing in the iframe
+      frame.src = `${LLMAI}/briefing`;
+      frame.style.display = 'block';
+      offline.style.display = 'none';
+      refBtn.style.display = 'block';
+      briefingLoaded = true;
+    } catch {
+      // Server not running — show the offline state
+      offline.style.display = 'flex';
+      frame.style.display = 'none';
+      refBtn.style.display = 'none';
+    }
+  }
+
+  function retryBriefing() {
+    briefingLoaded = false;
+    initBriefingPanel();
+  }
+
+  async function triggerBriefingRefresh() {
+    const btn = document.getElementById('briefing-refresh-btn');
+    btn.textContent = '⏳ Generating…';
+    btn.disabled = true;
+    try {
+      await fetch(`${LLMAI}/briefing/refresh`, { method: 'POST' });
+      // Poll status and reload iframe when done
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        if (attempts > 30) { clearInterval(poll); btn.textContent = '↻ Refresh briefing'; btn.disabled = false; return; }
+        try {
+          const s = await fetch(`${LLMAI}/briefing/status`);
+          const d = await s.json();
+          if (!d.generating) {
+            clearInterval(poll);
+            document.getElementById('briefing-frame').src = `${LLMAI}/briefing?t=${Date.now()}`;
+            btn.textContent = '↻ Refresh briefing';
+            btn.disabled = false;
+          }
+        } catch { clearInterval(poll); btn.textContent = '↻ Refresh briefing'; btn.disabled = false; }
+      }, 2000);
+    } catch {
+      btn.textContent = '↻ Refresh briefing';
+      btn.disabled = false;
+    }
   }
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
