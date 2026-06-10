@@ -559,3 +559,21 @@ def register_elastic_tools() -> None:
     if "query_logs" not in existing:
         TOOL_DEFINITIONS.append(QUERY_DEF)
         _BASE_HANDLERS["query_logs"] = query_logs
+
+
+def register_mcp_tools() -> None:
+    """Append all tools discovered from connected MCP servers.
+
+    Same gate pattern as ``register_memory_tool`` — never expose a tool
+    the agent can't actually use. Idempotent. Called from the entry
+    points after ``llmai.mcp.init()``.
+    """
+    from . import mcp
+    if not mcp.is_enabled():
+        return
+    existing = {t["function"]["name"] for t in TOOL_DEFINITIONS}
+    for spec, handler in mcp.get_registrations():
+        if spec.qualified in existing:
+            continue
+        TOOL_DEFINITIONS.append(spec.to_openai_format())
+        _BASE_HANDLERS[spec.qualified] = handler

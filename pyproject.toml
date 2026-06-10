@@ -39,6 +39,9 @@ memory = [
 elastic = [
     "elasticsearch>=8.13,<9",
 ]
+mcp = [
+    "mcp>=1.0",
+]
 
 [project.scripts]
 llmai        = "llmai.main:main"

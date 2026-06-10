@@ -156,6 +156,25 @@ Two tools: `search_knowledge` (hybrid keyword + dense vector, RRF-fused, auto-ap
 
 Full guide: **[docs/elastic-setup.md](docs/elastic-setup.md)**
 
+### 4. MCP — plug in partner MCP servers
+
+```bash
+pip install 'llmai-agent[mcp]'   # MCP Python SDK (servers below also need Node >= 18)
+
+# in config.json:
+#   "mcp": { "enabled": true, "servers": { "mongodb": {
+#       "command": "npx", "args": ["-y", "mongodb-mcp-server", "--readOnly"],
+#       "env": { "MDB_MCP_CONNECTION_STRING": "${LLMAI_MEMORY_URI}" },
+#       "allow": ["find", "aggregate", "list-collections"] } } }
+
+llmai-doctor    # verify SDK + server commands
+llmai-server    # tools appear as mcp__mongodb__find, ...
+```
+
+Every MCP tool defaults to `ask`; only names in the server's `allow` list auto-approve. Servers run as local stdio subprocesses — no sockets.
+
+Full guide: **[docs/mcp-setup.md](docs/mcp-setup.md)**
+
 ### One-command demo bootstrap
 
 ```bash
@@ -172,7 +191,7 @@ make demo-status       # health check across the whole stack
 - **Agentic loop** — observe → judge → act, up to 20 iterations per turn
 - **Permission gates** — read-only auto-approves; writes and shell prompt
 - **Three-layer awareness** — operational (Dynatrace), personal (Atlas), org (Elastic) — all opt-in
-- **MCP-compatible tool shapes** — `recall_memory`, `search_knowledge`, `query_logs` mirror the official MCP server contracts
+- **Real MCP client** — connect official partner MCP servers (MongoDB, Elastic, or any stdio server); their tools register as `mcp__{server}__{tool}` behind the permission gate
 - **Dual tool-calling modes** — native OpenAI function calling for capable models; XML fallback for `gemma3`, `phi3`, etc.
 - **Context compression** — auto-summarizes when conversation exceeds ~50k tokens
 - **Workspace sandboxing** — file ops restricted to `WORKSPACE_ROOT`; dangerous command patterns blocked
@@ -189,6 +208,7 @@ make demo-status       # health check across the whole stack
 | GitLab (11) | `gitlab_list_issues`, `gitlab_get_mr`, `gitlab_get_job_log`, … | reads `allow`, mutations `ask` |
 | Memory (1) | `recall_memory` | `allow` |
 | Elastic (2) | `search_knowledge`, `query_logs` | `allow` / `ask` |
+| MCP (dynamic) | `mcp__{server}__{tool}` — discovered from configured MCP servers | `ask` (per-server `allow` list) |
 
 Tools are registered conditionally — the model never sees a tool whose backend isn't connected.
 
@@ -265,10 +285,14 @@ LLMai/
 │   │   ├── store.py
 │   │   ├── embeddings.py
 │   │   └── recall_tool.py
-│   └── elastic/          # Elasticsearch knowledge search + log analytics
+│   ├── elastic/          # Elasticsearch knowledge search + log analytics
+│   │   ├── client.py
+│   │   ├── search_tool.py
+│   │   └── query_tool.py
+│   └── mcp/              # MCP client: partner servers over stdio
 │       ├── client.py
-│       ├── search_tool.py
-│       └── query_tool.py
+│       ├── bridge.py
+│       └── registry.py
 ├── server/               # FastAPI + WebSocket Web UI
 │   ├── app.py
 │   ├── agent_ws.py       # Async agent loop (native + XML modes)
@@ -299,6 +323,7 @@ LLMai/
 - **[Dynatrace observability](docs/dynatrace-setup.md)** — OpenTelemetry spans, metrics, Bindplane pipeline
 - **[MongoDB Atlas memory](docs/atlas-setup.md)** — cross-session continuity, semantic recall
 - **[Elastic knowledge search](docs/elastic-setup.md)** — hybrid search, ES|QL, agent self-logs
+- **[MCP integration](docs/mcp-setup.md)** — partner MCP servers (MongoDB, Elastic) over stdio
 - [Local LLM Setup](docs/tips/local-llm-setup.md) — best practices for Ollama
 - [Permission System](docs/tips/permission-system.md) — allow/ask/deny configuration
 - [Tool System](docs/tips/tool-system.md) — tool definitions and sandboxing

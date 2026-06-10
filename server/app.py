@@ -16,7 +16,7 @@ from fastapi import BackgroundTasks, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from llmai import elastic, memory, telemetry
+from llmai import elastic, mcp, memory, telemetry
 from llmai import tools as _vt
 from llmai._logging import configure_logging
 from llmai.llm import resolve_provider_config
@@ -37,8 +37,10 @@ async def _init_observability() -> None:
     telemetry.init(cfg.get("telemetry"))
     memory.init(cfg.get("memory"))
     elastic.init(cfg.get("elastic"))
+    mcp.init(cfg.get("mcp"))
     _vt.register_memory_tool()
     _vt.register_elastic_tools()
+    _vt.register_mcp_tools()
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -189,7 +191,8 @@ async def _generate_briefing() -> None:
 async def _llm_ds_question(ollama_url: str, model: str, topic: str) -> str:
     """Call Ollama to generate a DS interview question for the given topic."""
     prompt = (
-        f"Generate a single mid-to-senior level data science interview question on the topic: '{topic}'.\n\n"
+        f"Generate a single mid-to-senior level data science interview question "
+        f"on the topic: '{topic}'.\n\n"
         "Format your response as HTML using only these tags: "
         "<p>, <ul>, <li>, <strong>, <pre><code>.\n\n"
         "Include:\n"
@@ -236,7 +239,8 @@ async def _fetch_korea_news() -> str:
                 logger.debug("Korea RSS fetch failed (%s): %s", url, e)
 
     if not items:
-        return "<p style='color:var(--muted)'>Could not fetch Korea news. Check your internet connection.</p>"
+        return ("<p style='color:var(--muted)'>Could not fetch Korea news. "
+                "Check your internet connection.</p>")
 
     html_parts = []
     for i, item in enumerate(items[:5], 1):
@@ -270,8 +274,10 @@ async def _fetch_market_news() -> str:
     html_parts = []
     for item in items:
         html_parts.append(
-            f'<div class="mover-row" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:10px">'
-            f'<div class="news-headline" style="font-size:13px;font-weight:600">{_esc(item["title"])}</div>'
+            f'<div class="mover-row" style="flex-direction:column;'
+            f'align-items:flex-start;gap:4px;margin-bottom:10px">'
+            f'<div class="news-headline" style="font-size:13px;font-weight:600">'
+            f'{_esc(item["title"])}</div>'
             f'<div class="news-source">{_esc(item["source"])}</div>'
             f'</div>'
         )
@@ -320,7 +326,9 @@ def _loading_page() -> str:
 </div></body></html>"""
 
 
-def _build_briefing_html(date_str: str, topic: str, ds_html: str, korea_html: str, market_html: str) -> str:
+def _build_briefing_html(
+    date_str: str, topic: str, ds_html: str, korea_html: str, market_html: str
+) -> str:
     """Assemble the full briefing dashboard HTML."""
     # Read the template from static if it exists, otherwise use the embedded template
     template_path = STATIC_DIR / "briefing_template.html"
@@ -470,7 +478,8 @@ async def ws_endpoint(websocket: WebSocket):
 
             t = data.get("type")
             if t not in _VALID_TYPES:
-                await websocket.send_json({"type": "error", "message": f"Unknown message type: {t}"})
+                await websocket.send_json(
+                    {"type": "error", "message": f"Unknown message type: {t}"})
                 continue
 
             if t == "get_info":
@@ -487,7 +496,8 @@ async def ws_endpoint(websocket: WebSocket):
                     await websocket.send_json({"type": "error", "message": "Empty message"})
                     continue
                 if agent_task and not agent_task.done():
-                    await websocket.send_json({"type": "error", "message": "Agent is busy. Wait or reset."})
+                    await websocket.send_json(
+                        {"type": "error", "message": "Agent is busy. Wait or reset."})
                     continue
                 agent_task = asyncio.create_task(agent.run(content))
             elif t == "permission_response":

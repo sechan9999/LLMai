@@ -116,7 +116,10 @@ class WebSocketAgent:
         self.native = (provider != "ollama") or _supports_native_tools(model)
         system = NATIVE_SYSTEM_PROMPT if self.native else XML_SYSTEM_PROMPT
         self.messages: list[dict] = [{"role": "system", "content": system}]
-        self.rules: dict[str, str] = dict(DEFAULT)
+        # MCP tool permissions are discovered at server startup (mcp.init),
+        # after this module's import — merge them per-connection.
+        from llmai import mcp as _mcp
+        self.rules: dict[str, str] = {**DEFAULT, **_mcp.MCP_DEFAULT_PERMISSIONS}
         self._perm_queue: asyncio.Queue[bool] = asyncio.Queue()
         self._last_result: str = ""
         self.session_id: str = _new_session_id()

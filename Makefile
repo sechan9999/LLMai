@@ -1,7 +1,7 @@
 # llmai — common dev / demo tasks.
 # Cross-platform: works in Git-Bash / WSL on Windows and on macOS / Linux.
 
-.PHONY: help install install-all install-telemetry install-memory install-elastic \
+.PHONY: help install install-all install-telemetry install-memory install-elastic install-mcp \
         test lint demo-up demo-down demo-bootstrap demo-status \
         elastic-up elastic-down elastic-setup elastic-ingest \
         bindplane-up bindplane-down
@@ -15,6 +15,7 @@ help:
 	@echo "  install-telemetry  Add OpenTelemetry stack"
 	@echo "  install-memory     Add MongoDB pymongo"
 	@echo "  install-elastic    Add Elasticsearch client"
+	@echo "  install-mcp        Add MCP client SDK (partner MCP servers)"
 	@echo ""
 	@echo "Demo (one command per group):"
 	@echo "  demo-up            Start Elastic + Kibana + Bindplane (Docker)"
@@ -38,7 +39,7 @@ install:
 	pip install -e .
 
 install-all:
-	pip install -e ".[telemetry,memory,elastic,dev]"
+	pip install -e ".[telemetry,memory,elastic,mcp,dev]"
 
 install-telemetry:
 	pip install -e ".[telemetry]"
@@ -48,6 +49,9 @@ install-memory:
 
 install-elastic:
 	pip install -e ".[elastic]"
+
+install-mcp:
+	pip install -e ".[mcp]"
 
 # ── One-command demo ─────────────────────────────────────────────────────────
 

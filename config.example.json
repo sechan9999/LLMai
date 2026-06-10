@@ -40,5 +40,23 @@
       "docs":       "llmai-docs",
       "agent_logs": "llmai-agent-logs"
     }
+  },
+  "mcp": {
+    "enabled": false,
+    "call_timeout_s": 30,
+    "servers": {
+      "mongodb": {
+        "command": "npx",
+        "args": ["-y", "mongodb-mcp-server", "--readOnly"],
+        "env": { "MDB_MCP_CONNECTION_STRING": "${LLMAI_MEMORY_URI}" },
+        "allow": ["find", "aggregate", "list-collections", "list-databases"]
+      },
+      "elasticsearch": {
+        "command": "npx",
+        "args": ["-y", "@elastic/mcp-server-elasticsearch"],
+        "env": { "ES_URL": "http://localhost:9200" },
+        "allow": ["search", "list_indices", "get_mappings"]
+      }
+    }
   }
 }

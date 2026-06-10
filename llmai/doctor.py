@@ -229,6 +229,39 @@ def _check_gitlab() -> None:
                f"{url} unreachable — {type(e).__name__}")
 
 
+def _check_mcp(cfg: dict) -> None:
+    env = os.environ.get("LLMAI_MCP_ENABLED", "").lower()
+    enabled = (env in ("1", "true", "yes", "on")
+               or (env == "" and bool(cfg.get("mcp", {}).get("enabled"))))
+    if not enabled:
+        _check("mcp", "ok", "disabled (default)")
+        return
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        _check("mcp sdk", "bad",
+               "enabled but not installed — pip install 'llmai-agent[mcp]'")
+        return
+    _check("mcp sdk", "ok", "installed")
+    servers = cfg.get("mcp", {}).get("servers", {})
+    if not servers:
+        _check("mcp servers", "warn", "enabled but no servers configured")
+        return
+    for name, raw in servers.items():
+        cmd = (raw or {}).get("command", "")
+        if not cmd:
+            _check(f"mcp:{name}", "bad", "missing 'command'")
+            continue
+        if shutil.which(cmd):
+            detail = f"command '{cmd}' found"
+            if cmd in ("npx", "npm", "node"):
+                detail += " (Node.js runtime)"
+            _check(f"mcp:{name}", "ok", detail)
+        else:
+            hint = " — install Node.js >= 18" if cmd in ("npx", "npm", "node") else ""
+            _check(f"mcp:{name}", "bad", f"command '{cmd}' not on PATH{hint}")
+
+
 def _probe_tcp(url_or_host: str) -> bool:
     """Best-effort TCP connect to verify a host:port is reachable."""
     try:
@@ -279,6 +312,7 @@ def run(args: Iterable[str] = ()) -> int:
 
     print("\n[Integrations]")
     _check_gitlab()
+    _check_mcp(cfg)
 
     print()
     return 0 if py_ok else 1

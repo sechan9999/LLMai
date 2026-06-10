@@ -42,8 +42,12 @@ class PermissionManager:
     Modes can be loaded from a JSON config file and overridden at runtime.
     """
 
-    def __init__(self, config_path: str = None):
+    def __init__(self, config_path: str = None, extra_defaults: dict = None):
+        # extra_defaults: runtime-discovered tools (e.g. MCP) whose names
+        # aren't known at import time. Config-file rules still win.
         self.rules: dict[str, PermMode] = dict(DEFAULT)
+        if extra_defaults:
+            self.rules.update(extra_defaults)
         if config_path:
             p = Path(config_path)
             if p.exists():
@@ -106,4 +110,9 @@ def _preview(name: str, args: dict) -> str:
         body = args.get("body", "")[:60]
         return f"{name}: comment on {kind} #{args.get('iid')} — '{body}'"
     parts = [f"{k}={repr(v)[:30]}" for k, v in args.items()]
+    if name.startswith("mcp__"):
+        # mcp__{server}__{tool} — surface the remote server's identity
+        bits = name.split("__", 2)
+        server = bits[1] if len(bits) > 2 else "?"
+        return f"{name} [remote tool via MCP server '{server}'] ({', '.join(parts)})"
     return f"{name}({', '.join(parts)})"
