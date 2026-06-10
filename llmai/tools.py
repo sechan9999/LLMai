@@ -63,11 +63,13 @@ def _validate_path(path: str) -> Path:
 
 _DANGEROUS_PATTERNS: list[str] = [
     r"rm\s+(-rf?|--recursive)\s+/",     # recursive delete from root
-    r":()\{\s*:\|\s*:&\s*\};:",          # fork bomb
+    r":\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:",  # fork bomb :(){ :|:& };:
     r"mkfs\.",                            # format filesystem
     r"dd\s+if=.*/dev/",                  # raw disk write
     r">\s*/dev/sd",                       # redirect into raw device
-    r"shutdown|reboot|halt|poweroff",     # system power commands
+    # power commands — only in command position (start of line or after ; & |)
+    # so e.g. `grep reboot docs/` is not blocked
+    r"(?:^|[;&|]\s*)(?:sudo\s+)?(?:shutdown|reboot|halt|poweroff)\b",
     r"chmod\s+-R\s+777\s+/",             # open permissions on root
 ]
 

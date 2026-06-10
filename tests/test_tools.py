@@ -48,7 +48,11 @@ class TestDangerousCommands:
         "mkfs.ext4 /dev/sda1",
         "shutdown -h now",
         "reboot",
+        "sudo reboot",
+        "echo done; poweroff",
         "dd if=/dev/zero of=/dev/sda",
+        ":(){ :|:& };:",
+        ":() { : | : & } ; :",
     ])
     def test_dangerous_commands_detected(self, cmd):
         assert _is_dangerous_command(cmd) is True
@@ -59,6 +63,9 @@ class TestDangerousCommands:
         "python -m pytest",
         "rm temp_file.txt",
         "echo hello",
+        "grep reboot docs/",
+        "git log --grep=shutdown",
+        "cat notes/halt-procedure.md",
     ])
     def test_safe_commands_allowed(self, cmd):
         assert _is_dangerous_command(cmd) is False

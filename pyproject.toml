@@ -42,7 +42,7 @@ elastic = [
 
 [project.scripts]
 llmai        = "llmai.main:main"
-llmai-server = "run_server:main"
+llmai-server = "server.run:main"
 llmai-doctor = "llmai.doctor:main"
 
 [tool.setuptools.packages.find]
@@ -51,6 +51,7 @@ include = ["llmai*", "server*"]
 
 [tool.setuptools.package-data]
 llmai = ["py.typed"]
+server = ["static/*"]
 
 [tool.ruff]
 target-version = "py310"
