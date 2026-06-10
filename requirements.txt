@@ -18,4 +18,4 @@ pymongo[srv]>=4.8
 # Optional: organizational knowledge search via Elasticsearch
 # (opt-in via LLMAI_ELASTIC_ENABLED=true). Safe to remove if you
 # don't need hybrid search over issues / logs / docs.
-elasticsearch>=8.13,<9
+elasticsearch>=8.13,<10
