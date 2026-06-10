@@ -11,5 +11,16 @@
     "run_command": "ask",
     "fetch_url":   "ask",
     "create_directory": "ask"
+  },
+  "mcp": {
+    "enabled": false,
+    "call_timeout_s": 30,
+    "servers": {
+      "gitlab": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "https://gitlab.com/api/v4/mcp"],
+        "allow": []
+      }
+    }
   }
 }

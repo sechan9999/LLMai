@@ -160,19 +160,19 @@ Two tools: `search_knowledge` (hybrid keyword + dense vector, RRF-fused, auto-ap
 
 Full guide: **[docs/elastic-setup.md](docs/elastic-setup.md)**
 
-### 4. MCP — plug in partner MCP servers
+### 4. MCP — plug in partner MCP servers (GitLab, MongoDB, Elastic, …)
 
 ```bash
 pip install 'llmai-agent[mcp]'   # MCP Python SDK (servers below also need Node >= 18)
 
-# in config.json:
-#   "mcp": { "enabled": true, "servers": { "mongodb": {
-#       "command": "npx", "args": ["-y", "mongodb-mcp-server", "--readOnly"],
-#       "env": { "MDB_MCP_CONNECTION_STRING": "${LLMAI_MEMORY_URI}" },
-#       "allow": ["find", "aggregate", "list-collections"] } } }
+# in config.json — GitLab's official MCP server via the mcp-remote bridge:
+#   "mcp": { "enabled": true, "servers": { "gitlab": {
+#       "command": "npx",
+#       "args": ["-y", "mcp-remote", "https://gitlab.com/api/v4/mcp"],
+#       "allow": [] } } }
 
 llmai-doctor    # verify SDK + server commands
-llmai-server    # tools appear as mcp__mongodb__find, ...
+llmai-server    # tools appear as mcp__gitlab__*, mcp__mongodb__find, ...
 ```
 
 Every MCP tool defaults to `ask`; only names in the server's `allow` list auto-approve. Servers run as local stdio subprocesses — no sockets.
@@ -195,7 +195,7 @@ make demo-status       # health check across the whole stack
 - **Agentic loop** — observe → judge → act, up to 20 iterations per turn
 - **Permission gates** — read-only auto-approves; writes and shell prompt
 - **Three-layer awareness** — operational (Dynatrace), personal (Atlas), org (Elastic) — all opt-in
-- **Real MCP client** — connect official partner MCP servers (MongoDB, Elastic, or any stdio server); their tools register as `mcp__{server}__{tool}` behind the permission gate
+- **Real MCP client** — connect official partner MCP servers (GitLab, MongoDB, Elastic, or any stdio server); their tools register as `mcp__{server}__{tool}` behind the permission gate
 - **Dual tool-calling modes** — native OpenAI function calling for capable models; XML fallback for `gemma3`, `phi3`, etc.
 - **Context compression** — auto-summarizes when conversation exceeds ~50k tokens
 - **Workspace sandboxing** — file ops restricted to `WORKSPACE_ROOT`; dangerous command patterns blocked
@@ -327,7 +327,7 @@ LLMai/
 - **[Dynatrace observability](docs/dynatrace-setup.md)** — OpenTelemetry spans, metrics, Bindplane pipeline
 - **[MongoDB Atlas memory](docs/atlas-setup.md)** — cross-session continuity, semantic recall
 - **[Elastic knowledge search](docs/elastic-setup.md)** — hybrid search, ES|QL, agent self-logs
-- **[MCP integration](docs/mcp-setup.md)** — partner MCP servers (MongoDB, Elastic) over stdio
+- **[MCP integration](docs/mcp-setup.md)** — partner MCP servers (GitLab, MongoDB, Elastic) over stdio
 - [Local LLM Setup](docs/tips/local-llm-setup.md) — best practices for Ollama
 - [Permission System](docs/tips/permission-system.md) — allow/ask/deny configuration
 - [Tool System](docs/tips/tool-system.md) — tool definitions and sandboxing

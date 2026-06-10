@@ -20,9 +20,9 @@ Plus the base agent capabilities that make all three useful:
 
 -**Explicit-permission writes.** Read-only tools execute instantly. Anything that mutates state (writing files, running commands) pauses for your explicit approval.
 
--**GitLab integration.** Triage issues, fetch merge requests, read failing pipeline logs, open fix MRs — all from the agent.
+-**GitLab integration — via GitLab's MCP server.** The agent connects to GitLab's official MCP server (`https://gitlab.com/api/v4/mcp`, bridged to stdio with `mcp-remote`), discovers its tools at startup, and uses them to triage issues, fetch merge requests, and read failing pipeline logs before writing code. A built-in REST toolset (11 tools) remains as a fallback for self-managed instances.
 
--**Real MCP client over stdio.** LLMai now launches partner MCP servers as local subprocesses, discovers their tools at startup, and registers them as `mcp__{server}__{tool}` behind the same permission system as built-in tools.
+-**Real MCP client over stdio.** LLMai launches partner MCP servers as local subprocesses, discovers their tools at startup, and registers them as `mcp__{server}__{tool}` behind the same permission system as built-in tools — every remote tool defaults to ask-before-run, and server subprocesses receive only a minimal environment (no inherited secrets).
 
 Every partner integration is opt-in. The default mode is fully local with zero external calls.
 

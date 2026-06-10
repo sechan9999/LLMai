@@ -46,6 +46,11 @@
     "enabled": false,
     "call_timeout_s": 30,
     "servers": {
+      "gitlab": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "https://gitlab.com/api/v4/mcp"],
+        "allow": []
+      },
       "mongodb": {
         "command": "npx",
         "args": ["-y", "mongodb-mcp-server", "--readOnly"],
