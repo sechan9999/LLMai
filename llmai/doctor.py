@@ -229,6 +229,35 @@ def _check_gitlab() -> None:
                f"{url} unreachable — {type(e).__name__}")
 
 
+def _check_gemini() -> None:
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        _check("gemini", "ok", "disabled (set GEMINI_API_KEY to enable)")
+        return
+    from .llm import _GEMINI_DEFAULT_BASE, _GEMINI_DEFAULT_MODEL
+    base = os.environ.get("GEMINI_BASE_URL", _GEMINI_DEFAULT_BASE).rstrip("/")
+    model = os.environ.get("GEMINI_MODEL", _GEMINI_DEFAULT_MODEL)
+    try:
+        r = requests.get(f"{base}/models",
+                         headers={"Authorization": f"Bearer {key}"}, timeout=5)
+        if r.status_code == 200:
+            ids = [m.get("id", "") for m in (r.json().get("data") or [])]
+            if any(model in i for i in ids):
+                _check("gemini key", "ok",
+                       f"active LLM backend — model {model} available")
+            else:
+                _check("gemini key", "warn",
+                       f"key valid but model '{model}' not listed")
+        elif r.status_code in (401, 403):
+            _check("gemini key", "bad",
+                   f"{base} returned {r.status_code} — invalid key")
+        else:
+            _check("gemini key", "bad", f"{base} returned {r.status_code}")
+    except Exception as e:
+        _check("gemini key", "warn",
+               f"{base} unreachable — {type(e).__name__}")
+
+
 def _check_mcp(cfg: dict) -> None:
     env = os.environ.get("LLMAI_MCP_ENABLED", "").lower()
     enabled = (env in ("1", "true", "yes", "on")
@@ -311,6 +340,7 @@ def run(args: Iterable[str] = ()) -> int:
     _check_elastic(cfg)
 
     print("\n[Integrations]")
+    _check_gemini()
     _check_gitlab()
     _check_mcp(cfg)
 
