@@ -35,6 +35,12 @@ First run opens a browser for GitLab OAuth; the token is cached locally
 check the startup log for the exact tool names the server advertises,
 then allowlist the read-only ones — anything unlisted simply prompts.
 
+> ⚠️ **Tier requirement (verified 2026-06):** GitLab's official MCP
+> server is **Premium/Ultimate only** and requires GitLab Duo + beta
+> features enabled on the top-level group. On a free-tier namespace the
+> endpoint returns 404 *after* OAuth succeeds. Free-tier users: use the
+> community server below, or start a 30-day Ultimate trial on a group.
+
 **Self-managed GitLab / headless fallback:** the community
 `@zereight/gitlab-mcp` server takes a plain token over stdio, no OAuth:
 

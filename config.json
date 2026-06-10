@@ -13,12 +13,18 @@
     "create_directory": "ask"
   },
   "mcp": {
-    "enabled": false,
+    "enabled": true,
     "call_timeout_s": 30,
     "servers": {
       "gitlab": {
         "command": "npx",
-        "args": ["-y", "mcp-remote", "https://gitlab.com/api/v4/mcp"],
+        "args": ["-y", "@zereight/gitlab-mcp"],
+        "env": {
+          "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_TOKEN}",
+          "GITLAB_API_URL": "https://gitlab.com/api/v4",
+          "GITLAB_READ_ONLY_MODE": "true",
+          "GITLAB_PROJECT_ID": "hkchun18/LLMai"
+        },
         "allow": []
       }
     }
