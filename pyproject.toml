@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 #     llmai-server     # or: from llmai.agent import AgentLoop
 name = "llmai-agent"
 version = "0.3.0"
-description = "Local AI coding agent — Ollama + any model"
+description = "Local-first AI coding agent with optional Gemini and Google ADK runtimes"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -42,6 +42,10 @@ elastic = [
 mcp = [
     "mcp>=1.0",
 ]
+google-cloud = [
+    "google-adk>=1.0",
+    "mcp>=1.0",
+]
 
 [project.scripts]
 llmai        = "llmai.main:main"
@@ -50,7 +54,7 @@ llmai-doctor = "llmai.doctor:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["llmai*", "server*"]
+include = ["llmai*", "server*", "google_agent*"]
 
 [tool.setuptools.package-data]
 llmai = ["py.typed"]
@@ -84,5 +88,5 @@ asyncio_mode = "auto"
 # Run them explicitly with: pytest tests/integration/ -m integration
 addopts = "-m 'not integration' --ignore=tests/integration"
 markers = [
-    "integration: needs live backends (Ollama / MongoDB / Elasticsearch). Skipped by default.",
+    "integration: needs live backends (Ollama / Gemini / MongoDB / Elasticsearch). Skipped by default.",
 ]

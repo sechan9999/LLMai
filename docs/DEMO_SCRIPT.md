@@ -4,9 +4,10 @@
 **Format:** Screen recording with voiceover, no talking head
 **Tone:** Engineer to engineer — show, don't sell
 
-The pitch for the GitLab track: **a Gemini-powered local agent that uses
-GitLab's official MCP server to learn from your team before it writes
-code** — multi-step, permission-gated, private by default. The three
+The pitch for the GitLab track: **a local-first project with a runnable
+Gemini 3 + Google ADK investigation profile connected to GitLab's official
+MCP server**. The ADK profile is read-only; the separate LLMai Web runtime
+contains the interactive write approvals. The three
 awareness layers appear as a fast montage, not the main act.
 
 ---
@@ -26,37 +27,37 @@ have context for that") and LLMai on the right calling
 
 ### 0:15 – 0:35 · What it is, fast (20 s)
 
-**On screen:** Quick `ls llmai/` showing `agent.py`, `tools.py`,
-`permissions.py`, `mcp/`, `memory/`, `elastic/`. Then config.json with
-`"mcp": { "enabled": true, "servers": { "gitlab": ... } }` highlighted.
+**On screen:** Quick `ls llmai/ google_agent/` showing `agent.py`,
+`google_cloud.py`, `permissions.py`, and `mcp/`. Then show the ADK
+`root_agent`, Gemini 3 model setting, and official GitLab MCP URL.
 
 **Voiceover:**
-> "LLMai is a local-first coding agent — agentic loop, eight core tools,
-> explicit permission gates. Today it's running on Gemini. And this is
-> the key line: a real MCP client, connected to GitLab's official MCP
-> server. One config flip, zero code."
+> "LLMai is local-first, and this optional profile is built with Google
+> Agent Development Kit. Gemini 3 is the orchestrator, with read-only
+> workspace tools and GitLab's official MCP server attached directly."
 
 ### 0:35 – 0:55 · Startup & MCP discovery (20 s)
 
 **On screen:**
-1. `llmai-server` — startup log shows the GitLab MCP server subprocess
-   connecting (stdio handshake) and tools registering
+1. `adk web .` — ADK discovers `google_agent`; startup shows the GitLab MCP
+   subprocess connecting and tools registering
 2. Caption: "GitLab official MCP server · gitlab.com/api/v4/mcp · bridged
    to stdio via mcp-remote"
-3. Web UI opens; provider banner shows **Gemini**
+3. ADK Web opens with **google_agent** selected and Gemini 3 shown in config
 
 **Voiceover:**
-> "On startup, LLMai spawns GitLab's MCP server as a local subprocess,
-> runs the MCP handshake, and discovers its tools — namespaced
-> mcp-gitlab, every one of them behind the permission system, and the
-> subprocess gets a minimal environment. No inherited secrets."
+> "On startup, Google ADK constructs the LLMai agent and spawns the bridge
+> to GitLab's official MCP server,
+> runs the MCP handshake, and discovers the tools available to this GitLab
+> account. The adapter filters mutation-oriented tool names, leaving this
+> demonstration profile read-only."
 
 ### 0:55 – 2:05 · The multi-step mission (70 s) ★ THE CORE
 
-**On screen:** Web UI. Type one prompt:
+**On screen:** ADK Web. Type one read-only prompt:
 
-> *"Check GitLab issue #12 about the failing login test, find any related
-> merge requests, then fix the bug and run the tests."*
+> *"Check GitLab issue #12 about the failing login test, find related merge
+> requests, inspect the local implementation, and propose a patch plan."*
 
 Capture these five beats (jump-cut the waiting):
 
@@ -65,19 +66,16 @@ Capture these five beats (jump-cut the waiting):
 2. Agent finds the related MR / discussion via a second `mcp__gitlab__*`
    call (caption: "team context, not guesswork")
 3. `read_file` on the local repo — auto-approved, read-only
-4. `edit_file` proposed → **permission card pops** → you click Approve
-   (caption: "human in the loop — writes always ask")
-5. `run_command` → pytest output goes green
+4. Agent identifies the likely file and explains the proposed change
+5. Caption: "ADK demo profile is read-only; no file or GitLab mutation tools"
 
 **Voiceover:**
-> "One prompt, one mission. Watch the plan unfold: first, the agent pulls
+> "One prompt, one investigation. Watch the plan unfold: first, the agent pulls
 > the issue from GitLab over MCP. Second, it finds the merge request
 > where a teammate hit the same bug last quarter — so it's not inventing
-> a fix, it's reusing one. Third, it reads the local code. Fourth — and
-> this matters — writing a file stops and asks me. I approve. Fifth, it
-> runs the tests itself. Green. Five tool calls across two systems, and
-> the only network traffic was the GitLab API calls I authorized. My
-> code stayed on this machine."
+> a fix, it's grounding its recommendation. Third, it reads the local code
+> and proposes a patch plan. This Google ADK profile is deliberately
+> read-only, so it cannot edit the checkout or mutate GitLab."
 
 ### 2:05 – 2:30 · Three awareness layers, fast montage (25 s)
 
@@ -122,7 +120,8 @@ then the README three-layer table, then GitHub URL + live demo URL.
   and the matching small bug planted in a local clone
 - Atlas free-tier cluster with a few prior sessions (for the montage)
 - Dynatrace tenant warm; Elastic local cluster with issues ingested
-- `GEMINI_API_KEY` set — confirm the UI banner says Gemini before recording
+- Google credentials configured; confirm ADK shows `google_agent` and the
+  selected Gemini 3 model before recording
 
 ### What to cut if you go over 3:00
 - Drop one of the three montage cuts (saves ~8 s)

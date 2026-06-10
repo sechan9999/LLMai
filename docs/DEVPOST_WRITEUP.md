@@ -3,10 +3,14 @@
 ## Inspiration
 Cloud-based AI coding tools send your proprietary source code, prompts, and terminal history to external servers you don't control. For privacy-conscious developers and enterprise environments, this is an unacceptable risk. But the existing "local agent" alternatives all share the same two blind spots: they forget what they did yesterday, and they ignore what your team has already learned. Your past decisions vanish at `/reset`, and the fix to the bug you're chasing is sitting in a GitLab issue your colleague filed six months ago that the model never reads.
 
-LLMai is our answer: a 100% local AI coding agent that runs the model on your machine, then adds three opt-in "layers of awareness" so it can observe itself, remember across sessions, and search your organization's knowledge before writing code.
+LLMai is our answer: a local-first AI coding agent that runs on Ollama by default and offers a separate Gemini 3 profile built with Google's Agent Development Kit (ADK). It adds three opt-in "layers of awareness" so the agent can observe itself, remember across sessions, and search organizational knowledge before proposing code changes.
 
 ## What it does
 LLMai doesn't just chat — it plans, reads files, writes code, and runs shell commands driven by a model on your own hardware. On top of the local agent loop, it integrates three hackathon partner backends to give the agent three distinct kinds of awareness:
+
+## How LLMai fits the GitLab Partner Track
+
+LLMai includes an executable Google ADK profile in which a configurable Gemini 3 model orchestrates read-only investigation across a local code workspace and GitLab. The profile attaches GitLab's official hosted MCP endpoint through `mcp-remote`, so the tools available to Gemini are discovered from the authenticated GitLab account rather than simulated in the application. This supports multi-step work such as reading an issue, finding related merge requests or pipeline context, inspecting the corresponding local files, and producing a grounded patch plan. The adapter omits local write and shell tools and filters GitLab tool names associated with mutations. LLMai's separate native CLI/Web runtime implements interactive approval for writes, but this submission does not claim that approval UI is part of the Google ADK profile or that the ADK agent is already deployed to Vertex AI Agent Engine.
 
 -**Operational awareness via Dynatrace.** Every tool invocation is an OpenTelemetry span: `agent.turn` → `agent.iteration` → `llm.chat` + `tool.invocation`. Spans carry token counts, exec latency, permission outcome (allow / ask_allow / ask_deny / deny), and success/error — but never file contents or raw prompts. Routed via a Bindplane OTel collector so the agent never speaks Dynatrace's protocol directly.
 
@@ -20,7 +24,7 @@ Plus the base agent capabilities that make all three useful:
 
 -**Explicit-permission writes.** Read-only tools execute instantly. Anything that mutates state (writing files, running commands) pauses for your explicit approval.
 
--**GitLab integration — via GitLab's MCP server.** The agent connects to GitLab's official MCP server (`https://gitlab.com/api/v4/mcp`, bridged to stdio with `mcp-remote`), discovers its tools at startup, and uses them to triage issues, fetch merge requests, and read failing pipeline logs before writing code. A built-in REST toolset (11 tools) remains as a fallback for self-managed instances.
+-**GitLab integration — via GitLab's MCP server.** Both LLMai's native MCP client and the Google ADK profile are configured to connect to GitLab's official MCP server (`https://gitlab.com/api/v4/mcp`, bridged to stdio with `mcp-remote`). They discover the tools exposed to the authenticated GitLab account at startup. The ADK profile filters state-changing tool names and is limited to investigation workflows. A built-in REST toolset (11 tools) remains available to the native runtime as a fallback for self-managed instances.
 
 -**Real MCP client over stdio.** LLMai launches partner MCP servers as local subprocesses, discovers their tools at startup, and registers them as `mcp__{server}__{tool}` behind the same permission system as built-in tools — every remote tool defaults to ask-before-run, and server subprocesses receive only a minimal environment (no inherited secrets).
 
@@ -29,11 +33,11 @@ Every partner integration is opt-in. The default mode is fully local with zero e
 ## How we built it
 -**Backend:** A lightweight, highly readable Python loop — no heavy abstraction frameworks. FastAPI for the Web UI, a sync REPL for the CLI, both sharing the same tool definitions and permission system.
 
--**AI orchestration:** Native function-calling for models like Qwen 2.5 Coder and Llama 3.1 / 3.2, with an intelligent XML-based fallback for Gemma, Phi, and Mistral.
+-**AI orchestration:** The default CLI/Web runtime uses LLMai's compact function-calling loop. The optional `google_agent` entry point is constructed by Google ADK with a configurable Gemini 3 model, read-only workspace functions, and GitLab's MCP toolset.
 
 -**Frontend:** A dark-mode full-screen browser UI (HTML / Vanilla JS / CSS) connecting via WebSockets, with real-time token streaming and inline permission cards. A rich terminal REPL for CLI users.
 
--**LLM engine:** Powered entirely by local Ollama instances (provider-agnostic architecture also supports Gemini and Groq fallbacks for the hosted demo).
+-**LLM engine:** Ollama is the private-by-default backend. Setting `GEMINI_API_KEY` runs the native LLMai loop against Gemini's OpenAI-compatible API. Running `adk web .` uses the separate Google ADK profile with `gemini-3.1-pro-preview` as its default model identifier; actual access depends on the configured Google project or API account.
 
 -**Observability (Layer 1):** OpenTelemetry SDK directly in both agent loops, exporting OTLP/HTTP to a bundled Bindplane Agent (Docker container) that fans out to Dynatrace and — optionally — to Elastic for the "agent queries its own behavior" loop.
 
@@ -55,18 +59,18 @@ Every partner integration is opt-in. The default mode is fully local with zero e
 -**Asynchronous memory writes.** The async WebSocket agent loop couldn't block on MongoDB writes between turns, but the sync CLI loop needed deterministic save-after-turn semantics. We unified both by routing the synchronous pymongo calls through `loop.run_in_executor` in the async path, so neither loop's surface area changes.
 
 ## Accomplishments that we're proud of
--**Three layers, one agent, zero API keys required.** A fully functional local AI agent that delivers operational, personal, and organizational awareness without ever forcing a cloud dependency. The core loop runs entirely on Ollama; partner layers are pure additions, not replacements.
+-**Local-first operation remains intact.** The default core loop still runs on Ollama without an API key. Gemini, Google ADK, GitLab MCP, and the awareness layers are explicit optional modes rather than hidden network dependencies.
 
 -**Verified semantic recall.** End-to-end tested against a real Elasticsearch cluster: `search_knowledge("chat endpoint throttling")` returns the pre-seeded rate-limit issue at score 0.84 — a pure semantic match with zero keyword overlap. `search_knowledge("cookie token rotation")` returns the auth design doc at 0.87. The agent is genuinely finding the right prior work, not pattern-matching tokens.
 
--**Three integrations × four failure modes × graceful degradation everywhere.** 103 unit tests pass; each partner integration was hand-verified to fail cleanly when the backend is off, when the optional dependency is missing, when credentials are wrong, and when the cluster is unreachable. The agent loop never raises into the user's turn because of a partner outage.
+-**Three integrations × four failure modes × graceful degradation everywhere.** 181 offline unit tests pass; the native partner integrations are tested to fail cleanly when disabled or unavailable. Live Google ADK and hosted GitLab MCP operation still depends on valid credentials and account eligibility.
 
--**MCP requirement genuinely met.** We implemented a real MCP client layer and validated partner-server wiring over stdio, so this is no longer a contract-only shim.
+-**Executable Google ADK and MCP wiring.** The repository contains an importable ADK `root_agent` that selects a Gemini 3 model and constructs GitLab's official MCP toolset over `mcp-remote`. Offline tests verify the selected model family, official endpoint, and read-only filter. A live demo still requires valid Google and GitLab credentials.
 
 -**A modern dark-mode dashboard** that makes it incredibly easy to monitor the agent's thought process and approve or reject state-mutating actions, with token-by-token streaming and per-turn telemetry.
 
 ## What we learned
-You don't need massive, opaque frameworks to build powerful AI agents. A well-designed, permission-gated Python loop paired with the right local model (like Qwen 2.5 Coder) reaches production-level coding assistance with zero privacy trade-offs.
+You do not need to abandon local execution to add a cloud orchestration option. LLMai keeps its permission-gated local runtime while providing a narrow Google ADK profile for Gemini and GitLab-assisted investigation.
 
 We also learned that the most valuable partner integration patterns aren't the obvious "send everything to the cloud" ones — they're the ones where the agent's local execution is *enriched* by cloud-side awareness: traces of its own behavior, recall of its own past work, and search over its team's existing knowledge. Each layer pays for itself in observability or capability. None of them require relocating the model.
 
@@ -81,6 +85,6 @@ Finally, we learned that **graceful degradation is the price of admission for op
 
 -**Auto-route compute.** Use cheap models for tool selection and larger models only for code generation. Cut local-LLM cost (in time and energy) without changing the agent loop.
 
--**Expand native Git platform integrations beyond GitLab** (GitHub, Bitbucket) and **add Claude / OpenAI cloud paths** alongside the existing Gemini and Groq fallbacks.
+-**Complete an Agent Engine deployment.** The repository demonstrates local ADK execution but does not yet claim a deployed Vertex AI Agent Engine instance. A production deployment also needs a non-interactive GitLab authentication design and cloud-native approval checkpoints.
 
 -**Optional encrypted local history** so users can choose persistence without leaving plaintext transcripts in browser storage.

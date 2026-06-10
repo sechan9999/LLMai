@@ -198,7 +198,7 @@ class OllamaClient:
 # For Vertex AI, point GEMINI_BASE_URL at the Vertex OpenAI compat endpoint
 # and supply a bearer token from `gcloud auth print-access-token`.
 _GEMINI_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai"
-_GEMINI_DEFAULT_MODEL = "gemini-2.5-flash"
+_GEMINI_DEFAULT_MODEL = "gemini-3.1-pro-preview"
 
 
 def resolve_provider_config(

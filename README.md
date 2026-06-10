@@ -10,7 +10,7 @@
 
 <p align="center">
   <strong>A local-first AI coding agent with three layers of awareness.</strong><br/>
-  <em>Runs on your own Ollama. Remembers across sessions. Searches your org's knowledge before writing code. Observable end-to-end.</em>
+  <em>Runs locally with Ollama, or through an optional Gemini 3 + Google ADK profile. Remembers across sessions. Searches your org's knowledge before writing code.</em>
 </p>
 
 ---
@@ -25,7 +25,7 @@ A privacy-first AI coding agent that runs the model locally and gives it three d
 | **Personal** | MongoDB Atlas (per-workspace) | Recalls *your* past sessions, decisions, and extracted facts. Boots warm |
 | **Organizational** | Elastic (per-org) | Hybrid search over GitLab issues, CI failure logs, docs — checks "have we seen this before?" before writing code |
 
-All three are **opt-in**. The core agent runs 100% locally with no external dependencies. Each integration is one config flip away.
+All three are **opt-in**. The default runtime stays local with Ollama. Cloud model, MCP, memory, search, and telemetry connections are enabled separately.
 
 **Live demo:** [ll-mai.vercel.app](https://ll-mai.vercel.app)
 
@@ -52,7 +52,7 @@ All three are **opt-in**. The core agent runs 100% locally with no external depe
                               └──► Elastic llmai-agent-logs
                                    (so the agent can query itself)
 
-LLM backend: Ollama localhost:11434 — Gemini / Groq optional
+LLM backend: Ollama by default; Gemini 3 and Google ADK are optional
 ```
 
 ---
@@ -264,12 +264,26 @@ Full example: [config.example.json](config.example.json).
 The agent speaks the OpenAI `/v1/chat/completions` contract.
 
 ```bash
-# Gemini (via AI Studio key — also works for Vertex AI compat endpoint)
+# Gemini 3 through the existing CLI and Web UI agent loop
 export GEMINI_API_KEY=...
+export GEMINI_MODEL=gemini-3.1-pro-preview
 
 # Any OpenAI-compat endpoint (LM Studio, vLLM, custom):
 # set "ollama_url" in config.json
 ```
+
+### Google Cloud Agent Builder profile
+
+LLMai also includes an optional [Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/) entry point. In this profile, a Gemini 3 model orchestrates read-only workspace tools and GitLab's official MCP server. It is separate from the default Web UI runtime and does not claim to reproduce the Web UI's interactive write approvals.
+
+```bash
+pip install -e ".[google-cloud]"
+export GOOGLE_API_KEY=...
+export LLMAI_GOOGLE_MODEL=gemini-3.1-pro-preview
+adk web .
+```
+
+The discovered agent is `google_agent`. Its local and GitLab tools are filtered to read-only operations. See **[docs/google-cloud-agent-builder.md](docs/google-cloud-agent-builder.md)** for AI Studio, Vertex AI, OAuth, and verification steps.
 
 ---
 
@@ -297,6 +311,7 @@ LLMai/
 │       ├── client.py
 │       ├── bridge.py
 │       └── registry.py
+├── google_agent/         # Optional Gemini 3 + Google ADK entry point
 ├── server/               # FastAPI + WebSocket Web UI
 │   ├── app.py
 │   ├── agent_ws.py       # Async agent loop (native + XML modes)
@@ -328,6 +343,7 @@ LLMai/
 - **[MongoDB Atlas memory](docs/atlas-setup.md)** — cross-session continuity, semantic recall
 - **[Elastic knowledge search](docs/elastic-setup.md)** — hybrid search, ES|QL, agent self-logs
 - **[MCP integration](docs/mcp-setup.md)** — partner MCP servers (GitLab, MongoDB, Elastic) over stdio
+- **[Google Cloud Agent Builder](docs/google-cloud-agent-builder.md)** — Gemini 3 + ADK + GitLab MCP verification path
 - [Local LLM Setup](docs/tips/local-llm-setup.md) — best practices for Ollama
 - [Permission System](docs/tips/permission-system.md) — allow/ask/deny configuration
 - [Tool System](docs/tips/tool-system.md) — tool definitions and sandboxing

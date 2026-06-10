@@ -86,15 +86,14 @@ card auto-approving, "Fix MR !43 opened ✓" at the end.
 
 [Settle back. Technical clarification beat.]
 
-> Want a stronger model than what fits on your laptop? Set
-> `GEMINI_API_KEY` and the same agent runs against **Google Gemini** —
-> 2.5 Pro, 2.5 Flash, whichever you choose. The architecture is
-> provider-agnostic; the same client speaks to Ollama, to Gemini through
-> AI Studio, and to Vertex AI through its OpenAI-compatible endpoint.
-> Switch by setting an environment variable.
+> Want a Google-native orchestration path? Install the optional ADK extra
+> and launch `google_agent`. A Gemini 3 model then orchestrates read-only
+> workspace inspection and GitLab's official MCP tools. The default LLMai
+> Web and CLI runtime remains separate and continues to use Ollama unless
+> you explicitly configure Gemini.
 
-*On-screen:* startup banner cycling through `Provider: Ollama (local)` →
-`Provider: Google Gemini` to show the swap.
+*On-screen:* `google_agent/agent.py`, the Gemini 3 model configuration, and
+ADK Web displaying the discovered agent.
 
 ---
 
