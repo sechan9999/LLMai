@@ -56,8 +56,9 @@ have context for that") and LLMai on the right calling
 
 **On screen:** ADK Web. Type one read-only prompt:
 
-> *"Check GitLab issue #12 about the failing login test, find related merge
-> requests, inspect the local implementation, and propose a patch plan."*
+> *"Check GitLab issue #1 in llmai1/LLMai about the failing login test,
+> find any related merge requests or notes, inspect the local
+> implementation in workspace/demo-login, and propose a patch plan."*
 
 Capture these five beats (jump-cut the waiting):
 
@@ -114,14 +115,27 @@ then the README three-layer table, then GitHub URL + live demo URL.
   words/min
 - **Cuts:** every shot ≤ 8 s; lean on jump cuts and on-screen captions
 
-### Pre-recorded assets / seeding
-- **GitLab demo project** with: issue #12 ("login test fails on token
-  refresh"), one closed MR whose description hints at the root cause,
-  and the matching small bug planted in a local clone
-- Atlas free-tier cluster with a few prior sessions (for the montage)
-- Dynatrace tenant warm; Elastic local cluster with issues ingested
-- Google credentials configured; confirm ADK shows `google_agent` and the
-  selected Gemini 3 model before recording
+### Pre-recorded assets / seeding — STATUS as of 2026-06-10
+
+- [x] **GitLab demo project seeded** — gitlab.com/llmai1/LLMai: Issue
+      **#1** ("Login test fails on token refresh") + MR **!18**
+      (postmortem hinting the inverted comparison). Re-seed anytime:
+      `python scripts/seed_gitlab_demo.py` (GITLAB_PROJECT=llmai1/LLMai)
+- [x] **GitLab MCP connected** — community `@zereight/mcp-gitlab` over
+      stdio, read-only mode, 58 tools discovered; 16 read-only tools
+      allowlisted in config.json. (Official gitlab.com MCP endpoint
+      requires Premium/Ultimate + Duo — 404 on free tier.)
+- [x] **Local bug planted** — `workspace/demo-login/`: both tests fail;
+      the fix is one character in `auth.py` (`<` → `>=` in `needs_refresh`)
+- [x] **Gemini verified** — key valid, native loop auto-resolves to
+      gemini-2.5-flash
+- [x] **End-to-end smoke test** — `mcp__gitlab__get_issue` fetched Issue
+      #1 through the agent dispatcher in ~300 ms
+- [ ] Google credentials configured; confirm ADK shows `google_agent` and
+      the selected Gemini 3 model before recording
+- [ ] Atlas sessions + Dynatrace/Elastic warm (only for the 25 s montage —
+      cut the montage if backends aren't ready)
+- [ ] One timed dry run with the exact demo prompt, then record
 
 ### What to cut if you go over 3:00
 - Drop one of the three montage cuts (saves ~8 s)

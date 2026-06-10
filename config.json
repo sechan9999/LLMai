@@ -18,14 +18,20 @@
     "servers": {
       "gitlab": {
         "command": "npx",
-        "args": ["-y", "@zereight/gitlab-mcp"],
+        "args": ["-y", "@zereight/mcp-gitlab"],
         "env": {
           "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_TOKEN}",
           "GITLAB_API_URL": "https://gitlab.com/api/v4",
           "GITLAB_READ_ONLY_MODE": "true",
-          "GITLAB_PROJECT_ID": "hkchun18/LLMai"
+          "GITLAB_PROJECT_ID": "llmai1/LLMai"
         },
-        "allow": []
+        "allow": [
+          "get_issue", "list_issues", "list_issue_discussions",
+          "get_merge_request", "list_merge_requests", "mr_discussions",
+          "get_merge_request_notes", "get_merge_request_diffs",
+          "search_repositories", "get_file_contents", "get_repository_tree",
+          "list_commits", "get_commit", "get_project", "whoami", "health_check"
+        ]
       }
     }
   }

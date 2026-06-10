@@ -41,13 +41,13 @@ then allowlist the read-only ones — anything unlisted simply prompts.
 > endpoint returns 404 *after* OAuth succeeds. Free-tier users: use the
 > community server below, or start a 30-day Ultimate trial on a group.
 
-**Self-managed GitLab / headless fallback:** the community
-`@zereight/gitlab-mcp` server takes a plain token over stdio, no OAuth:
+**Self-managed GitLab / free-tier / headless fallback:** the community
+`@zereight/mcp-gitlab` server takes a plain token over stdio, no OAuth:
 
 ```json
 "gitlab": {
   "command": "npx",
-  "args": ["-y", "@zereight/gitlab-mcp"],
+  "args": ["-y", "@zereight/mcp-gitlab"],
   "env": {
     "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_TOKEN}",
     "GITLAB_API_URL": "https://gitlab.com/api/v4",
