@@ -47,6 +47,17 @@ def _expand_env(value: str) -> str:
     return _ENV_VAR_RE.sub(repl, value)
 
 
+def build_subprocess_env(extra: dict[str, str]) -> dict[str, str]:
+    """Env for an MCP server subprocess: minimal safe defaults + named vars.
+
+    Deliberately NOT the agent's full environment — unrelated secrets
+    (API keys, tokens) must not leak into MCP server processes. The SDK's
+    default environment carries just PATH/HOME-class variables.
+    """
+    from mcp.client.stdio import get_default_environment
+    return {**get_default_environment(), **extra}
+
+
 def parse_servers_config(block: dict) -> list[McpServerConfig]:
     """Parse the ``mcp.servers`` config block into typed configs.
 
@@ -93,7 +104,7 @@ class McpServerConnection:
         params = StdioServerParameters(
             command=self.config.command,
             args=self.config.args,
-            env={**os.environ, **self.config.env} if self.config.env else None,
+            env=build_subprocess_env(self.config.env),
         )
         loop = asyncio.get_running_loop()
         ready: asyncio.Future = loop.create_future()

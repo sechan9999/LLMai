@@ -1,0 +1,1201 @@
+{
+  "version": "2.0",
+  "lastUpdated": "2026-06-10T11:04:50.635344Z",
+  "activeFeatures": [
+    "api",
+    "vixcode",
+    "server",
+    "memory",
+    "scripts",
+    "elastic",
+    "llmai",
+    "tests",
+    "integration",
+    "local-vixcode",
+    "mcp"
+  ],
+  "primaryFeature": "api",
+  "features": {
+    "vixcode": {
+      "phase": "do",
+      "matchRate": 92,
+      "iterationCount": 0,
+      "startedAt": "2026-05-12T17:58:15.097Z",
+      "archivedAt": "2026-05-12T19:45:00.000Z",
+      "archivedTo": "docs/archive/2026-05/vixcode/",
+      "phaseNumber": 3,
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\vixcode\\main.py",
+      "timestamps": {
+        "lastUpdated": "2026-05-23T14:41:32.034Z"
+      }
+    },
+    "server": {
+      "phase": "do",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-05-12T17:58:18.262Z",
+      "archivedAt": "2026-05-12T20:00:00.000Z",
+      "archivedTo": "docs/archive/2026-05/server/",
+      "phaseNumber": 3,
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\server\\app.py",
+      "timestamps": {
+        "lastUpdated": "2026-06-10T10:50:57.307Z"
+      }
+    },
+    "rxhcc-app": {
+      "phase": "completed",
+      "phaseNumber": 6,
+      "matchRate": 100,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {
+        "report": "docs/04-report/rxhcc-app.report.md"
+      },
+      "timestamps": {
+        "started": "2026-05-12T19:06:10.119Z",
+        "lastUpdated": "2026-05-12T19:30:00.000Z",
+        "completedAt": "2026-05-12T19:30:00.000Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\FWA\\hackerthonFWA\\HCendGame\\rxhcc-app\\src\\RXHCCnva.jsx"
+    },
+    "api": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-23T14:05:07.612Z",
+        "lastUpdated": "2026-05-23T14:05:07.612Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\api\\chat.js"
+    },
+    "memory": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-23T14:35:39.267Z",
+        "lastUpdated": "2026-05-27T15:23:10.626Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\llmai\\memory\\embeddings.py"
+    },
+    "scripts": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-23T14:43:30.144Z",
+        "lastUpdated": "2026-05-23T15:03:58.060Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\scripts\\elastic_ingest_logs.py"
+    },
+    "elastic": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-23T14:54:16.537Z",
+        "lastUpdated": "2026-05-27T16:13:25.452Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\llmai\\elastic\\client.py"
+    },
+    "llmai": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-23T14:56:27.075Z",
+        "lastUpdated": "2026-06-10T10:47:06.648Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\llmai\\doctor.py"
+    },
+    "tests": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-27T10:33:51.794Z",
+        "lastUpdated": "2026-06-10T10:59:39.451Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\tests\\test_mcp_config.py"
+    },
+    "integration": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-05-27T12:52:10.504Z",
+        "lastUpdated": "2026-06-10T10:49:23.152Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\tests\\integration\\test_mcp_e2e.py"
+    },
+    "local-vixcode": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-10T01:58:14.394Z",
+        "lastUpdated": "2026-06-10T01:58:14.394Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\run_server.py"
+    },
+    "mcp-integration": {
+      "phase": "archived",
+      "matchRate": 98,
+      "iterationCount": 1,
+      "startedAt": "2026-06-10T02:11:44.174336Z",
+      "archivedAt": "2026-06-10T11:04:50.635344Z",
+      "archivedTo": "docs/archive/2026-06/mcp-integration/"
+    },
+    "mcp": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-10T10:43:24.320Z",
+        "lastUpdated": "2026-06-10T10:59:20.616Z"
+      },
+      "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\llmai\\mcp\\client.py"
+    }
+  },
+  "pipeline": {
+    "currentPhase": 1,
+    "level": "Dynamic",
+    "phaseHistory": []
+  },
+  "session": {
+    "startedAt": "2026-05-10T19:56:55.361Z",
+    "onboardingCompleted": false,
+    "lastActivity": "2026-06-10T11:01:04.988Z"
+  },
+  "history": [
+    {
+      "timestamp": "2026-05-12T17:58:15.097Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T17:58:18.262Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T17:58:26.141Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T17:58:30.477Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T17:58:35.791Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:06:10.119Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:06:16.953Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:06:36.596Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:06:54.760Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:07:15.385Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:07:24.304Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:07:32.209Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:07:49.796Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:07:55.512Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:00.533Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:08.124Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:12.206Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:16.290Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:29.245Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-12T19:08:34.991Z",
+      "feature": "rxhcc-app",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:05:07.612Z",
+      "feature": "api",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:19:16.177Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:26:12.145Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:26:39.111Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:26:51.220Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:27:06.181Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:27:24.049Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:28:01.072Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:28:14.308Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:28:24.910Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:30:33.951Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:30:41.732Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:35:39.268Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:35:53.485Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:36:45.413Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:37:22.841Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:37:36.632Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:37:45.925Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:37:56.943Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:38:05.212Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:38:13.731Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:38:23.923Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:38:54.267Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:39:03.444Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:39:12.582Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:39:19.276Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:39:38.978Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:39:48.855Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:40:10.227Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:41:06.724Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:41:16.762Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:41:32.034Z",
+      "feature": "vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:41:39.622Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:41:48.438Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:43:30.144Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:54:16.537Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:55:16.363Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:55:46.455Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:56:04.228Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:56:27.075Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:57:01.857Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:57:26.445Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:57:34.849Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:57:56.208Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:58:07.173Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:58:37.167Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T14:59:23.850Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T15:01:14.812Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T15:01:47.831Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T15:02:21.706Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T15:03:26.846Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-23T15:03:58.060Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-24T06:06:31.871Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-24T06:07:07.632Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:29:37.208Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:29:47.770Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:30:00.527Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:30:24.252Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:30:42.918Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:31:26.593Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:31:54.718Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:32:15.056Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:32:36.327Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:33:01.337Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:33:51.794Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:34:18.733Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T10:34:28.911Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:48:41.373Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:48:54.695Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:49:03.901Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:49:12.255Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:49:19.695Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:49:34.027Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:50:22.131Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:50:30.453Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:51:20.803Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:52:10.504Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:52:24.900Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:52:47.201Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:53:08.697Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T12:54:17.694Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T15:22:55.866Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T15:23:10.626Z",
+      "feature": "memory",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T15:55:13.699Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T15:55:15.266Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:12:43.575Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:12:53.041Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:13:25.452Z",
+      "feature": "elastic",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:13:48.505Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:14:01.234Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:14:10.814Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:14:19.898Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:14:28.307Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:14:37.320Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:15:09.952Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:15:29.548Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:15:37.838Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:16:01.558Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:16:10.892Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:16:29.387Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-05-27T16:19:16.125Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T01:56:13.435Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:14.394Z",
+      "feature": "local-vixcode",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:35.093Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T01:58:44.614Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T02:11:44.174336Z",
+      "feature": "mcp-integration",
+      "phase": "plan",
+      "action": "created"
+    },
+    {
+      "timestamp": "2026-06-10T10:40:00.038104Z",
+      "feature": "mcp-integration",
+      "phase": "design",
+      "action": "created"
+    },
+    {
+      "timestamp": "2026-06-10T10:41:20.931923Z",
+      "feature": "mcp-integration",
+      "phase": "do",
+      "action": "started"
+    },
+    {
+      "timestamp": "2026-06-10T10:43:24.320Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:44:13.192Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:44:40.360Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:45:17.696Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:45:44.795Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:45:54.094Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:45:56.894Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:16.542Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:18.860Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:20.892Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:29.049Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:31.192Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:46:40.334Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:47:04.418Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:47:06.648Z",
+      "feature": "llmai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:48:08.221Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:48:18.470Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:48:31.715Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:48:42.793Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:48:58.728Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:49:01.286Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:49:11.162Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:49:23.152Z",
+      "feature": "integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:32.433Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:39.548Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:41.172Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:54.533Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:55.982Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:50:57.307Z",
+      "feature": "server",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:54:09.863349Z",
+      "feature": "mcp-integration",
+      "phase": "do",
+      "action": "implementation complete"
+    },
+    {
+      "timestamp": "2026-06-10T10:58:08.839813Z",
+      "feature": "mcp-integration",
+      "phase": "check",
+      "action": "matchRate 92"
+    },
+    {
+      "timestamp": "2026-06-10T10:59:18.889Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:59:20.616Z",
+      "feature": "mcp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:59:28.862Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T10:59:39.451Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T11:01:04.316271Z",
+      "feature": "mcp-integration",
+      "phase": "act",
+      "action": "iteration 1: matchRate 92 -> 98"
+    },
+    {
+      "timestamp": "2026-06-10T11:01:04.988Z",
+      "feature": "mcp-integration",
+      "phase": "report",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-10T11:02:27.874641Z",
+      "feature": "mcp-integration",
+      "phase": "completed",
+      "action": "report generated"
+    },
+    {
+      "timestamp": "2026-06-10T11:04:50.635344Z",
+      "feature": "mcp-integration",
+      "phase": "archived",
+      "action": "archived with --summary"
+    }
+  ]
+}

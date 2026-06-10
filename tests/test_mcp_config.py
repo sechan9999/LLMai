@@ -1,6 +1,10 @@
 """Unit tests for MCP config parsing and the init() gate — no SDK required."""
+import pytest
+
 import llmai.mcp as mcp_layer
+from llmai import tools as _vt
 from llmai.mcp.client import parse_servers_config
+from llmai.mcp.registry import McpRegistry
 
 
 class TestParseServersConfig:
@@ -71,3 +75,51 @@ class TestInitGate:
         mcp_layer.shutdown()
         mcp_layer.shutdown()
         assert mcp_layer.is_enabled() is False
+
+    def test_nonexistent_command_yields_failed_state(self, monkeypatch):
+        # GAP-3: bad server command -> 'failed' state, agent unaffected.
+        pytest.importorskip("mcp", reason="requires the [mcp] extra")
+        monkeypatch.setenv("LLMAI_MCP_ENABLED", "true")
+        ok = mcp_layer.init({
+            "servers": {"broken": {"command": "definitely-not-a-command-xyz"}}
+        })
+        assert ok is False
+        assert mcp_layer.is_enabled() is False
+        [state] = mcp_layer.get_server_states()
+        assert state.status == "failed"
+        assert state.error
+
+
+class TestSubprocessEnv:
+    def test_parent_secrets_not_inherited(self, monkeypatch):
+        # GAP-1 regression: only named vars + SDK-safe defaults are passed.
+        pytest.importorskip("mcp", reason="requires the [mcp] extra")
+        from llmai.mcp.client import build_subprocess_env
+        monkeypatch.setenv("SUPER_SECRET_API_KEY", "leak-me-not")
+        env = build_subprocess_env({"WANTED": "yes"})
+        assert "SUPER_SECRET_API_KEY" not in env
+        assert env["WANTED"] == "yes"
+
+
+class TestRegisterMcpToolsIdempotency:
+    def test_double_registration_adds_once(self, monkeypatch):
+        # GAP-3: register_mcp_tools() called twice must not duplicate.
+        registry = McpRegistry(call_fn=lambda s, t, a: "ok")
+        registry.add_server_tools("fake", [("ping", "test tool", {})])
+        monkeypatch.setattr(mcp_layer, "is_enabled", lambda: True)
+        monkeypatch.setattr(
+            mcp_layer, "get_registrations", registry.get_registrations
+        )
+        before = len(_vt.TOOL_DEFINITIONS)
+        try:
+            _vt.register_mcp_tools()
+            _vt.register_mcp_tools()
+            names = [t["function"]["name"] for t in _vt.TOOL_DEFINITIONS]
+            assert names.count("mcp__fake__ping") == 1
+            assert len(_vt.TOOL_DEFINITIONS) == before + 1
+        finally:
+            _vt.TOOL_DEFINITIONS[:] = [
+                t for t in _vt.TOOL_DEFINITIONS
+                if t["function"]["name"] != "mcp__fake__ping"
+            ]
+            _vt._BASE_HANDLERS.pop("mcp__fake__ping", None)

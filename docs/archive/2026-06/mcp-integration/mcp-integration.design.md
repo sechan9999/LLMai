@@ -121,7 +121,7 @@ New optional dependency in pyproject: `mcp = ["mcp>=1.0"]`.
 - `${VAR}` values in `env` are expanded from the parent process environment at spawn time; unset vars resolve to empty string with a logged warning.
 - `allow`: tool names (un-namespaced) auto-approved for this server. Everything else defaults to `ask`.
 
-### 3.2 Internal Types (`llmai/mcp/registry.py`)
+### 3.2 Internal Types (`McpToolSpec` in `registry.py`, `McpServerState` in `bridge.py`)
 
 ```python
 @dataclass
@@ -145,7 +145,7 @@ class McpServerState:
 | MCP side | LLM side |
 |----------|----------|
 | server `mongodb`, tool `find` | `mcp__mongodb__find` |
-| tool names with `-` or `.` | replaced with `_` (e.g. `list-collections` → `list_collections`) |
+| chars outside `[a-zA-Z0-9_-]` | replaced with `_` (e.g. `a.b` → `a_b`; dashes are valid and kept: `list-collections` stays) |
 | collision after sanitizing | suffix `_2`, `_3`, … + warning log |
 
 Qualified names must match `^[a-zA-Z0-9_-]{1,64}$` (OpenAI function-name constraint); truncate to 64 chars if needed, keeping the server prefix intact.
@@ -176,7 +176,7 @@ def register_mcp_tools() -> None:
     from . import mcp
     if not mcp.is_enabled():
         return
-    for spec, handler in mcp.registry.get_registrations():
+    for spec, handler in mcp.get_registrations():
         if any(t["function"]["name"] == spec.qualified for t in TOOL_DEFINITIONS):
             continue
         TOOL_DEFINITIONS.append(spec.to_openai_format())

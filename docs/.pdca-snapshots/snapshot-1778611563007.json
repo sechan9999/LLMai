@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-05-12T18:46:03.006Z",
+  "reason": "compaction",
+  "status": {
+    "version": "2.0",
+    "lastUpdated": "2026-05-12T17:58:35.791Z",
+    "activeFeatures": [
+      "vixcode",
+      "server"
+    ],
+    "primaryFeature": "vixcode",
+    "features": {
+      "vixcode": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-05-12T17:58:15.097Z",
+          "lastUpdated": "2026-05-12T17:58:30.477Z"
+        },
+        "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\vixcode\\tools.py"
+      },
+      "server": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-05-12T17:58:18.262Z",
+          "lastUpdated": "2026-05-12T17:58:35.791Z"
+        },
+        "lastFile": "C:\\Users\\secha\\.claude\\projects\\Harness\\local-vixcode\\server\\app.py"
+      }
+    },
+    "pipeline": {
+      "currentPhase": 1,
+      "level": "Dynamic",
+      "phaseHistory": []
+    },
+    "session": {
+      "startedAt": "2026-05-10T19:56:55.361Z",
+      "onboardingCompleted": false,
+      "lastActivity": "2026-05-12T17:58:35.791Z"
+    },
+    "history": [
+      {
+        "timestamp": "2026-05-12T17:58:15.097Z",
+        "feature": "vixcode",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-05-12T17:58:18.262Z",
+        "feature": "server",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-05-12T17:58:26.141Z",
+        "feature": "vixcode",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-05-12T17:58:30.477Z",
+        "feature": "vixcode",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-05-12T17:58:35.791Z",
+        "feature": "server",
+        "phase": "do",
+        "action": "updated"
+      }
+    ]
+  }
+}
