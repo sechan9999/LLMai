@@ -8,7 +8,7 @@
   <meta property="og:title" content="LLM ai — Local AI Coding Agent">
   <meta property="og:description" content="Privacy-first local AI coding agent. Runs locally via Ollama with permission gates for writes and shell commands.">
   <meta property="og:url" content="https://ll-mai.vercel.app/">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#07090c">
   <link rel="canonical" href="https://ll-mai.vercel.app/">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2346d39a'/%3E%3Cstop offset='1' stop-color='%236aa9ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='42' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='32' font-weight='800' text-anchor='middle' fill='%23071014'%3EL%3C/text%3E%3C/svg%3E">
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
   <style>
     :root {
       --bg:    #07090c;
@@ -172,6 +173,14 @@
     .bubble h1,.bubble h2,.bubble h3 { margin: 10px 0 6px; }
     .bubble strong { font-weight: 600; }
     .bubble a { color: var(--blue); }
+    .bubble table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+    .bubble th, .bubble td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; }
+    .bubble.thinking::after {
+      content: '···'; display: inline-block; letter-spacing: 3px;
+      color: var(--muted); font-weight: 700;
+      animation: think 1.2s ease-in-out infinite;
+    }
+    @keyframes think { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
     /* input bar */
     .input-wrap {
       border-top: 1px solid var(--line); padding: 12px 20px 16px; flex-shrink: 0;
@@ -328,11 +337,11 @@
     <span class="brand-mark">L</span>
     <span>LLM ai</span>
   </a>
-  <nav class="tabs">
-    <button class="tab active" data-tab="chat"      onclick="switchTab('chat')">Chat</button>
-    <button class="tab"        data-tab="briefing"  onclick="switchTab('briefing')">☀️ Briefing</button>
-    <button class="tab"        data-tab="about"     onclick="switchTab('about')">About</button>
-    <button class="tab"        data-tab="install"   onclick="switchTab('install')">Install</button>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" aria-selected="true"  data-tab="chat"      onclick="switchTab('chat')">Chat</button>
+    <button class="tab"        role="tab" aria-selected="false" data-tab="briefing"  onclick="switchTab('briefing')">☀️ Briefing</button>
+    <button class="tab"        role="tab" aria-selected="false" data-tab="about"     onclick="switchTab('about')">About</button>
+    <button class="tab"        role="tab" aria-selected="false" data-tab="install"   onclick="switchTab('install')">Install</button>
   </nav>
   <div class="spacer"></div>
   <button class="status-pill" id="chat-status" data-state="loading" onclick="showSetupHelp()" type="button">
@@ -506,7 +515,11 @@ llmai-server
   // ── Tab switching ──────────────────────────────────────────────────────────
   function switchTab(name) {
     document.querySelectorAll('.tab')
-      .forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      .forEach(t => {
+        const on = t.dataset.tab === name;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', String(on));
+      });
     document.querySelectorAll('.panel')
       .forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
     if (name === 'briefing') initBriefingPanel();
@@ -669,7 +682,8 @@ llmai-server
     const bub = document.createElement('div');
     bub.className = 'bubble';
     bub.dataset.raw = content || '';
-    renderInto(bub, content || '');
+    if (role === 'user') bub.textContent = content || '';
+    else renderInto(bub, content || '');
     row.appendChild(bub);
     $feed().appendChild(row);
     $feed().scrollTop = $feed().scrollHeight;
@@ -677,13 +691,26 @@ llmai-server
   }
 
   function renderInto(el, raw) {
-    el.textContent = raw || '';
+    if (window.marked && window.DOMPurify) {
+      el.innerHTML = DOMPurify.sanitize(marked.parse(raw || ''));
+      el.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+      if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+    } else {
+      el.textContent = raw || '';
+    }
   }
 
+  let renderQueued = false;
   function appendDelta(bub, delta) {
+    bub.classList.remove('thinking');
     bub.dataset.raw += delta;
-    renderInto(bub, bub.dataset.raw);
-    $feed().scrollTop = $feed().scrollHeight;
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => {
+      renderQueued = false;
+      renderInto(bub, bub.dataset.raw);
+      $feed().scrollTop = $feed().scrollHeight;
+    });
   }
 
   async function streamChat(response, bub) {
@@ -708,11 +735,29 @@ llmai-server
     return full;
   }
 
+  // Keep history under the cloud proxy's caps (40 msgs / 12k chars) with margin;
+  // also keeps local context small for 7B models.
+  const HIST_MAX_MSGS = 36, HIST_MAX_CHARS = 11000;
+  function trimmedHistory() {
+    let msgs = history.slice(1);
+    if (msgs.length > HIST_MAX_MSGS) msgs = msgs.slice(-HIST_MAX_MSGS);
+    let total = msgs.reduce((s, m) => s + m.content.length, 0);
+    while (msgs.length > 1 && total > HIST_MAX_CHARS) total -= msgs.shift().content.length;
+    return [history[0], ...msgs];
+  }
+
+  let aborter = null;
+  function setBusy(b) {
+    chatBusy = b;
+    $send().textContent = b ? '◼' : '↑';
+    $send().setAttribute('aria-label', b ? 'Stop generating' : 'Send');
+  }
+
   async function sendChat() {
+    if (chatBusy) { aborter?.abort(); return; }
     const prompt = $text().value.trim();
-    if (!prompt || chatBusy) return;
-    chatBusy = true;
-    $send().disabled = true;
+    if (!prompt) return;
+    setBusy(true);
     $text().value = '';
     $text().style.height = 'auto';
     appendMsg('user', prompt);
@@ -724,7 +769,7 @@ llmai-server
       appendMsg('assistant',
         'Ollama is not running on `localhost:11434`.\n\n'
         + 'Switch to the **Install** tab to set it up, then reload this page.');
-      chatBusy = false; $send().disabled = false; $text().focus();
+      setBusy(false); $text().focus();
       return;
     }
 
@@ -737,26 +782,30 @@ llmai-server
         history.pop();
         appendMsg('assistant',
           'Cloud use cancelled. Start Ollama locally to keep prompts on your machine.');
-        chatBusy = false; $send().disabled = false; $text().focus();
+        setBusy(false); $text().focus();
         return;
       }
       cloudConsent = true;
     }
 
     const reply = appendMsg('assistant', '');
+    reply.classList.add('thinking');
+    aborter = new AbortController();
     try {
       let response;
       if (mode === 'local') {
         response = await fetch(`${OLLAMA}/v1/chat/completions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: activeModel, messages: history, stream: true }),
+          body: JSON.stringify({ model: activeModel, messages: trimmedHistory(), stream: true }),
+          signal: aborter.signal,
         });
       } else {
         response = await fetch(CLOUD, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({ messages: trimmedHistory() }),
+          signal: aborter.signal,
         });
       }
       if (!response.ok) {
@@ -765,15 +814,30 @@ llmai-server
         throw new Error(`HTTP ${response.status}`);
       }
       const full = await streamChat(response, reply);
+      reply.classList.remove('thinking');
+      renderInto(reply, full);
       history.push({ role: 'assistant', content: full });
     } catch (e) {
-      const errMsg = mode === 'local'
-        ? `**Local request failed:** ${e.message}\n\nIf this is a CORS error, restart Ollama:\n\`\`\`\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``
-        : `**Cloud unavailable:** ${e.message}`;
-      reply.dataset.raw = errMsg;
-      renderInto(reply, errMsg);
+      reply.classList.remove('thinking');
+      if (e.name === 'AbortError') {
+        const partial = reply.dataset.raw;
+        if (partial) {
+          renderInto(reply, partial);
+          history.push({ role: 'assistant', content: partial });
+        } else {
+          reply.dataset.raw = '*Generation stopped.*';
+          renderInto(reply, reply.dataset.raw);
+        }
+      } else {
+        const errMsg = mode === 'local'
+          ? `**Local request failed:** ${e.message}\n\nIf this is a CORS error, restart Ollama:\n\`\`\`\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\``
+          : `**Cloud unavailable:** ${e.message}`;
+        reply.dataset.raw = errMsg;
+        renderInto(reply, errMsg);
+      }
     } finally {
-      chatBusy = false; $send().disabled = false; $text().focus();
+      aborter = null;
+      setBusy(false); $text().focus();
     }
   }
 
@@ -809,7 +873,7 @@ llmai-server
       ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
     });
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!chatBusy) sendChat(); }
     });
     ta.focus();
     detectBackend();
