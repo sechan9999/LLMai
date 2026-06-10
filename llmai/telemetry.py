@@ -393,15 +393,24 @@ def _record(metric: str, value: float, attrs: dict) -> None:
 
 
 def _preview_args(args: dict) -> str:
-    """Render args as a short, PII-free preview (≤200 chars)."""
+    """Render args as a short, redacted preview (<=200 chars)."""
     parts: list[str] = []
     for k, v in args.items():
-        s = repr(v) if not isinstance(v, str) else v
+        s = _redact_arg(k, v)
         if len(s) > 50:
-            s = s[:50] + "…"
+            s = s[:50] + "..."
         parts.append(f"{k}={s}")
     out = ", ".join(parts)
     return out[:200]
+
+
+def _redact_arg(key: str, value: Any) -> str:
+    """Never export string values; only retain shape for non-string args."""
+    if isinstance(value, str):
+        return f"<redacted:{len(value)} chars>"
+    if isinstance(value, (int, float, bool)) or value is None:
+        return repr(value)
+    return f"<redacted:{type(value).__name__}>"
 
 
 _TIKTOKEN_ENC: Any = None

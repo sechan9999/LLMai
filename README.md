@@ -131,7 +131,11 @@ python scripts/setup_atlas_indexes.py   # one-time vector index bootstrap
 llmai-server
 ```
 
-Three collections: `sessions`, `summaries` (vector-embedded), `knowledge` (extracted facts, vector-embedded). New tool: `recall_memory` for the agent. On each new session, the 3 most recent prior summaries are auto-injected as a system message.
+Three collections: `sessions` (metadata-only by default), `summaries`
+(vector-embedded), `knowledge` (extracted facts, vector-embedded). New tool:
+`recall_memory` for the agent. On each new session, the 3 most recent prior
+summaries are auto-injected as a system message. Full transcript retention
+requires explicit `LLMAI_MEMORY_STORE_TRANSCRIPTS=true`.
 
 Full guide: **[docs/atlas-setup.md](docs/atlas-setup.md)**
 

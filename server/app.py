@@ -8,8 +8,10 @@ import asyncio
 import json
 import logging
 import os
+import secrets
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, WebSocket, WebSocketDisconnect
@@ -28,6 +30,8 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="llmai", description="Local AI Coding Agent")
+
+_WS_TOKEN = os.environ.get("LLMAI_WS_TOKEN") or secrets.token_urlsafe(32)
 
 
 @app.on_event("startup")
@@ -84,6 +88,55 @@ async def healthz():
             "elastic":   elastic.is_enabled(),
         },
     }
+
+
+@app.get("/session")
+async def session_info():
+    """Return browser-only connection settings for the local UI."""
+    return {"ws_token": _WS_TOKEN}
+
+
+def _origin_allowed(origin: str | None, host_header: str | None) -> bool:
+    """Block cross-site WebSocket hijacking against localhost."""
+    if not origin:
+        return False
+
+    configured = {
+        o.strip().rstrip("/")
+        for o in os.environ.get("LLMAI_ALLOWED_ORIGINS", "").split(",")
+        if o.strip()
+    }
+    if origin.rstrip("/") in configured:
+        return True
+
+    parsed = urlparse(origin)
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    if not host_header:
+        return False
+
+    request_host = host_header.lower()
+    localhost_hosts = {"localhost", "127.0.0.1", "::1"}
+    origin_name = (parsed.hostname or "").lower()
+    request_name = request_host.rsplit(":", 1)[0].strip("[]")
+
+    return (
+        origin_name in localhost_hosts
+        and request_name in localhost_hosts
+        and parsed.port == _port_from_host(request_host)
+    )
+
+
+def _port_from_host(host: str) -> int | None:
+    try:
+        return int(host.rsplit(":", 1)[1])
+    except (IndexError, ValueError):
+        return 443 if host.startswith("https://") else 80
+
+
+def _ws_token_allowed(websocket: WebSocket) -> bool:
+    token = websocket.query_params.get("token")
+    return bool(token) and secrets.compare_digest(token, _WS_TOKEN)
 
 
 # ── Briefing routes ───────────────────────────────────────────────────────────
@@ -450,6 +503,13 @@ def _detect_version() -> str:
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     """WebSocket endpoint for the agent chat loop."""
+    if not _origin_allowed(
+        websocket.headers.get("origin"),
+        websocket.headers.get("host"),
+    ) or not _ws_token_allowed(websocket):
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
 
     config = load_config()

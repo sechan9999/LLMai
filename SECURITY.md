@@ -62,13 +62,19 @@ Out of scope:
   formats, raw device writes, system power commands
 - **Permission gates** — every mutating tool defaults to `ask` (see
   `llmai/permissions.py:DEFAULT`)
+- **Authenticated local WebSocket** — the browser fetches a per-process
+  token and the server rejects non-local origins by default. Set
+  `LLMAI_ALLOWED_ORIGINS` explicitly for a trusted non-local deployment
 - **Local-first by default** — no network calls unless an `LLMAI_*_ENABLED`
   env var is explicitly set to `true`
 - **No raw prompts in telemetry** — OTel span attributes carry metadata
-  only (lengths, latencies, outcomes). `tool.args.preview` is truncated
-  to 200 chars
+  only (lengths, latencies, outcomes). Sensitive argument values are
+  redacted before `tool.args.preview` is exported
 - **Per-workspace memory scoping** — `sha256(absolute_path)[:16]` filters
   every read and write; cross-workspace queries are refused
+- **Metadata-only session retention by default** — Atlas session documents
+  store roles, sizes, and tool names. Raw transcripts require explicit
+  `LLMAI_MEMORY_STORE_TRANSCRIPTS=true`
 - **TLS for cloud connections** — `mongodb+srv://` and Elastic Cloud
   endpoints use TLS by default
 - **MCP servers are untrusted by default** — every tool discovered from
@@ -81,11 +87,12 @@ Out of scope:
 
 | Configuration | Data that leaves the machine |
 |---------------|------------------------------|
-| Core (default) | Nothing — model, tools, and files are all local |
+| Core (default) | Nothing — model, tools, UI assets, and files are all local |
 | + Telemetry | Span metadata only (latencies, token counts, outcomes) to your configured OTel endpoint; no prompts or file contents |
-| + Memory (Atlas) | Session summaries, extracted facts, and their embeddings to your Atlas cluster |
+| + Memory (Atlas) | Session metadata, summaries, extracted facts, and embeddings to your Atlas cluster. Full transcripts only when explicitly enabled |
 | + Elastic | Search queries and ingested GitLab issues/logs/docs to your Elastic cluster |
 | + MCP | Whatever the configured MCP server sends to its own backend (e.g. queries to your Atlas cluster); the MCP wire protocol itself stays on localhost stdio |
+| Hosted web demo | Chat messages are sent to Groq only after an explicit browser confirmation |
 
 ## Known limitations
 
@@ -96,7 +103,12 @@ Out of scope:
   damage). This is the inherent risk of agent autonomy — the mitigation
   is the permission gate, not an absolute defense
 - The Web UI is single-user. Do not expose `llmai-server` (port 7777) to
-  untrusted networks
+  untrusted networks. Non-local origins are denied unless listed in
+  `LLMAI_ALLOWED_ORIGINS`
+- `run_command` is an approval-gated local shell, not a container boundary.
+  It blocks parent traversal, absolute paths outside the workspace, strips
+  unrelated environment variables, and rejects known destructive commands,
+  but an approved program can still use its own APIs or network stack
 - Telemetry, when enabled, ships span metadata to whatever endpoint you
   configure. Verify your collector's network path before pointing it at
   production data

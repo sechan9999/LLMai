@@ -59,6 +59,7 @@ class MemoryStore:
         connect_timeout_ms: int = 5_000,
         skill_promote_threshold: int = 3,
         skill_inject_limit: int = 5,
+        store_transcripts: bool = False,
     ):
         self.uri = uri
         self.db_name = db_name
@@ -67,6 +68,7 @@ class MemoryStore:
         self.connect_timeout_ms = connect_timeout_ms
         self.skill_promote_threshold = max(1, int(skill_promote_threshold))
         self.skill_inject_limit = max(0, int(skill_inject_limit))
+        self.store_transcripts = store_transcripts
         self._client = None
         self._db = None
         self.connected = False
@@ -106,6 +108,12 @@ class MemoryStore:
             or cfg.get("skill_inject_limit")
             or 5
         )
+        transcript_env = os.environ.get("LLMAI_MEMORY_STORE_TRANSCRIPTS")
+        store_transcripts = (
+            _truthy(transcript_env)
+            if transcript_env is not None
+            else bool(cfg.get("store_transcripts", False))
+        )
         return cls(
             uri=uri,
             db_name=db_name,
@@ -113,6 +121,7 @@ class MemoryStore:
             recall_limit=int(cfg.get("recall_limit") or 3),
             skill_promote_threshold=promote_threshold,
             skill_inject_limit=inject_limit,
+            store_transcripts=store_transcripts,
         )
 
     def connect(self) -> bool:
@@ -203,7 +212,10 @@ class MemoryStore:
                     "workspace_path": str(workspace_path),
                     "provider": provider,
                     "model": model,
-                    "messages": messages,
+                    "messages": self._messages_for_storage(messages),
+                    "transcript_storage": (
+                        "full" if self.store_transcripts else "metadata_only"
+                    ),
                     "token_estimate": token_estimate,
                     "turn_count": turn_count,
                     "updated_at": now,
@@ -220,6 +232,27 @@ class MemoryStore:
             )
         except Exception as exc:
             logger.warning("save_session failed: %s", exc)
+
+    def _messages_for_storage(self, messages: list[dict]) -> list[dict]:
+        """Return the session payload that is safe to persist externally."""
+        if self.store_transcripts:
+            return messages
+
+        safe: list[dict] = []
+        for m in messages:
+            item: dict[str, Any] = {"role": m.get("role", "?")}
+            content = m.get("content")
+            item["content_chars"] = len(content) if isinstance(content, str) else 0
+            tool_calls = m.get("tool_calls") or []
+            if tool_calls:
+                item["tool_calls"] = [
+                    tc.get("function", {}).get("name", "?")
+                    for tc in tool_calls[:20]
+                ]
+            if m.get("tool_call_id"):
+                item["tool_call_id"] = m.get("tool_call_id")
+            safe.append(item)
+        return safe
 
     def load_session(self, session_id: str) -> Optional[dict]:
         if not self.connected:

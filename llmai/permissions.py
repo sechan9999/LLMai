@@ -29,6 +29,8 @@ DEFAULT: dict[str, PermMode] = {
     "edit_file":   "ask",
     "run_bash":    "ask",
     "run_command": "ask",
+    "fetch_url":   "ask",
+    "create_directory": "ask",
     # GitLab tools (active only when GITLAB_TOKEN is set; harmless otherwise)
     **GITLAB_DEFAULT_PERMISSIONS,
     # Elastic tools (active only when LLMAI_ELASTIC_ENABLED=true)

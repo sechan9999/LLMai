@@ -73,6 +73,10 @@ _DANGEROUS_PATTERNS: list[str] = [
     r"chmod\s+-R\s+777\s+/",             # open permissions on root
 ]
 
+_PATH_TOKEN_RE = re.compile(
+    r"(?<!://)(?P<path>(?:[A-Za-z]:\\|\\\\|/)[^\s;&|<>`]+)"
+)
+
 
 def _is_dangerous_command(command: str) -> bool:
     """Return True if *command* matches a known destructive pattern."""
@@ -80,6 +84,35 @@ def _is_dangerous_command(command: str) -> bool:
         if re.search(pat, command, re.IGNORECASE):
             return True
     return False
+
+
+def _references_path_outside_workspace(command: str) -> str | None:
+    """Return the first absolute path token that escapes the workspace."""
+    traversal = re.search(r"(?:^|[\s;&|<>])((?:\.\.[/\\])+[^\s;&|<>`]*)", command)
+    if traversal:
+        return traversal.group(1)
+    for match in _PATH_TOKEN_RE.finditer(command):
+        raw = match.group("path").strip("'\"")
+        if raw in {"/", "\\"}:
+            return raw
+        try:
+            candidate = Path(raw).resolve()
+        except (OSError, RuntimeError):
+            continue
+        try:
+            candidate.relative_to(WORKSPACE_ROOT)
+        except ValueError:
+            return raw
+    return None
+
+
+def _safe_subprocess_env() -> dict[str, str]:
+    """Pass only execution basics to shell tools, not user secrets."""
+    keep = {
+        "PATH", "Path", "HOME", "USER", "USERNAME", "TEMP", "TMP", "TMPDIR",
+        "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "VIRTUAL_ENV",
+    }
+    return {k: v for k, v in os.environ.items() if k in keep}
 
 
 # ── Tool definitions (OpenAI function-calling format) ─────────────────────────
@@ -330,6 +363,12 @@ def _run_command(command: str, timeout: int = 30) -> str:
     # P1: block obviously destructive commands
     if _is_dangerous_command(command):
         return "Error: Command blocked — matches a dangerous pattern. Please review."
+    escaped_path = _references_path_outside_workspace(command)
+    if escaped_path:
+        return (
+            "Error: Command blocked — absolute path outside workspace: "
+            f"{escaped_path}"
+        )
 
     try:
         # P3: Windows compatibility — use PowerShell instead of cmd
@@ -340,6 +379,7 @@ def _run_command(command: str, timeout: int = 30) -> str:
                 text=True,
                 timeout=timeout,
                 cwd=str(WORKSPACE_ROOT),
+                env=_safe_subprocess_env(),
                 encoding="utf-8",
                 errors="replace",
             )
@@ -351,6 +391,7 @@ def _run_command(command: str, timeout: int = 30) -> str:
                 text=True,
                 timeout=timeout,
                 cwd=str(WORKSPACE_ROOT),
+                env=_safe_subprocess_env(),
                 encoding="utf-8",
                 errors="replace",
             )

@@ -500,7 +500,7 @@ llmai-server
   const PREFS    = ['qwen2.5-coder','qwen2.5','llama3.1','llama3.2','gemma3','phi3','mistral'];
   const SYSTEM   = "You are the LLMai assistant — an expert on LLMai, a 100% local open-source AI coding agent at https://github.com/sechan9999/LLMai that runs on Ollama with no external API keys. It has an agentic loop, explicit permission gates for writes and shell commands, GitLab integration, and context compression. When asked to review 'this repo', analyze https://github.com/sechan9999/LLMai. Answer directly and helpfully. Never refuse to discuss the project. Be concise and use Markdown when helpful.";
 
-  let mode = 'unknown', activeModel = null, chatBusy = false;
+  let mode = 'unknown', activeModel = null, chatBusy = false, cloudConsent = false;
   const history = [{ role: 'system', content: SYSTEM }];
 
   // ── Tab switching ──────────────────────────────────────────────────────────
@@ -677,12 +677,7 @@ llmai-server
   }
 
   function renderInto(el, raw) {
-    if (window.marked) {
-      el.innerHTML = marked.parse(raw || '');
-      if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
-    } else {
-      el.textContent = raw || '';
-    }
+    el.textContent = raw || '';
   }
 
   function appendDelta(bub, delta) {
@@ -731,6 +726,21 @@ llmai-server
         + 'Switch to the **Install** tab to set it up, then reload this page.');
       chatBusy = false; $send().disabled = false; $text().focus();
       return;
+    }
+
+    if (mode === 'cloud' && !cloudConsent) {
+      const approved = window.confirm(
+        'Use the Groq cloud demo? Your full chat history will be sent to Groq. '
+        + 'Do not continue with proprietary code, credentials, or personal data.',
+      );
+      if (!approved) {
+        history.pop();
+        appendMsg('assistant',
+          'Cloud use cancelled. Start Ollama locally to keep prompts on your machine.');
+        chatBusy = false; $send().disabled = false; $text().focus();
+        return;
+      }
+      cloudConsent = true;
     }
 
     const reply = appendMsg('assistant', '');

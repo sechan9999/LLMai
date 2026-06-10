@@ -15,7 +15,7 @@ llmai agent ──OTLP/HTTP:4318──► Bindplane (OTel collector) ──► D
 | `agent.turn` | One per user input | `agent.mode` (cli / ws-native / ws-xml), `agent.provider`, `agent.model`, `agent.input.chars`, `agent.iterations.actual`, `agent.outcome` |
 | `agent.iteration` | One per loop iteration | `iteration.number`, `tokens.estimate.before` |
 | `llm.chat` | One per LLM call | `llm.model`, `llm.provider`, `llm.messages.count`, `llm.streamed`, `llm.latency_ms`, `llm.tool_calls.requested` |
-| `tool.invocation` | One per tool call | `tool.name`, `tool.args.preview` (truncated, no file contents), `tool.permission.outcome` (allow / ask_allow / ask_deny / deny), `tool.permission.latency_ms`, `tool.exec.latency_ms`, `tool.result.chars`, `error` |
+| `tool.invocation` | One per tool call | `tool.name`, `tool.args.preview` (redacted and truncated), `tool.permission.outcome` (allow / ask_allow / ask_deny / deny), `tool.permission.latency_ms`, `tool.exec.latency_ms`, `tool.result.chars`, `error` |
 
 Metrics (alongside spans):
 
@@ -112,8 +112,9 @@ Bindplane is recommended because it (a) buffers when Dynatrace is unreachable, (
 
 - **No raw prompts or file contents** are exported. Span attributes are
   metadata only: name, length, latency, outcome.
-- `tool.args.preview` truncates each argument value to 50 chars and the
-  whole preview to 200 chars.
+- `tool.args.preview` redacts sensitive argument keys and secret-shaped
+  values, then truncates each remaining value to 50 chars and the whole
+  preview to 200 chars.
 - `LLMAI_OTEL_ENABLED` defaults to `false`. Telemetry is opt-in.
 
 ## Local debugging without Dynatrace

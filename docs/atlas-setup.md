@@ -6,7 +6,7 @@ purposes:
 
 | Collection | What | When written | When read |
 |------------|------|--------------|-----------|
-| `sessions` | Raw transcript per session | After every turn | On demand (by `session_id`) |
+| `sessions` | Metadata-only session record by default | After every turn | On demand (by `session_id`) |
 | `summaries` | LLM-summarized session, vector-embedded | At session end + on context compression | At each new session start (top 3 most recent) and via `recall_memory` |
 | `knowledge` | Extracted facts/decisions, vector-embedded | At session end (3–5 per session) | Via the `recall_memory` tool the agent can call |
 
@@ -100,7 +100,8 @@ llmai-server
     "db_name": "llmai",
     "embed_model": "nomic-embed-text",
     "auto_recall_at_startup": true,
-    "recall_limit": 3
+    "recall_limit": 3,
+    "store_transcripts": false
   }
 }
 ```
@@ -143,11 +144,10 @@ Read-only — auto-approved by the permission system.
   ("authentication uses bcrypt", "API client lives in `client/`"), not
   verbatim file bodies. Snippets store file path + line range, not the
   code itself.
-- **No raw prompts unless you opt in to session retention** — the
-  `sessions` collection contains the full transcript by design (for
-  `/show last-session` style features later); if you want to disable
-  this, set `memory.skip_session_retention: true` (TODO — for v1, you
-  can manually `db.sessions.drop()` periodically).
+- **No raw prompts by default** — the `sessions` collection stores roles,
+  content sizes, and tool names. Set `LLMAI_MEMORY_STORE_TRANSCRIPTS=true`
+  or `memory.store_transcripts: true` only when full transcript retention
+  is acceptable for your data policy.
 - **No cross-workspace leakage** — every query is filtered by
   `workspace_id`. The `recall_memory` tool refuses to search across
   workspaces.

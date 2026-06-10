@@ -10,7 +10,7 @@ LLMai doesn't just chat — it plans, reads files, writes code, and runs shell c
 
 -**Operational awareness via Dynatrace.** Every tool invocation is an OpenTelemetry span: `agent.turn` → `agent.iteration` → `llm.chat` + `tool.invocation`. Spans carry token counts, exec latency, permission outcome (allow / ask_allow / ask_deny / deny), and success/error — but never file contents or raw prompts. Routed via a Bindplane OTel collector so the agent never speaks Dynatrace's protocol directly.
 
--**Personal awareness via MongoDB Atlas.** Three collections — `sessions` (raw transcripts), `summaries` (LLM-summarized, vector-embedded), and `knowledge` (3–5 extracted facts per session, vector-embedded) — give the agent persistent memory scoped per workspace via `sha256(abs_path)[:16]`. On every new session in the same workspace, the top-3 recent summaries are auto-injected as a system message. The agent boots warm. A `recall_memory` tool gives it semantic recall on demand.
+-**Personal awareness via MongoDB Atlas.** Three collections — `sessions` (metadata-only by default), `summaries` (LLM-summarized, vector-embedded), and `knowledge` (3–5 extracted facts per session, vector-embedded) — give the agent persistent memory scoped per workspace via `sha256(abs_path)[:16]`. Full transcript retention is explicit opt-in. On every new session in the same workspace, the top-3 recent summaries are auto-injected as a system message. The agent boots warm. A `recall_memory` tool gives it semantic recall on demand.
 
 -**Organizational awareness via Elastic.** GitLab issues and project docs are ingested with dense vector embeddings; pipeline failure logs are indexed with regex-extracted `error_signature` for ES|QL. The agent gets two tools: `search_knowledge` (hybrid BM25 + kNN, RRF where available with kNN-only fallback on basic license — auto-approved) and `query_logs` (raw ES|QL, permission-gated). The system prompt nudges the model to call `search_knowledge` before writing code that touches an error path.
 
@@ -83,4 +83,4 @@ Finally, we learned that **graceful degradation is the price of admission for op
 
 -**Expand native Git platform integrations beyond GitLab** (GitHub, Bitbucket) and **add Claude / OpenAI cloud paths** alongside the existing Gemini and Groq fallbacks.
 
--**Persistent localStorage chat history in the Web UI** so a browser refresh doesn't lose your in-progress turn.
+-**Optional encrypted local history** so users can choose persistence without leaving plaintext transcripts in browser storage.

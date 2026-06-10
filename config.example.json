@@ -24,6 +24,7 @@
     "embed_model": "nomic-embed-text",
     "auto_recall_at_startup": true,
     "recall_limit": 3,
+    "store_transcripts": false,
     "skill_promote_threshold": 3,
     "skill_inject_limit": 5
   },

@@ -4,11 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LLM ai</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root {
   --bg:        #05050a;
@@ -31,8 +26,8 @@
   --red-dim:   rgba(239,68,68,.12);
   --cyan:      #06b6d4;
   --purple:    #a855f7;
-  --sans: 'Inter', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Consolas', 'Courier New', monospace;
   --r: 10px;
   --r-sm: 6px;
   --shadow: 0 4px 24px rgba(0,0,0,.45);
@@ -797,12 +792,20 @@ document.querySelector('.bar-hint').textContent = t('sendHint')
 const hintChips = document.querySelectorAll('.hint-chip')
 t('hints').forEach((text, i) => { if (hintChips[i]) hintChips[i].textContent = text })
 
-// ── marked config ───────────────────────────────────────────────────────────
-marked.setOptions({ gfm: true, breaks: true })
-
 // ── WebSocket ────────────────────────────────────────────────────────────────
-function connect() {
-  ws = new WebSocket(`ws://${location.host}/ws`)
+async function connect() {
+  let token
+  try {
+    const response = await fetch('/session', { credentials: 'same-origin' })
+    if (!response.ok) throw new Error(`session init failed: ${response.status}`)
+    token = (await response.json()).ws_token
+  } catch {
+    setOnline(false)
+    setTimeout(connect, 2500)
+    return
+  }
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
+  ws = new WebSocket(`${scheme}://${location.host}/ws?token=${encodeURIComponent(token)}`)
   ws.onopen  = () => { setOnline(true);  ws.send(j({type:'get_info'})) }
   ws.onclose = () => { setOnline(false); setTimeout(connect, 2500) }
   ws.onerror = () => setOnline(false)
@@ -881,8 +884,7 @@ function appendAi(text) {
     curAiEl = content
   }
   curAiEl._raw = (curAiEl._raw || '') + text
-  curAiEl.innerHTML = marked.parse(curAiEl._raw)
-  curAiEl.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b))
+  curAiEl.innerHTML = renderMarkdown(curAiEl._raw)
   scrollDown()
 }
 
@@ -1005,6 +1007,34 @@ let _uid = 0
 function mk(tag, cls) { const e=document.createElement(tag); if(cls)e.className=cls; return e }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function j(o)   { return JSON.stringify(o) }
+function renderMarkdown(text) {
+  const codeBlocks = []
+  let rendered = esc(text).replace(
+    /```(?:[\w.+-]+)?\n([\s\S]*?)```/g,
+    (_, code) => {
+      const token = `LLMAICODEBLOCK${codeBlocks.length}TOKEN`
+      codeBlocks.push(`<pre><code>${code}</code></pre>`)
+      return token
+    },
+  )
+  rendered = rendered
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .split(/\n{2,}/)
+    .map(block => (
+      /^<(?:h[1-3]|pre)/.test(block) || /^LLMAICODEBLOCK\d+TOKEN$/.test(block)
+        ? block
+        : `<p>${block.replace(/\n/g, '<br>')}</p>`
+    ))
+    .join('')
+  codeBlocks.forEach((block, i) => {
+    rendered = rendered.replace(`LLMAICODEBLOCK${i}TOKEN`, block)
+  })
+  return rendered
+}
 function fmtArgs(args) {
   if (!args || !Object.keys(args).length) return ''
   return Object.entries(args).map(([k,v]) => {
@@ -1054,9 +1084,9 @@ const SESSIONS_KEY = 'llmai_sessions'
 let currentSessionId = null
 
 function _sessionsLoad() {
-  try { return JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]') } catch { return [] }
+  try { return JSON.parse(sessionStorage.getItem(SESSIONS_KEY) || '[]') } catch { return [] }
 }
-function _sessionsSave(s) { localStorage.setItem(SESSIONS_KEY, JSON.stringify(s)) }
+function _sessionsSave(s) { sessionStorage.setItem(SESSIONS_KEY, JSON.stringify(s)) }
 
 function saveCurrentSession() {
   if (msgCount === 0) return
@@ -1111,8 +1141,7 @@ function loadSession(s) {
       const content = mk('div', 'ai-content')
       block.appendChild(av); block.appendChild(content); row.appendChild(block); feed.appendChild(row)
       content._raw = m.content
-      content.innerHTML = marked.parse(m.content)
-      content.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b))
+      content.innerHTML = renderMarkdown(m.content)
     }
   })
   scrollDown()
