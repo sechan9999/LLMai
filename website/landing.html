@@ -10,8 +10,10 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="LLMai (llmai) — Local AI Coding Agent">
     <meta property="og:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
-    <meta property="og:url" content="https://ll-mai.vercel.app/">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:url" content="https://ll-mai.vercel.app/landing.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="theme-color" content="#05050a">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2346d39a'/%3E%3Cstop offset='1' stop-color='%236aa9ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='42' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='32' font-weight='800' text-anchor='middle' fill='%23071014'%3EL%3C/text%3E%3C/svg%3E">
     <meta name="twitter:title" content="LLMai (llmai) — Local AI Coding Agent">
     <meta name="twitter:description" content="An agentic coding assistant that runs on your own hardware. Powered by Ollama, with full path sandboxing and explicit-permission writes.">
 
@@ -22,6 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 </head>
 <body>
     <!-- Background Elements -->
@@ -33,12 +36,13 @@
         <div class="container header-inner">
             <div class="logo">
                 <div class="logo-icon">⚡</div>
-                <div class="logo-text">vix<span>code</span></div>
+                <div class="logo-text">llm<span>ai</span></div>
             </div>
             <nav>
                 <a href="#features">Features</a>
                 <a href="#how-it-works">How it works</a>
                 <a href="./promo.html">Demo</a>
+                <a href="./">Live App</a>
                 <a href="#quick-start">Install</a>
                 <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener" class="btn btn-outline">GitHub</a>
             </nav>
@@ -235,7 +239,7 @@ docker compose up -d
         <div class="container footer-inner">
             <div class="logo">
                 <div class="logo-icon small">⚡</div>
-                <div class="logo-text">vix<span>code</span></div>
+                <div class="logo-text">llm<span>ai</span></div>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/sechan9999/LLMai" target="_blank" rel="noopener">GitHub</a>
@@ -317,7 +321,8 @@ docker compose up -d
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble';
         bubble.dataset.raw = content || '';
-        renderInto(bubble, content || '');
+        if (role === 'user') bubble.textContent = content || '';
+        else renderInto(bubble, content || '');
         row.appendChild(bubble);
         $feed().appendChild(row);
         $feed().scrollTop = $feed().scrollHeight;
@@ -325,26 +330,58 @@ docker compose up -d
     }
 
     function renderInto(el, raw) {
-        if (window.marked) {
-            el.innerHTML = marked.parse(raw);
+        if (window.marked && window.DOMPurify) {
+            el.innerHTML = DOMPurify.sanitize(marked.parse(raw || ''));
+            el.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
             if (window.hljs) el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
         } else {
-            el.textContent = raw;
+            el.textContent = raw || '';
         }
     }
 
+    let renderQueued = false;
     function appendDelta(bubble, delta) {
+        bubble.classList.remove('thinking');
         bubble.dataset.raw += delta;
-        renderInto(bubble, bubble.dataset.raw);
-        $feed().scrollTop = $feed().scrollHeight;
+        if (renderQueued) return;
+        renderQueued = true;
+        requestAnimationFrame(() => {
+            renderQueued = false;
+            renderInto(bubble, bubble.dataset.raw);
+            $feed().scrollTop = $feed().scrollHeight;
+        });
+    }
+
+    // Keep context small for local 7B-class models.
+    const HIST_MAX_MSGS = 36, HIST_MAX_CHARS = 11000;
+    function trimmedHistory() {
+        let msgs = history.slice(1);
+        if (msgs.length > HIST_MAX_MSGS) msgs = msgs.slice(-HIST_MAX_MSGS);
+        let total = msgs.reduce((s, m) => s + m.content.length, 0);
+        while (msgs.length > 1 && total > HIST_MAX_CHARS) total -= msgs.shift().content.length;
+        return [history[0], ...msgs];
+    }
+
+    let aborter = null;
+    function setBusy(b) {
+        chatBusy = b;
+        const btn = $send();
+        if (b) {
+            if (!btn.dataset.svg) btn.dataset.svg = btn.innerHTML;
+            btn.textContent = '◼';
+            btn.setAttribute('aria-label', 'Stop generating');
+        } else {
+            if (btn.dataset.svg) btn.innerHTML = btn.dataset.svg;
+            btn.setAttribute('aria-label', 'Send');
+        }
     }
 
     async function sendChat() {
+        if (chatBusy) { aborter?.abort(); return; }
         const txt = $text().value.trim();
-        if (!txt || chatBusy) return;
+        if (!txt) return;
 
-        chatBusy = true;
-        $send().disabled = true;
+        setBusy(true);
         $text().value = '';
         $text().style.height = 'auto';
 
@@ -357,14 +394,15 @@ docker compose up -d
                 const existingHelp = document.getElementById('chat-help-msg');
                 if (existingHelp) existingHelp.remove();
                 showSetupHelp();
-                chatBusy = false;
-                $send().disabled = false;
+                setBusy(false);
                 $text().focus();
                 return;
             }
         }
 
         const reply = appendMsg('assistant', '');
+        reply.classList.add('thinking');
+        aborter = new AbortController();
 
         try {
             const resp = await fetch(`${OLLAMA}/v1/chat/completions`, {
@@ -372,9 +410,10 @@ docker compose up -d
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     model: activeModel,
-                    messages: history,
+                    messages: trimmedHistory(),
                     stream: true,
                 }),
+                signal: aborter.signal,
             });
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
@@ -399,13 +438,27 @@ docker compose up -d
                     } catch { /* ignore partial */ }
                 }
             }
+            reply.classList.remove('thinking');
+            renderInto(reply, full);
             history.push({ role: 'assistant', content: full });
         } catch (e) {
-            reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
-            renderInto(reply, reply.dataset.raw);
+            reply.classList.remove('thinking');
+            if (e.name === 'AbortError') {
+                const partial = reply.dataset.raw;
+                if (partial) {
+                    renderInto(reply, partial);
+                    history.push({ role: 'assistant', content: partial });
+                } else {
+                    reply.dataset.raw = '*Generation stopped.*';
+                    renderInto(reply, reply.dataset.raw);
+                }
+            } else {
+                reply.dataset.raw = `__Request failed:__ ${e.message}\n\nIf this is a CORS error, quit Ollama from your taskbar/menu and restart it from the terminal:\n\n**macOS/Linux:**\n\`\`\`bash\nOLLAMA_ORIGINS=${location.origin} ollama serve\n\`\`\`\n\n**Windows (PowerShell):**\n\`\`\`powershell\n$env:OLLAMA_ORIGINS="${location.origin}"\nollama serve\n\`\`\``;
+                renderInto(reply, reply.dataset.raw);
+            }
         } finally {
-            chatBusy = false;
-            $send().disabled = false;
+            aborter = null;
+            setBusy(false);
             $text().focus();
         }
     }
@@ -418,7 +471,7 @@ docker compose up -d
             ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
         });
         ta.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!chatBusy) sendChat(); }
         });
         if (window.marked) {
             marked.setOptions({ breaks: true, gfm: true });

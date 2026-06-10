@@ -831,3 +831,14 @@ footer {
     nav { display: none; }
     .cta-container { padding: 40px 20px; }
 }
+
+/* Typing indicator while waiting for the first token */
+.chat-bubble.thinking::after {
+    content: '\00b7\00b7\00b7';
+    display: inline-block;
+    letter-spacing: 3px;
+    font-weight: 700;
+    opacity: .6;
+    animation: think 1.2s ease-in-out infinite;
+}
+@keyframes think { 0%, 100% { opacity: .25; } 50% { opacity: .9; } }
