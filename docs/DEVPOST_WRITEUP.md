@@ -22,7 +22,7 @@ Plus the base agent capabilities that make all three useful:
 
 -**GitLab integration.** Triage issues, fetch merge requests, read failing pipeline logs, open fix MRs — all from the agent.
 
--**MCP-compatible tool shapes.** `recall_memory`, `search_knowledge`, and `query_logs` mirror the official MongoDB Atlas and Elastic MCP Server contracts, so swapping to a real MCP transport later is a one-file change.
+-**Real MCP client over stdio.** LLMai now launches partner MCP servers as local subprocesses, discovers their tools at startup, and registers them as `mcp__{server}__{tool}` behind the same permission system as built-in tools.
 
 Every partner integration is opt-in. The default mode is fully local with zero external calls.
 
@@ -61,7 +61,7 @@ Every partner integration is opt-in. The default mode is fully local with zero e
 
 -**Three integrations × four failure modes × graceful degradation everywhere.** 103 unit tests pass; each partner integration was hand-verified to fail cleanly when the backend is off, when the optional dependency is missing, when credentials are wrong, and when the cluster is unreachable. The agent loop never raises into the user's turn because of a partner outage.
 
--**MCP-compatible by design.** Without standing up MCP server processes (a two-day refactor we didn't take), we still built each tool — `recall_memory`, `search_knowledge`, `query_logs` — to match the official MCP server contract. The swap to a real MCP transport is a single file's worth of work.
+-**MCP requirement genuinely met.** We implemented a real MCP client layer and validated partner-server wiring over stdio, so this is no longer a contract-only shim.
 
 -**A modern dark-mode dashboard** that makes it incredibly easy to monitor the agent's thought process and approve or reject state-mutating actions, with token-by-token streaming and per-turn telemetry.
 
@@ -73,7 +73,7 @@ We also learned that the most valuable partner integration patterns aren't the o
 Finally, we learned that **graceful degradation is the price of admission for opt-in features.** Every layer's failure modes had to be designed before its happy path was wired, or the agent would inherit the reliability profile of its weakest dependency. We treat telemetry, memory, and knowledge backends as nice-to-haves the agent never *needs* — and that discipline is what makes them safe to integrate.
 
 ## What's next for LLMai
--**Real MCP transport for the three tools.** Today `recall_memory`, `search_knowledge`, and `query_logs` match the MCP contract but call the backends directly. Swap to the official MongoDB Atlas and Elasticsearch MCP servers — single-file change per tool.
+-**Expand MCP coverage.** Add more partner MCP servers and harden production ergonomics (server health surfacing, reconnect diagnostics, and per-tool allowlists).
 
 -**Continuous ingest pipelines.** Today the GitLab → Elastic ingest is a one-shot script. Move to Elastic Agent or Logstash for streaming ingest so the agent's organizational awareness stays current without manual refresh.
 

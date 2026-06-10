@@ -10,6 +10,21 @@ _Nothing yet._
 
 ---
 
+## [0.3.0] — 2026-06-10
+
+### Added
+- **Real MCP client integration (partner servers over stdio).** MCP servers are spawned as local subprocesses, tools are discovered dynamically, and registered as `mcp__{server}__{tool}` under the same permission model.
+- MCP setup guide and demo wiring docs for partner servers (`docs/mcp-setup.md`) with MongoDB and Elasticsearch examples.
+- Daily briefing tab support for DS practice, Korea news, and US market updates.
+
+### Fixed
+- Packaging/entrypoint cleanup for the server launcher and command regex handling.
+
+### Changed
+- Devpost writeup now explicitly states that the MCP requirement is met with a real MCP client layer (not contract-only tool shapes).
+
+---
+
 ## [0.2.3] — 2026-05-27
 
 ### Fixed
@@ -138,7 +153,8 @@ First public release. Tagged after the hackathon partner integrations landed.
 - `hybrid_search` gracefully cascades RRF → kNN → BM25 so basic-license
   Elasticsearch clusters (no Platinum / no Atlas) still work.
 
-[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/sechan9999/LLMai/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/sechan9999/LLMai/releases/tag/v0.3.0
 [0.2.3]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.3
 [0.2.2]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.2
 [0.2.1]: https://github.com/sechan9999/LLMai/releases/tag/v0.2.1

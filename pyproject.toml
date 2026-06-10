@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 #     pip install llmai-agent
 #     llmai-server     # or: from llmai.agent import AgentLoop
 name = "llmai-agent"
-version = "0.2.3"
+version = "0.3.0"
 description = "Local AI coding agent — Ollama + any model"
 readme = "README.md"
 license = {text = "MIT"}
