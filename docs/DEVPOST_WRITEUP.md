@@ -28,6 +28,8 @@ Plus the base agent capabilities that make all three useful:
 
 -**Real MCP client over stdio.** LLMai launches partner MCP servers as local subprocesses, discovers their tools at startup, and registers them as `mcp__{server}__{tool}` behind the same permission system as built-in tools — every remote tool defaults to ask-before-run, and server subprocesses receive only a minimal environment (no inherited secrets).
 
+-**Daily briefing dashboard.** The local server doubles as a morning dashboard: a data-science interview question generated and answered by the local Ollama model (topic rotates daily across 8 areas), Korea headlines, US market news (Yahoo Finance RSS with a MarketWatch fallback), and CEPR's live AI Bubble Monitor charts. It auto-regenerates in the background whenever the server boots on a new day, and the hosted site embeds it directly in a ☀️ Briefing tab.
+
 Every partner integration is opt-in. The default mode is fully local with zero external calls.
 
 ## How we built it
@@ -36,6 +38,8 @@ Every partner integration is opt-in. The default mode is fully local with zero e
 -**AI orchestration:** The default CLI/Web runtime uses LLMai's compact function-calling loop. The optional `google_agent` entry point is constructed by Google ADK with a configurable Gemini 3 model, read-only workspace functions, and GitLab's MCP toolset.
 
 -**Frontend:** A dark-mode full-screen browser UI (HTML / Vanilla JS / CSS) connecting via WebSockets, with real-time token streaming and inline permission cards. A rich terminal REPL for CLI users.
+
+-**Daily briefing:** A FastAPI startup task compares the saved dashboard's date to today and rebuilds it in the background when stale — one local LLM call for the interview Q&A, dependency-free RSS parsing for news, and a static HTML file on disk so serving it is free. The hosted site's Briefing tab health-checks the local server and iframes the dashboard through narrowly-scoped CORS: only `/healthz` and `/briefing*` are exposed to the site's origin, while the WebSocket-token endpoint stays same-origin.
 
 -**LLM engine:** Ollama is the private-by-default backend. Setting `GEMINI_API_KEY` runs the native LLMai loop against Gemini's OpenAI-compatible API. Running `adk web .` uses the separate Google ADK profile with `gemini-3.1-pro-preview` as its default model identifier; actual access depends on the configured Google project or API account.
 
