@@ -318,10 +318,21 @@ async def _llm_ds_question(ollama_url: str, model: str, topic: str) -> str:
             )
             r.raise_for_status()
             content = r.json()["choices"][0]["message"]["content"]
-            return content
+            return _strip_code_fences(content)
     except Exception as e:
         logger.warning("LLM call failed: %s", e)
         return f"<p class='question-text'>Could not generate question: {e}</p>"
+
+
+def _strip_code_fences(text: str) -> str:
+    """Remove markdown code fences the LLM wraps around HTML despite the prompt."""
+    import re
+    t = text.strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z]*[ \t]*\r?\n?", "", t)
+        if t.rstrip().endswith("```"):
+            t = t.rstrip()[:-3]
+    return t.strip()
 
 
 # Some feed hosts (Yahoo) reject httpx's default User-Agent with 429/403.
