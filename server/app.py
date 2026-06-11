@@ -324,6 +324,13 @@ async def _llm_ds_question(ollama_url: str, model: str, topic: str) -> str:
         return f"<p class='question-text'>Could not generate question: {e}</p>"
 
 
+# Some feed hosts (Yahoo) reject httpx's default User-Agent with 429/403.
+_RSS_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) llmai-briefing/1.0",
+    "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+}
+
+
 async def _fetch_korea_news() -> str:
     """Fetch top Korea headlines from KBS World RSS and return HTML list items."""
     feeds = [
@@ -331,7 +338,7 @@ async def _fetch_korea_news() -> str:
         "https://koreajoongangdaily.joins.com/rss/news.xml",
     ]
     items: list[dict] = []
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, headers=_RSS_HEADERS) as client:
         for url in feeds:
             try:
                 r = await client.get(url, follow_redirects=True)
@@ -361,16 +368,23 @@ async def _fetch_korea_news() -> str:
 
 
 async def _fetch_market_news() -> str:
-    """Fetch US market headlines from Yahoo Finance RSS and return HTML."""
-    url = "https://finance.yahoo.com/news/rssindex"
+    """Fetch US market headlines from Yahoo Finance RSS (with fallbacks)."""
+    feeds = [
+        "https://finance.yahoo.com/news/rssindex",
+        "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+        "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US",
+    ]
     items: list[dict] = []
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            r = await client.get(url, follow_redirects=True)
-            if r.status_code == 200:
-                items = _parse_rss(r.text, limit=4)
-        except Exception as e:
-            logger.debug("Market RSS fetch failed: %s", e)
+    async with httpx.AsyncClient(timeout=10.0, headers=_RSS_HEADERS) as client:
+        for url in feeds:
+            try:
+                r = await client.get(url, follow_redirects=True)
+                if r.status_code == 200:
+                    items = _parse_rss(r.text, limit=4)
+                    if items:
+                        break
+            except Exception as e:
+                logger.debug("Market RSS fetch failed (%s): %s", url, e)
 
     if not items:
         return "<p style='color:var(--muted)'>Could not fetch market news.</p>"
