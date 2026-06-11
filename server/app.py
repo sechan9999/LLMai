@@ -147,6 +147,17 @@ _briefing_generating = False
 BRIEFING_PATH = STATIC_DIR / "daily_briefing_dashboard.html"
 
 
+@app.on_event("startup")
+async def _refresh_stale_briefing() -> None:
+    """Regenerate the briefing in the background if it's missing or not today's."""
+    if BRIEFING_PATH.exists():
+        mtime = datetime.fromtimestamp(BRIEFING_PATH.stat().st_mtime)
+        if mtime.date() == datetime.now().date():
+            return
+    logger.info("Briefing missing or stale — regenerating in background")
+    asyncio.create_task(_generate_briefing())
+
+
 @app.get("/briefing")
 async def get_briefing():
     """Serve the daily briefing dashboard.
