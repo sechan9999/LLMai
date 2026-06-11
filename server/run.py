@@ -44,8 +44,10 @@ def main():
         print("uvicorn not installed. Run: pip install uvicorn[standard]")
         sys.exit(1)
 
-    # Open browser only when running locally (not in container)
-    if host == "127.0.0.1":
+    # Opt-in browser auto-open (LLMAI_OPEN_BROWSER=1). Off by default so the
+    # server doesn't pop a separate window — the website's Briefing tab
+    # embeds it directly.
+    if host == "127.0.0.1" and os.environ.get("LLMAI_OPEN_BROWSER") == "1":
         import threading
         import time
         def _open():

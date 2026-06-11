@@ -14,7 +14,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import BackgroundTasks, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -49,6 +49,46 @@ async def _init_observability() -> None:
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# ── Scoped CORS for the hosted website's Briefing tab ─────────────────────────
+# The site at ll-mai.vercel.app health-checks this server and embeds /briefing
+# in an iframe. Only health + briefing paths get CORS — /session (WS token)
+# and everything else stay same-origin only.
+_CORS_ORIGINS = {
+    o.strip().rstrip("/")
+    for o in os.environ.get(
+        "LLMAI_BRIEFING_ORIGINS", "https://ll-mai.vercel.app"
+    ).split(",")
+    if o.strip()
+}
+
+
+def _cors_eligible(origin: str, path: str) -> bool:
+    return origin in _CORS_ORIGINS and (
+        path == "/healthz" or path == "/briefing" or path.startswith("/briefing/")
+    )
+
+
+@app.middleware("http")
+async def _briefing_cors(request: Request, call_next):
+    origin = (request.headers.get("origin") or "").rstrip("/")
+    eligible = _cors_eligible(origin, request.url.path)
+    if request.method == "OPTIONS" and eligible:
+        return Response(status_code=204, headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            # Chrome Local Network Access preflight (public site -> localhost)
+            "Access-Control-Allow-Private-Network": "true",
+            "Access-Control-Max-Age": "600",
+            "Vary": "Origin",
+        })
+    response = await call_next(request)
+    if eligible:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
 
 # ── Valid WebSocket message types ─────────────────────────────────────────────
 _VALID_TYPES = {"get_info", "user_message", "permission_response", "reset", "cancel"}
