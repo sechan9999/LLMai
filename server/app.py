@@ -509,6 +509,12 @@ pre{{background:#0d1117;border:1px solid var(--border);border-radius:8px;
              color:var(--accent);border-radius:8px;padding:6px 14px;
              font-size:12px;font-weight:600;cursor:pointer;}}
 .refresh-btn:hover{{background:rgba(91,141,238,.1);}}
+.chart-block{{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);}}
+.chart-title{{font-size:13px;font-weight:700;margin-bottom:4px;}}
+.chart-block img{{width:100%;border:1px solid var(--border);border-radius:8px;
+                 margin-top:10px;background:#fff;display:block;}}
+.chart-src{{font-size:11px;color:var(--muted);margin-top:8px;}}
+.chart-src a{{color:var(--accent);text-decoration:none;}}
 @media(max-width:700px){{.grid-2{{grid-template-columns:1fr;}}}}
 </style></head>
 <body><div style="max-width:1200px;margin:0 auto;">
@@ -534,6 +540,20 @@ pre{{background:#0d1117;border:1px solid var(--border);border-radius:8px;
   <div class="card">
     <div class="section-title"><span>📈</span> US Market News</div>
     {market_html}
+    <div class="chart-block">
+      <div class="chart-title">🫧 AI Bubble Monitor</div>
+      <a href="https://cepr.net/publications/ai-bubble-monitor/" target="_blank" rel="noopener">
+        <img src="https://datawrapper.dwcdn.net/evPFl/full.png"
+             alt="Figure 1 — Market capitalization of major tech companies" loading="lazy">
+      </a>
+      <a href="https://cepr.net/publications/ai-bubble-monitor/" target="_blank" rel="noopener">
+        <img src="https://datawrapper.dwcdn.net/ssOd1/full.png"
+             alt="Figure 2 — Price-to-earnings ratios: Magnificent Seven and other tech companies vs. long-term average" loading="lazy">
+      </a>
+      <div class="chart-src">Source:
+        <a href="https://cepr.net/publications/ai-bubble-monitor/" target="_blank" rel="noopener">
+        CEPR — AI Bubble Monitor</a> (live charts, updated by CEPR)</div>
+    </div>
   </div>
 </div>
 
