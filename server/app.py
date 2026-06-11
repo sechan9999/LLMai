@@ -370,7 +370,7 @@ async def _fetch_korea_news() -> str:
             f'<div class="news-item">'
             f'<div class="news-num">{i}</div>'
             f'<div class="news-body">'
-            f'<div class="news-headline">{_esc(item["title"])}</div>'
+            f'{_headline_html(item)}'
             f'<div class="news-summary">{_esc(item["desc"])}</div>'
             f'<div class="news-source">{_esc(item["source"])}</div>'
             f'</div></div>'
@@ -405,8 +405,7 @@ async def _fetch_market_news() -> str:
         html_parts.append(
             f'<div class="mover-row" style="flex-direction:column;'
             f'align-items:flex-start;gap:4px;margin-bottom:10px">'
-            f'<div class="news-headline" style="font-size:13px;font-weight:600">'
-            f'{_esc(item["title"])}</div>'
+            f'{_headline_html(item, style="font-size:13px;font-weight:600")}'
             f'<div class="news-source">{_esc(item["source"])}</div>'
             f'</div>'
         )
@@ -418,17 +417,40 @@ def _parse_rss(xml: str, limit: int = 5) -> list[dict]:
     import re
     items = []
     for block in re.findall(r"<item>(.*?)</item>", xml, re.DOTALL)[:limit]:
-        title = _tag(block, "title")
+        title = _unescape_xml(_tag(block, "title"))
         desc  = _tag(block, "description") or _tag(block, "summary") or ""
-        desc  = re.sub(r"<[^>]+>", "", desc)[:160].strip()
-        items.append({"title": title or "—", "desc": desc, "source": "RSS"})
+        desc  = _unescape_xml(re.sub(r"<[^>]+>", "", desc)[:160].strip())
+        link  = _unescape_xml(_tag(block, "link"))
+        if not link.startswith(("http://", "https://")):
+            link = ""
+        source = "RSS"
+        if link:
+            host = urlparse(link).hostname or ""
+            source = host.removeprefix("www.") or "RSS"
+        items.append({"title": title or "—", "desc": desc, "link": link, "source": source})
     return items
+
+
+def _headline_html(item: dict, style: str = "") -> str:
+    """Headline span, wrapped in a link to the original article when available."""
+    attr = f' style="{style}"' if style else ""
+    title = _esc(item["title"])
+    if item.get("link"):
+        return (f'<a class="news-headline"{attr} href="{_esc(item["link"])}" '
+                f'target="_blank" rel="noopener">{title}</a>')
+    return f'<div class="news-headline"{attr}>{title}</div>'
 
 
 def _tag(text: str, name: str) -> str:
     import re
     m = re.search(rf"<{name}[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</{name}>", text, re.DOTALL)
     return m.group(1).strip() if m else ""
+
+
+def _unescape_xml(s: str) -> str:
+    """Decode XML entities from RSS field text so _esc doesn't double-escape."""
+    import html
+    return html.unescape(s)
 
 
 def _esc(s: str) -> str:
@@ -514,6 +536,8 @@ pre{{background:#0d1117;border:1px solid var(--border);border-radius:8px;
           font-size:12px;font-weight:700;color:var(--accent);}}
 .news-body{{flex:1;}}
 .news-headline{{font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.4;}}
+a.news-headline{{color:inherit;text-decoration:none;display:block;}}
+a.news-headline:hover{{color:var(--accent);text-decoration:underline;}}
 .news-summary{{font-size:13px;color:#a0a8c0;line-height:1.55;margin-bottom:4px;}}
 .news-source{{font-size:11px;color:var(--muted);font-weight:600;}}
 .refresh-btn{{float:right;background:var(--surface2);border:1px solid var(--border);
