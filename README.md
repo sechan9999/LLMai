@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" />
   <img src="https://img.shields.io/badge/status-alpha-orange?style=flat-square" />
   <a href="https://ll-mai.vercel.app"><img src="https://img.shields.io/badge/demo-ll--mai.vercel.app-6aa9ff?style=flat-square" /></a>
+  <a href="https://youtu.be/V3Rda1kLSos"><img src="https://img.shields.io/badge/▶%20demo%20video-YouTube-red?style=flat-square&logo=youtube&logoColor=white" /></a>
 </p>
 
 <h1 align="center">LLMai</h1>
@@ -27,7 +28,7 @@ A privacy-first AI coding agent that runs the model locally and gives it three d
 
 All three are **opt-in**. The default runtime stays local with Ollama. Cloud model, MCP, memory, search, and telemetry connections are enabled separately.
 
-**Live demo:** [ll-mai.vercel.app](https://ll-mai.vercel.app)
+**Live demo:** [ll-mai.vercel.app](https://ll-mai.vercel.app) · **Demo video (3 min):** [youtu.be/V3Rda1kLSos](https://youtu.be/V3Rda1kLSos)
 
 ---
 

@@ -229,6 +229,12 @@
       max-width: 960px; width: 100%; margin: 0 auto;
     }
     .eyebrow { font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+    .video-wrap {
+      aspect-ratio: 16 / 9; margin-bottom: 44px;
+      border: 1px solid var(--line); border-radius: var(--r);
+      overflow: hidden; background: #000;
+    }
+    .video-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
     .big-title { font-size: clamp(28px, 4vw, 46px); font-weight: 800; letter-spacing: -.04em; line-height: 1.1; margin-bottom: 14px; }
     .lead { color: var(--muted); font-size: 16px; line-height: 1.65; margin-bottom: 36px; max-width: 640px; }
     .proof-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 44px; }
@@ -419,6 +425,14 @@
         A local-first AI coding workspace: run sensitive work on your machine,
         route heavier tasks only when approved, and keep every write behind a clear permission gate.
       </p>
+
+      <div class="sec-label">3-minute demo</div>
+      <div class="video-wrap">
+        <iframe src="https://www.youtube.com/embed/V3Rda1kLSos"
+                title="LLMai — 3-minute demo"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
 
       <div class="proof-strip">
         <div class="proof"><strong>0</strong><span>required API keys for local work</span></div>
