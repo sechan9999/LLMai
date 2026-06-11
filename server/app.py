@@ -512,7 +512,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 .header h1{{font-size:22px;font-weight:700;}}
 .date-badge{{background:var(--surface2);border:1px solid var(--border);
             border-radius:20px;padding:6px 16px;font-size:13px;color:var(--muted);}}
-.grid-2{{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+.grid-2{{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:var(--gap);margin-bottom:var(--gap);}}
 .card{{background:var(--surface);border:1px solid var(--border);
       border-radius:var(--radius);padding:22px 24px;}}
 .section-title{{font-size:15px;font-weight:700;margin-bottom:16px;
@@ -550,7 +550,7 @@ a.news-headline:hover{{color:var(--accent);text-decoration:underline;}}
                  margin-top:10px;background:#fff;display:block;}}
 .chart-src{{font-size:11px;color:var(--muted);margin-top:8px;}}
 .chart-src a{{color:var(--accent);text-decoration:none;}}
-@media(max-width:700px){{.grid-2{{grid-template-columns:1fr;}}}}
+@media(max-width:1000px){{.grid-2{{grid-template-columns:1fr;}}}}
 </style></head>
 <body><div style="max-width:1200px;margin:0 auto;">
 <div class="header">
