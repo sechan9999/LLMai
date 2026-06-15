@@ -1,21 +1,21 @@
-requests>=2.31
-rich>=13.0
-fastapi>=0.110
-uvicorn[standard]>=0.29
-httpx>=0.27
+requests>=2.34.2
+rich>=15.0.0
+fastapi>=0.137.1
+uvicorn[standard]>=0.49.0
+httpx>=0.28.1
 
 # Optional: telemetry (opt-in via LLMAI_OTEL_ENABLED=true).
 # Safe to remove if you don't need observability.
-opentelemetry-api>=1.27
-opentelemetry-sdk>=1.27
-opentelemetry-exporter-otlp-proto-http>=1.27
+opentelemetry-api>=1.42.1
+opentelemetry-sdk>=1.42.1
+opentelemetry-exporter-otlp-proto-http>=1.42.1
 
 # Optional: persistent memory backed by MongoDB Atlas (opt-in via
 # LLMAI_MEMORY_ENABLED=true). Safe to remove if you don't need
 # cross-session continuity.
-pymongo[srv]>=4.8
+pymongo[srv]>=4.17.0
 
 # Optional: organizational knowledge search via Elasticsearch
 # (opt-in via LLMAI_ELASTIC_ENABLED=true). Safe to remove if you
 # don't need hybrid search over issues / logs / docs.
-elasticsearch>=8.13,<9
+elasticsearch>=9.4.1,<10
