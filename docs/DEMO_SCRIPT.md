@@ -128,7 +128,8 @@ then the README three-layer table, then GitHub URL + live demo URL.
 - [x] **Local bug planted** — `workspace/demo-login/`: both tests fail;
       the fix is one character in `auth.py` (`<` → `>=` in `needs_refresh`)
 - [x] **Gemini verified** — key valid, native loop auto-resolves to
-      gemini-2.5-flash
+      gemini-3.1-pro-preview (re-verify with `llmai-doctor` before each
+      recording — the default in `llmai/llm.py` can move)
 - [x] **End-to-end smoke test** — `mcp__gitlab__get_issue` fetched Issue
       #1 through the agent dispatcher in ~300 ms
 - [ ] Google credentials configured; confirm ADK shows `google_agent` and

@@ -123,8 +123,8 @@ class TestResolveProvider:
 
     def test_gemini_model_override(self, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "k")
-        monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-pro")
-        assert resolve_provider_config()["model"] == "gemini-2.5-pro"
+        monkeypatch.setenv("GEMINI_MODEL", "gemini-3.5-flash")
+        assert resolve_provider_config()["model"] == "gemini-3.5-flash"
 
     def test_explicit_base_url_takes_priority(self, monkeypatch):
         # Even with GEMINI_API_KEY set, an explicit base_url wins.

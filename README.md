@@ -292,7 +292,7 @@ The agent speaks the OpenAI `/v1/chat/completions` contract.
 ```bash
 # Gemini 3 through the existing CLI and Web UI agent loop
 export GEMINI_API_KEY=...
-export GEMINI_MODEL=gemini-3.1-pro-preview   # unset → defaults to gemini-2.5-flash
+export GEMINI_MODEL=gemini-3.1-pro-preview   # optional — this is already the default (llmai/llm.py); set only to override, e.g. gemini-3.5-flash
 
 llmai-doctor   # validates the key and model availability
 
