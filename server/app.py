@@ -681,7 +681,12 @@ async def ws_endpoint(websocket: WebSocket):
                     continue
                 agent_task = asyncio.create_task(agent.run(content))
             elif t == "permission_response":
-                await agent.handle_permission(data.get("approved", False))
+                # Only a JSON boolean true approves; "false", 1, etc. are denies.
+                rid = data.get("request_id")
+                await agent.handle_permission(
+                    data.get("approved") is True,
+                    rid if isinstance(rid, str) else None,
+                )
             elif t == "cancel":
                 if agent_task and not agent_task.done():
                     agent_task.cancel()
