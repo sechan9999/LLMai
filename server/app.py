@@ -512,7 +512,8 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 .header h1{{font-size:22px;font-weight:700;}}
 .date-badge{{background:var(--surface2);border:1px solid var(--border);
             border-radius:20px;padding:6px 16px;font-size:13px;color:var(--muted);}}
-.grid-2{{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:var(--gap);margin-bottom:var(--gap);}}
+.grid-2{{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+        gap:var(--gap);margin-bottom:var(--gap);}}
 .card{{background:var(--surface);border:1px solid var(--border);
       border-radius:var(--radius);padding:22px 24px;}}
 .section-title{{font-size:15px;font-weight:700;margin-bottom:16px;
@@ -583,7 +584,9 @@ a.news-headline:hover{{color:var(--accent);text-decoration:underline;}}
       </a>
       <a href="https://cepr.net/publications/ai-bubble-monitor/" target="_blank" rel="noopener">
         <img src="https://datawrapper.dwcdn.net/ssOd1/full.png"
-             alt="Figure 2 — Price-to-earnings ratios: Magnificent Seven and other tech companies vs. long-term average" loading="lazy">
+             alt="Figure 2 — Price-to-earnings ratios: Magnificent Seven and
+                  other tech companies vs. long-term average"
+             loading="lazy">
       </a>
       <div class="chart-src">Source:
         <a href="https://cepr.net/publications/ai-bubble-monitor/" target="_blank" rel="noopener">
@@ -681,7 +684,12 @@ async def ws_endpoint(websocket: WebSocket):
                     continue
                 agent_task = asyncio.create_task(agent.run(content))
             elif t == "permission_response":
-                await agent.handle_permission(data.get("approved", False))
+                # Only a JSON boolean true approves; "false", 1, etc. are denies.
+                rid = data.get("request_id")
+                await agent.handle_permission(
+                    data.get("approved") is True,
+                    rid if isinstance(rid, str) else None,
+                )
             elif t == "cancel":
                 if agent_task and not agent_task.done():
                     agent_task.cancel()

@@ -151,11 +151,12 @@ class AgentLoop:
                         print_fn(f"\n  ⚙  {fn_name}({_fmt_args(fn_args)})")
 
                         with telemetry.tool_span(name=fn_name, args=fn_args) as (_, oc):
+                            mode = self.permissions.rules.get(fn_name, "ask")
                             perm_start = time.monotonic()
                             allowed = self.permissions.check(fn_name, fn_args)
                             oc.perm_latency_ms = (time.monotonic() - perm_start) * 1000
                             if allowed:
-                                oc.permission = "allow"
+                                oc.permission = "allow" if mode == "allow" else "ask_allow"
                                 try:
                                     result = execute_tool(fn_name, fn_args)
                                     if result.startswith("Error"):
@@ -165,7 +166,7 @@ class AgentLoop:
                                     result = f"Error in {fn_name}: {e}"
                                 _print_result(result, print_fn)
                             else:
-                                oc.permission = "deny"
+                                oc.permission = "deny" if mode == "deny" else "ask_deny"
                                 oc.error = True
                                 result = f"Permission denied for {fn_name}"
                                 print_fn(f"  ✗  {result}")

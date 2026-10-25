@@ -838,7 +838,10 @@ function handle(m) {
       break
     case 'permission_request':
       curAiEl = null
-      addPermCard(m.tool, m.preview, m.args)
+      addPermCard(m.tool, m.preview, m.args, m.request_id)
+      break
+    case 'permission_expired':
+      expirePermCard(m.request_id)
       break
     case 'done':
       setbusy(false); curAiEl = null
@@ -930,8 +933,9 @@ function resolveToolCard({ card, uid }, content, error) {
   scrollDown()
 }
 
-function addPermCard(tool, preview, args) {
+function addPermCard(tool, preview, args, requestId) {
   const wrap = mk('div','perm-wrap')
+  if (requestId) wrap.dataset.requestId = requestId
   const pre  = preview || `${tool}(${JSON.stringify(args)})`
   wrap.innerHTML = `
     <div class="perm-card">
@@ -946,16 +950,22 @@ function addPermCard(tool, preview, args) {
     </div>`
   const btnsId = `pb-${_uid}`
   wrap.querySelector('.btn-allow').onclick = () => {
-    perm(true)
+    perm(true, requestId)
     document.getElementById(btnsId).innerHTML = `<span style="color:var(--green);font-size:12px">${esc(t('allowed'))}</span>`
   }
   wrap.querySelector('.btn-deny').onclick = () => {
-    perm(false)
+    perm(false, requestId)
     document.getElementById(btnsId).innerHTML = `<span style="color:var(--muted);font-size:12px">${esc(t('denied'))}</span>`
   }
   feed.appendChild(wrap)
   showFeed()
   scrollDown()
+}
+
+function expirePermCard(requestId) {
+  const wrap = [...document.querySelectorAll('.perm-wrap')].find(w => w.dataset.requestId === requestId)
+  const btns = wrap?.querySelector('.perm-btns')
+  if (btns) btns.innerHTML = `<span style="color:var(--muted);font-size:12px">${_lang === 'ko' ? '시간 초과로 거부됨' : 'Timed out (denied)'}</span>`
 }
 
 function addThinking() {
@@ -1064,7 +1074,7 @@ function send() {
   setbusy(true); addThinking()
   ws.send(j({type:'user_message', content:text}))
 }
-function perm(approved) { ws.send(j({type:'permission_response', approved})) }
+function perm(approved, request_id) { ws.send(j({type:'permission_response', approved, request_id})) }
 function cmd(t)          { if (ws?.readyState === WebSocket.OPEN) ws.send(j({type:t})) }
 
 // ── Input resize + Enter / Esc ───────────────────────────────────────────────

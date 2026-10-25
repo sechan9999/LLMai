@@ -11,6 +11,7 @@ import json
 import logging
 import re
 import time
+import uuid
 
 import httpx
 from fastapi import WebSocket
@@ -95,6 +96,8 @@ class WebSocketAgent:
     """
 
     MAX_ITERATIONS = 20
+    # An unanswered permission card is treated as a deny after this long.
+    PERMISSION_TIMEOUT_S = 300.0
 
     def __init__(
         self,
@@ -120,7 +123,9 @@ class WebSocketAgent:
         # after this module's import — merge them per-connection.
         from llmai import mcp as _mcp
         self.rules: dict[str, str] = {**DEFAULT, **_mcp.MCP_DEFAULT_PERMISSIONS}
-        self._perm_queue: asyncio.Queue[bool] = asyncio.Queue()
+        # (request_id, approved) pairs; a response only counts for the
+        # request it names, so stale clicks can't approve a later tool.
+        self._perm_queue: asyncio.Queue[tuple[str | None, bool]] = asyncio.Queue()
         self._last_result: str = ""
         self.session_id: str = _new_session_id()
         self.turn_count: int = 0
@@ -202,9 +207,9 @@ class WebSocketAgent:
             )
             await self._send("done")
 
-    async def handle_permission(self, approved: bool) -> None:
+    async def handle_permission(self, approved: bool, request_id: str | None = None) -> None:
         """Receive the user's permission decision from the UI."""
-        await self._perm_queue.put(approved)
+        await self._perm_queue.put((request_id, approved is True))
 
     def reset(self) -> None:
         """Clear conversation context."""
@@ -338,13 +343,35 @@ class WebSocketAgent:
             return True
         if mode == "deny":
             return False
+
+        # Drop answers left over from earlier cards (e.g. clicked after a cancel).
+        while not self._perm_queue.empty():
+            self._perm_queue.get_nowait()
+
+        request_id = uuid.uuid4().hex
         await self._send(
             "permission_request",
             tool=tool_name,
             preview=_preview(tool_name, args),
             args=args,
+            request_id=request_id,
         )
-        return await self._perm_queue.get()
+
+        deadline = time.monotonic() + self.PERMISSION_TIMEOUT_S
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                rid, approved = await asyncio.wait_for(self._perm_queue.get(), remaining)
+            except asyncio.TimeoutError:
+                break
+            if rid == request_id:
+                return approved
+            logger.warning("Ignoring permission response for unknown request %r", rid)
+
+        await self._send("permission_expired", request_id=request_id)
+        return False
 
     async def _chat(self) -> dict:
         """Send a non-streaming chat completion request to Ollama.
